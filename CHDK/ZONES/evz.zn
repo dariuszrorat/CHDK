@@ -1,0 +1,11 @@
+@title EV Zones
+# Values scaled to real viewport levels
+@zone   0,  11, 0xD2
+@zone  14,  22, 0xDF
+@zone  25,  37, 0xDD
+@zone  42,  60, 0x1D
+@zone  85,  99, 0x5F
+@zone 120, 142, 0x55
+@zone 177, 198, 0x21
+@zone 226, 241, 0x6C
+@zone 250, 255, 0x22

@@ -1,0 +1,14 @@
+@title IRE Zones
+# https://www.premiumbeat.com/blog/how-to-use-false-color-nail-skin-tone-exposure/
+@zone   0,   5, 0x11
+@zone   6,  24, 0xDF
+@zone  25,  47, 0xDD
+@zone  48, 100, 0xAA
+@zone 101, 114, 0x21
+@zone 115, 123, 0x33
+@zone 124, 137, 0x55
+@zone 138, 185, 0x31
+@zone 186, 199, 0x6F
+@zone 200, 223, 0x6C
+@zone 224, 237, 0x6E
+@zone 238, 255, 0x22
