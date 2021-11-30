@@ -33,3 +33,4 @@
   - Kelvin temperature calculation
 
 
+![This is an image](https://github.com/dariuszrorat/CHDK/blob/master/chdk_sx100.jpg)
