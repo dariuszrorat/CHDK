@@ -1,0 +1,10 @@
+
+/bin
+/CHDK
+*.o
+*.a
+*.exe
+*.bin
+*.elf
+*.dump
+*.syms
