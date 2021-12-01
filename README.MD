@@ -33,4 +33,32 @@
   - Kelvin temperature calculation
 
 
+## WARNING
+
+The code was compiled and tested only for SX10IS and SX100IS. Define these values
+in platform\<model>\platform_camera.h as sensor size float values
+
+```
+     #define CAM_SENSOR_WIDTH <size in mm>
+     #define CAM_SENSOR_HEIGHT <size in mm>
+     #define CAM_SENSOR_DIAGONAL <size in mm>
+```
+
+example for sx10is, 1/2.3"
+
+```
+     #define CAM_SENSOR_WIDTH 6.17f
+     #define CAM_SENSOR_HEIGHT 4.55f
+     #define CAM_SENSOR_DIAGONAL 7.67f
+```
+
+example for sx100is, 1/2.5"
+
+```
+     #define CAM_SENSOR_WIDTH 5.744f
+     #define CAM_SENSOR_HEIGHT 4.308f
+     #define CAM_SENSOR_DIAGONAL 7.18f
+```
+
+
 ![This is an image](https://github.com/dariuszrorat/CHDK/blob/master/chdk_sx100.jpg)
