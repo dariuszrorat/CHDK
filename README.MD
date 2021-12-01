@@ -1,6 +1,6 @@
 ## General info
 
-This project id fork of official CHDK
+This project is fork of official CHDK
 
 https://app.assembla.com/spaces/chdk
 
