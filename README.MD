@@ -1,3 +1,11 @@
+## General info
+
+This project id fork of official CHDK
+
+https://app.assembla.com/spaces/chdk
+
+This fork is not based on newest CHDK version. This is fork of 1.4.1 version.
+
 ## New Features
 
 ### AutoISO 2 extensions
