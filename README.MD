@@ -6,7 +6,14 @@ https://app.assembla.com/spaces/chdk
 
 This fork is not based on newest CHDK version. This is fork of 1.4.1 version.
 
-## New Features
+## Installation
+
+You need to install the official version of CHDK on your SD card first and make it bootable.
+Then just overwrite the binary files of this project, DISKBOOT.BIN and the
+flt modules as well as the language files. The project only works on bootable SD
+cards where the official CHDK project is loaded automatically.
+
+## Features
 
 ### AutoISO 2 extensions
 
@@ -41,7 +48,7 @@ This fork is not based on newest CHDK version. This is fork of 1.4.1 version.
   - Kelvin temperature calculation
 
 
-## WARNING
+## Compilation
 
 The code was compiled and tested only for SX10IS and SX100IS. Define these values
 in platform\<model>\platform_camera.h as sensor size float values
@@ -67,6 +74,16 @@ example for sx100is, 1/2.5"
      #define CAM_SENSOR_HEIGHT 4.308f
      #define CAM_SENSOR_DIAGONAL 7.18f
 ```
+
+## WARNING
+
+The project was tested only on the Powershot SX10IS and SX100IS. I don't know
+how it will behave on other camera models so be careful. Many times during
+tests and errors in the codes my camera turned off with the lens extended
+and in order to restart it I had to remove the batteries. I do not know how
+the extended functionalities will affect the stability, especially on other cameras.
+
+## Example screenshot
 
 
 ![This is an image](https://github.com/dariuszrorat/CHDK/blob/master/chdk_sx100.jpg)
