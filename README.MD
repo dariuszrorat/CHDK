@@ -54,6 +54,9 @@ The code was compiled and tested only for SX10IS and SX100IS. Define these value
 in platform\<model>\platform_camera.h as sensor size float values
 
 ```
+     #undef CAM_SENSOR_WIDTH
+     #undef CAM_SENSOR_HEIGHT
+     #undef CAM_SENSOR_DIAGONAL
      #define CAM_SENSOR_WIDTH <size in mm>
      #define CAM_SENSOR_HEIGHT <size in mm>
      #define CAM_SENSOR_DIAGONAL <size in mm>
@@ -62,6 +65,9 @@ in platform\<model>\platform_camera.h as sensor size float values
 example for sx10is, 1/2.3"
 
 ```
+     #undef CAM_SENSOR_WIDTH
+     #undef CAM_SENSOR_HEIGHT
+     #undef CAM_SENSOR_DIAGONAL
      #define CAM_SENSOR_WIDTH 6.17f
      #define CAM_SENSOR_HEIGHT 4.55f
      #define CAM_SENSOR_DIAGONAL 7.67f
@@ -70,10 +76,15 @@ example for sx10is, 1/2.3"
 example for sx100is, 1/2.5"
 
 ```
+     #undef CAM_SENSOR_WIDTH
+     #undef CAM_SENSOR_HEIGHT
+     #undef CAM_SENSOR_DIAGONAL
      #define CAM_SENSOR_WIDTH 5.744f
      #define CAM_SENSOR_HEIGHT 4.308f
      #define CAM_SENSOR_DIAGONAL 7.18f
 ```
+
+The default is 1/2.5" sensor size in include/camera.h
 
 ## WARNING
 

@@ -142,7 +142,12 @@
     
     #define CAM_KEY_PRESS_DELAY             30  // delay after a press - TODO can we combine this with above ?
     #define CAM_KEY_RELEASE_DELAY           30  // delay after a release - TODO do we really need to wait after release ?
-    
+
+    //camera sensor values for AOV and FOV, default 1/2.5" sensor
+    #define CAM_SENSOR_WIDTH                5.744f
+    #define CAM_SENSOR_HEIGHT               4.308f
+    #define CAM_SENSOR_DIAGONAL             7.18f
+
     // RAW & DNG related values
     #define DEFAULT_RAW_EXT                 1   // extension to use for raw (see raw_exts in conf.c)
     #define DNG_BADPIXEL_VALUE_LIMIT        0   // Max value of 'bad' pixel - this value or lower is considered a defective pixel on the sensor

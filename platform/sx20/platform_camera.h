@@ -27,9 +27,12 @@
     #define CAM_RAW_ROWPIX                  4080
     #define CAM_RAW_ROWS                    3048
 
-    #define CAM_SENSOR_WIDTH                6.16f
-    #define CAM_SENSOR_HEIGHT               4.62f
-    #define CAM_SENSOR_DIAGONAL             7.70f
+    #undef CAM_SENSOR_WIDTH
+    #undef CAM_SENSOR_HEIGHT
+    #undef CAM_SENSOR_DIAGONAL
+    #define CAM_SENSOR_WIDTH                6.17f
+    #define CAM_SENSOR_HEIGHT               4.55f
+    #define CAM_SENSOR_DIAGONAL             7.67f
 
     #define CAM_SWIVEL_SCREEN               1
     #define CAM_ADJUSTABLE_ALT_BUTTON       1

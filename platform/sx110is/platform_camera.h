@@ -26,9 +26,12 @@
     #define CAM_RAW_ROWPIX                  3720
     #define CAM_RAW_ROWS                    2772
 
-    #define CAM_SENSOR_WIDTH                6.16f
-    #define CAM_SENSOR_HEIGHT               4.62f
-    #define CAM_SENSOR_DIAGONAL             7.70f
+    #undef CAM_SENSOR_WIDTH
+    #undef CAM_SENSOR_HEIGHT
+    #undef CAM_SENSOR_DIAGONAL
+    #define CAM_SENSOR_WIDTH                6.17f
+    #define CAM_SENSOR_HEIGHT               4.55f
+    #define CAM_SENSOR_DIAGONAL             7.67f
 
     #define CAM_CAN_MUTE_MICROPHONE         1
     #define CAM_SHOW_OSD_IN_SHOOT_MENU      1

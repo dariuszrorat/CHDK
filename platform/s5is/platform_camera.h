@@ -26,10 +26,6 @@
     #define CAM_RAW_ROWPIX                  3336    // for new 8 MP
     #define CAM_RAW_ROWS                    2480    // for new 8 MP
 
-    #define CAM_SENSOR_WIDTH                5.744f
-    #define CAM_SENSOR_HEIGHT               4.308f
-    #define CAM_SENSOR_DIAGONAL             7.18f
-
     #define CAM_MULTIPART                   1
     #define CAM_SWIVEL_SCREEN               1
     #define CAM_ADJUSTABLE_ALT_BUTTON       1
