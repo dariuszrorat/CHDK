@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "modes.h"
 #include "clock.h"
 #include "shooting.h"
@@ -442,7 +441,7 @@ static void action_stack_process()
         // Get function address and id from stack
         long id = action_top(0);
         action_func f = (action_func)action_top(1);
-        if (id == AS_FUNC_ENTRY)    // Safety check
+        if (id == (long)AS_FUNC_ENTRY)    // Safety check
         {
             process = f();
         }

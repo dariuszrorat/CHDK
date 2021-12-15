@@ -3,9 +3,6 @@
 #include "core.h"
 #include "conf.h"
 #include "keyboard.h"
-#include "stdlib.h"
-#include "platform.h"
-#include "stdio.h"
 
 #define PARAM_FILE_COUNTER      0x3A        // tested param 58 asm1989
 
@@ -99,7 +96,7 @@ const CapturemodeMap modemap[] = {
     { MODE_TV,                  32771 },
     { MODE_AV,                  32770 },
     { MODE_M,                   32769 },
-    { MODE_AUTO,                32768 },
+    { MODE_AUTO | MODE_DISABLE_RAW, 32768 },
 
     { MODE_LIVE,                33336 },
     { MODE_EASY,                33318 },

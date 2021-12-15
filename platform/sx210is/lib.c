@@ -59,7 +59,7 @@ void debug_led(int state)
  *(int*)LED_PR=state ? 0x46 : 0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[5]={4,5,7,8,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -146,3 +146,50 @@ int vid_get_viewport_display_yoffset()
 	return 0;
 }
 
+int vid_get_viewport_buffer_width_proper()      { return 960; }
+int vid_get_palette_type()                      { return 3; }
+int vid_get_palette_size()                      { return 256 * 4; }
+int vid_get_aspect_ratio()                      { return 1; }
+extern int _GetVRAMHPixelsSize();
+extern int _GetVRAMVPixelsSize();
+
+int vid_get_viewport_width_proper() {
+    return ((mode_get()&MODE_MASK) == MODE_PLAY)?960:_GetVRAMHPixelsSize();
+}
+
+int vid_get_viewport_height_proper() {
+    return ((mode_get()&MODE_MASK) == MODE_PLAY)?240:_GetVRAMVPixelsSize();
+}
+
+// Defined in stubs_min.S
+extern char active_viewport_buffer;
+extern void* viewport_buffers[];
+
+void *vid_get_viewport_live_fb()
+{
+/*
+ffb64808: 0x40547700
+ffb6480c: 0x405c6000
+ffb64810: 0x40644900
+ffb64814: 0x409de0d0
+ffb64818: 0x417f4030
+ffb6481c: 0x41872930
+ffb64820: 0x418f1230
+ffb64824: 0x4196fb30
+*/
+    unsigned char buff = active_viewport_buffer;
+    if (buff == 0) {
+        buff = 2;
+    }
+    else {
+        buff--;
+    }
+    return viewport_buffers[buff];
+}
+
+void *vid_get_bitmap_active_palette()
+{
+    extern int active_palette_buffer;
+    extern int** palette_buffer_ptr;
+    return (palette_buffer_ptr[active_palette_buffer]+0x3);
+}

@@ -55,7 +55,7 @@ void debug_led(int state)
 // 8   15     EV LED
 */
 // converted to A2100
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[3]={3,8,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -77,11 +77,6 @@ long vid_get_viewport_height()
 {
    return 240;    //  G10
 }
-
-// Y multiplier for cameras with 480 pixel high viewports (CHDK code assumes 240)
-// int vid_get_viewport_yscale() {
-	// return 2;               // G10 viewport is 480 pixels high
-// }
 
 //1024 entry palette based on 100a ffcad26c
 int vid_get_palette_type()                      { return 3; }

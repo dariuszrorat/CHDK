@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "clock.h"
 #include "conf.h"
@@ -8,6 +7,7 @@
 #include "gui_draw.h"
 #include "gui_batt.h"
 #include "gui_lang.h"
+#include "time.h"
 
 #include "gui_read.h"
 #include "module_def.h"
@@ -377,6 +377,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

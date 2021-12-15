@@ -1,6 +1,5 @@
 #include "math.h"
 #include "platform.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "lang.h"
 #include "conf.h"
@@ -21,6 +20,7 @@
 //-------------------------------------------------------------------
 
 extern const char* gui_video_bitrate_enum(int change, int arg);
+extern const char* gui_video_min_bitrate_enum(int change, int arg);
 
 //-------------------------------------------------------------------
 static char osd_buf[64];
@@ -51,7 +51,8 @@ static EXPO_TYPE expo;
  * The generalization to 2000K < T < 4000K and the blackbody fits
  * are my own and should be taken with a grain of salt.
  */
-static const double XYZ_to_RGB[3][3] = {
+static const double XYZ_to_RGB[3][3] =
+{
     { 3.24071,	-0.969258,  0.0556352 },
     { -1.53726,	1.87599,    -0.203996 },
     { -0.498571,	0.0415557,  1.05707 }
@@ -62,11 +63,16 @@ void temperature_to_rgb(double T, double RGB[3])
     int c;
     double xD, yD, X, Y, Z, max;
     // Fit for CIE Daylight illuminant
-    if (T <= 4000) {
+    if (T <= 4000)
+    {
         xD = 0.27475e9 / (T * T * T) - 0.98598e6 / (T * T) + 1.17444e3 / T + 0.145986;
-    } else if (T <= 7000) {
+    }
+    else if (T <= 7000)
+    {
         xD = -4.6070e9 / (T * T * T) + 2.9678e6 / (T * T) + 0.09911e3 / T + 0.244063;
-    } else {
+    }
+    else
+    {
         xD = -2.0064e9 / (T * T * T) + 1.9018e6 / (T * T) + 0.24748e3 / T + 0.237040;
     }
     yD = -3 * xD * xD + 2.87 * xD - 0.275;
@@ -83,7 +89,8 @@ void temperature_to_rgb(double T, double RGB[3])
     Y = 1;
     Z = (1 - xD - yD) / yD;
     max = 0;
-    for (c = 0; c < 3; c++) {
+    for (c = 0; c < 3; c++)
+    {
         RGB[c] = X * XYZ_to_RGB[0][c] + Y * XYZ_to_RGB[1][c] + Z * XYZ_to_RGB[2][c];
         if (RGB[c] > max) max = RGB[c];
     }
@@ -95,7 +102,8 @@ void rgb_to_temperature(double RGB[3], double *T, double *Green)
     double Tmax, Tmin, testRGB[3];
     Tmin = 2000;
     Tmax = 23000;
-    for (*T = (Tmax + Tmin) / 2; Tmax - Tmin > 0.1; *T = (Tmax + Tmin) / 2) {
+    for (*T = (Tmax + Tmin) / 2; Tmax - Tmin > 0.1; *T = (Tmax + Tmin) / 2)
+    {
         temperature_to_rgb(*T, testRGB);
         if (testRGB[2] / testRGB[0] > RGB[2] / RGB[0])
             Tmax = *T;
@@ -141,16 +149,28 @@ static void print_aov(char *buf, int angle)
     sprintf(buf, "%2d.%d\xb0", i, f);
 }
 
+//-------------------------------------------------------------------
 // Append scaled value display of 'dist' to 'osd_buf'
 static void sprintf_dist(char *buf, int dist)
 {
-    print_dist(buf, dist, 0);
-}
-
-// Append scaled value display of 'dist' to 'osd_buf'
-static void sprintf_dist_hyp(char *buf, int dist)
-{
-    print_dist(buf, dist, 1);
+// length of printed string is always 4
+    if (dist<=0)
+    {
+        sprintf(buf, " inf");
+    }
+    else
+    {
+        int i = dist / 1000;
+        int f = dist % 1000;
+        if (i == 0)
+            sprintf(buf, ".%03d", f);
+        else if (i < 10)
+            sprintf(buf, "%d.%02d", i, (f+5)/10);
+        else if (i < 100)
+            sprintf(buf, "%02d.%d", i, (f+50)/100);
+        else
+            sprintf(buf, "%4d", i);
+    }
 }
 
 static void sprintf_aov(char *buf, int angle)
@@ -196,7 +216,7 @@ void gui_osd_draw_dof(int is_osd_edit)
     {
         twoColors col = user_color(conf.osd_color);
         twoColors valid_col = MAKE_COLOR(BG_COLOR(col), COLOR_GREEN);
-        int i = 9, j;
+        int i = 8, j;
         short f_ex = (conf.show_dof==DOF_SHOW_IN_DOF_EX);
         draw_osd_string(conf.dof_pos, 0, 0, "SD/NL/FL:", col, conf.dof_scale);
         sprintf_dist(osd_buf, camera_info.dof_values.subject_distance);
@@ -218,7 +238,7 @@ void gui_osd_draw_dof(int is_osd_edit)
         draw_osd_string(conf.dof_pos, i*FONT_WIDTH, FONT_HEIGHT, osd_buf, (f_ex && camera_info.dof_values.distance_valid)?valid_col:col, conf.dof_scale);
         i = i+j;
         draw_osd_string(conf.dof_pos, i*FONT_WIDTH, FONT_HEIGHT, "/", col, conf.dof_scale);
-        sprintf_dist_hyp(osd_buf, camera_info.dof_values.hyperfocal_distance);
+        sprintf_dist(osd_buf, camera_info.dof_values.hyperfocal_distance);
         draw_osd_string(conf.dof_pos, (++i)*FONT_WIDTH, FONT_HEIGHT, osd_buf, (f_ex && camera_info.dof_values.hyperfocal_valid)?valid_col:col, conf.dof_scale);
 
         //calculate AOV and FOV values
@@ -340,7 +360,7 @@ static void gui_print_osd_misc_string_canon_values(const char * title, short val
     gui_print_osd_misc_string();
 }
 
-static void gui_print_osd_dof_string_dist(const char * title, int value, short use_good_color, short is_hyp)
+static void gui_print_osd_dof_string_dist(const char * title, int value, short use_good_color)
 {
     strcpy(osd_buf, title);
     int i=strlen(osd_buf);
@@ -349,14 +369,7 @@ static void gui_print_osd_dof_string_dist(const char * title, int value, short u
     if (i<8)
     {
         draw_osd_string(conf.values_pos, 0, m, osd_buf, col, conf.values_scale);
-        if (is_hyp)
-        {
-            sprintf_dist_hyp(osd_buf, value);
-        }
-        else
-        {
-            sprintf_dist(osd_buf, value);
-        }
+        sprintf_dist(osd_buf, value);
         sprintf(osd_buf+strlen(osd_buf), "%9s", "");
         osd_buf[9-i]=0;
         draw_osd_string(conf.values_pos, i*FONT_WIDTH, m, osd_buf, use_good_color?valid_col:col, conf.values_scale);
@@ -455,7 +468,7 @@ void gui_osd_draw_state(int is_osd_edit)
         if (camera_info.cam_has_nd_filter)
             if ((conf.nd_filter_state && !(conf.override_disable==1))|| is_osd_edit)
                 gui_print_osd_state_string_chr("NDFILTER:", ((conf.nd_filter_state==1)?"IN":"OUT"));
-        if ((conf.autoiso_enable && shooting_get_iso_mode()<=0 && (camera_info.state.mode_shooting==MODE_AUTO || camera_info.state.mode_shooting==MODE_P || camera_info.state.mode_shooting==MODE_AV) && shooting_get_flash_mode() && (autoiso_and_bracketing_overrides_are_enabled)) || is_osd_edit)
+        if ((conf.autoiso_enable && shooting_get_iso_mode()<=0 && !(camera_info.state.mode_shooting==MODE_M || camera_info.state.mode_shooting==MODE_TV) && shooting_get_flash_mode() && (autoiso_and_bracketing_overrides_are_enabled)) || is_osd_edit)
             gui_print_osd_state_string_chr("AUTOISO:", ((conf.autoiso_enable==1)?"ON":"OFF"));
         if ((is_sd_override_enabled && shooting_can_focus()) || (camera_info.state.gui_mode_alt && shooting_get_common_focus_mode()) || is_osd_edit)
         {
@@ -548,15 +561,15 @@ static void gui_osd_draw_values(int is_osd_edit, int is_zebra)
         if (((conf.show_dof==DOF_SHOW_IN_MISC) || f_ex) && showtype && !is_osd_edit)
         {
             if (conf.dof_subj_dist_in_misc)
-                gui_print_osd_dof_string_dist("SD :", camera_info.dof_values.subject_distance, f_ex && (camera_info.dof_values.distance_valid || shooting_get_focus_mode()), 0);
+                gui_print_osd_dof_string_dist("SD :", camera_info.dof_values.subject_distance, f_ex && (camera_info.dof_values.distance_valid || shooting_get_focus_mode()));
             if (conf.dof_near_limit_in_misc)
-                gui_print_osd_dof_string_dist("NL :", camera_info.dof_values.near_limit, f_ex && camera_info.dof_values.distance_valid, 0);
+                gui_print_osd_dof_string_dist("NL :", camera_info.dof_values.near_limit, f_ex && camera_info.dof_values.distance_valid);
             if (conf.dof_far_limit_in_misc)
-                gui_print_osd_dof_string_dist("FL :", camera_info.dof_values.far_limit, f_ex && camera_info.dof_values.distance_valid, 0);
+                gui_print_osd_dof_string_dist("FL :", camera_info.dof_values.far_limit, f_ex && camera_info.dof_values.distance_valid);
             if (conf.dof_depth_in_misc)
-                gui_print_osd_dof_string_dist("DOF:", camera_info.dof_values.depth_of_field, f_ex && camera_info.dof_values.distance_valid, 0);
+                gui_print_osd_dof_string_dist("DOF:", camera_info.dof_values.depth_of_field, f_ex && camera_info.dof_values.distance_valid);
             if (conf.dof_hyperfocal_in_misc)
-                gui_print_osd_dof_string_dist("HYP:", camera_info.dof_values.hyperfocal_distance, f_ex && camera_info.dof_values.hyperfocal_valid, 1);
+                gui_print_osd_dof_string_dist("HYP:", camera_info.dof_values.hyperfocal_distance, f_ex && camera_info.dof_values.hyperfocal_valid);
         }
 
         if ((showtype == 1) || is_osd_edit)
@@ -600,7 +613,7 @@ static void gui_osd_draw_values(int is_osd_edit, int is_zebra)
                     gui_print_osd_misc_string();
                     break;
                 }
-
+                //gui_print_osd_misc_string();
             }
 
             if ((conf3.values_show_color_temp_tint != 0) && camera_info.state.is_shutter_half_press)
@@ -775,6 +788,7 @@ static void gui_osd_draw_movie_time_left()
         {
             // if manual adjust, show the field item to be adjusted
             // if any value overriden, show the override value
+#ifndef CAM_MOVIEREC_NEWSTYLE
 #if !CAM_VIDEO_QUALITY_ONLY
             if ((conf.video_mode == 0 && conf.fast_movie_quality_control==1) || conf.video_bitrate != VIDEO_DEFAULT_BITRATE)
             {
@@ -789,6 +803,21 @@ static void gui_osd_draw_movie_time_left()
                 sprintf(osd_buf, "Qual:%2i",conf.video_quality);
                 draw_osd_string(conf.mode_video_pos, 0, 3*FONT_HEIGHT, osd_buf, col, conf.mode_video_scale);
             }
+#else // CAM_MOVIEREC_NEWSTYLE
+            if ((conf.video_bitrate != VIDEO_DEFAULT_BITRATE) || (conf.video_quality != VIDEO_DEFAULT_QUALITY))
+            {
+                if (conf.video_mode == 1) // CBR, see gui.c
+                {
+                    sprintf(osd_buf, "CBR %5s",gui_video_bitrate_enum(0,0));
+                    draw_osd_string(conf.mode_video_pos, 0, 2*FONT_HEIGHT, osd_buf, col, conf.mode_video_scale);
+                }
+                else if (conf.video_mode > 1) // VBR, see gui.c
+                {
+                    sprintf(osd_buf, "VBR %5s / %s",gui_video_bitrate_enum(0,0),gui_video_min_bitrate_enum(0,0));
+                    draw_osd_string(conf.mode_video_pos, 0, 2*FONT_HEIGHT, osd_buf, col, conf.mode_video_scale);
+                }
+            }
+#endif // CAM_MOVIEREC_NEWSTYLE
             // everything else is for when recording
             if (!record_running)
             {
@@ -812,10 +841,18 @@ static void gui_osd_draw_movie_time_left()
 
         if (init == 1)
         {
+#ifndef CAM_MOVIEREC_NEWSTYLE
             card_used = init_space - GetFreeCardSpaceKb();
             elapsed = (int) ( get_tick_count() - init_time ) / 1000;
-            avg_use = card_used / elapsed;  // running average Kb/sec
-            time_left = (GetFreeCardSpaceKb() / avg_use);
+            avg_use = elapsed?(card_used / elapsed):1;  // running average Kb/sec (avoids division by zero)
+            time_left = avg_use?(GetFreeCardSpaceKb() / avg_use):1; // (avoids division by zero)
+#else
+            // D6: filesystem related info is not updated during recording
+            card_used = shooting_get_video_recorded_size_kb();
+            elapsed = (int) ( get_tick_count() - init_time ) / 1000;
+            avg_use = elapsed?(card_used / elapsed):1;  // running average Kb/sec (avoids division by zero)
+            time_left = avg_use?((init_space - card_used) / avg_use):1; // (avoids division by zero)
+#endif
             hour = time_left / 3600;
             min = (time_left % 3600) / 60;
             sec = (time_left % 3600) % 60;
@@ -910,9 +947,9 @@ void gui_osd_draw_temp(int is_osd_edit)
 }
 
 //-------------------------------------------------------------------
+#if CAM_EV_IN_VIDEO
 void gui_osd_draw_ev_video(int is_osd_edit)
 {
-#if CAM_EV_IN_VIDEO
     if (!is_video_recording() && !is_osd_edit) return;
 
     int visible = get_ev_video_avail() || is_osd_edit;
@@ -943,19 +980,20 @@ void gui_osd_draw_ev_video(int is_osd_edit)
     draw_line(x0+33,y0+18,x0+33,y0+22,col);
     draw_line(x0+36,y0+18,x0+36,y0+22,col);
     draw_line(x0+37,y0+19,x0+37,y0+22,col);
-#endif
 }
+#endif
 
 //-------------------------------------------------------------------
 // Process up/down/left/right/jogdial shortcuts when control options enabled
 static int kbd_use_up_down_left_right_as_fast_switch()
 {
     static long key_pressed = 0;
-    int ev_video = 0;
-    int jogdial;
 
+#if CAM_VIDEO_CONTROL
+    int ev_video = 0;
 #if CAM_EV_IN_VIDEO
     ev_video = get_ev_video_avail();
+#endif
 #endif
 
     // One of the control options must be enabled or don't do anything
@@ -991,7 +1029,7 @@ static int kbd_use_up_down_left_right_as_fast_switch()
             return 1;
         }
 #else
-        jogdial=get_jogdial_direction();
+        int jogdial=get_jogdial_direction();
 
         if (camera_info.state.is_shutter_half_press && (jogdial==JOGDIAL_RIGHT))
         {
@@ -1010,6 +1048,7 @@ static int kbd_use_up_down_left_right_as_fast_switch()
     }
 
     // Adjust video quality/bitrate if 'Video Quality Control?' option is set
+#ifndef CAM_MOVIEREC_NEWSTYLE
     if (conf.fast_movie_quality_control && key_pressed == 0 && is_video_recording())
     {
         if (kbd_is_key_pressed(KEY_UP))
@@ -1056,6 +1095,7 @@ static int kbd_use_up_down_left_right_as_fast_switch()
             return 1;
         }
     }
+#endif // !CAM_MOVIEREC_NEWSTYLE
 
 #if CAM_VIDEO_CONTROL
     // Pause / unpause video if 'Fast Movie Control' option is set
@@ -1067,7 +1107,7 @@ static int kbd_use_up_down_left_right_as_fast_switch()
     {
         if (kbd_is_key_pressed(KEY_LEFT) && is_video_recording())
         {
-            movie_status = VIDEO_RECORD_STOPPED;
+            set_movie_status(1); // set to stop
             key_pressed = KEY_LEFT;
             return 1;
         }
@@ -1075,9 +1115,9 @@ static int kbd_use_up_down_left_right_as_fast_switch()
         // reyalp - HACK for cams that can do video in any mode
         // note that this means this will probably run whenever you press right
         // BUG this doesn't know whether recording was stopped or paused.
-        if (kbd_is_key_pressed(KEY_RIGHT) && (movie_status == VIDEO_RECORD_STOPPED))
+        if (kbd_is_key_pressed(KEY_RIGHT) && (get_movie_status() == VIDEO_RECORD_STOPPED))
         {
-            movie_status = VIDEO_RECORD_IN_PROGRESS;
+            set_movie_status(2); // resume
             movie_reset = 1;
             key_pressed = KEY_RIGHT;
             return 1;
@@ -1183,8 +1223,8 @@ static int gui_std_kbd_process()
 #endif
     {
         short x;
-        get_property_case(PROPCASE_DIGITAL_ZOOM_STATE, &x, sizeof(x));
-        if (x)
+        // state = 1 => digital zoom standard
+        if (shooting_get_digital_zoom_state())
         {
             get_property_case(PROPCASE_DIGITAL_ZOOM_POSITION, &x, sizeof(x));
 #if defined(CAM_USE_OPTICAL_MAX_ZOOM_STATUS)
@@ -1325,7 +1365,7 @@ static void gui_debug_draw_tasklist(void)
             name = "(unknown)";
         }
         sprintf(osd_buf,"%10s %8X",name,tasklist[show_start+i]);
-        draw_string(64,16+16*i,osd_buf, user_color(conf.osd_color));
+        draw_string(64,FONT_HEIGHT+FONT_HEIGHT*i,osd_buf, user_color(conf.osd_color));
     }
 }
 #endif //CAM_DRYOS
@@ -1353,14 +1393,31 @@ void gui_draw_debug_vals_osd()
 
     twoColors col = user_color(conf.osd_color);
 
-#define DBGMISCVALS_X ((CAM_SCREEN_WIDTH/FONT_WIDTH)-17)
-#define DBGMISCVALS_Y ((CAM_SCREEN_HEIGHT/FONT_HEIGHT)-6)
+    int DBGMISCVALS_X = ((camera_screen.width/FONT_WIDTH)-17);
+    int DBGMISCVALS_Y = ((camera_screen.height/FONT_HEIGHT)-6);
 
     // DEBUG: "Show misc. values"
     // change ROW to fit values on screen in draw_txt_string(COLUMN, ROW, ...)
     // uncomment call to gui_draw_debug_vals_osd() in gui_redraw() if you want debug values always on top
     if (conf.debug_misc_vals_show)
     {
+
+#ifdef OPT_VIEWPORT_DEBUG
+        {
+            extern char avb_history[32];
+            extern unsigned char avb_times[32];
+            unsigned avbtsum = 0;
+            int n;
+            for (n=0; n<32; n++)
+            {
+                avbtsum += avb_times[n];
+                osd_buf[n] = avb_history[n]+'0';
+            }
+            sprintf(osd_buf+24, " FPS x 10: %3u",avbtsum?320000/avbtsum:0);
+            draw_txt_string(DBGMISCVALS_X-25,  DBGMISCVALS_Y-1, osd_buf, col);
+        }
+#endif
+
         // show value of Memory Address selected with Memory Browser
         sprintf(osd_buf, "MEM: %#8x", (void*) (*(int*)conf.mem_view_addr_init));    // show value in Hexadecimal integer
         //sprintf(osd_buf, "MEM: %8u", (void*) (*(int*)conf.mem_view_addr_init));    // show value in Decimal integer
@@ -1405,6 +1462,31 @@ void gui_draw_debug_vals_osd()
         */
 
         /*
+        // user friendlier keymap display with separated bits, grouped by hex digits
+        // comment out the above FB, ZB and USB related lines when using this
+        extern long physw_status[3];
+        #define BITDISP(str, val) { unsigned bdi; \
+                            char dig[4] = {'1','2','4','8'}; \
+                            for(bdi=0; bdi<32; bdi++) { \
+                              str[31-bdi] = (val&(1<<bdi))?dig[bdi&3]:'0'; \
+                            } \
+                            str[32] = 0; \
+                          }
+        draw_txt_string(DBGMISCVALS_X-20, DBGMISCVALS_Y+1, "     [ 7][ 6][ 5][ 4][ 3][ 2][ 1][ 0]", col);
+        strcpy(osd_buf, "PS1: ");
+        BITDISP((osd_buf+5), physw_status[0])
+        draw_txt_string(DBGMISCVALS_X-20, DBGMISCVALS_Y+2, osd_buf, col);
+
+        strcpy(osd_buf, "PS2: ");
+        BITDISP((osd_buf+5), physw_status[1])
+        draw_txt_string(DBGMISCVALS_X-20, DBGMISCVALS_Y+3, osd_buf, col);
+
+        strcpy(osd_buf, "PS3: ");
+        BITDISP((osd_buf+5), physw_status[2])
+        draw_txt_string(DBGMISCVALS_X-20, DBGMISCVALS_Y+4, osd_buf, col);
+        */
+
+        /*
         long v=get_file_counter();
         sprintf(osd_buf, "1:%03d-%04d", (v>>18)&0x3FF, (v>>4)&0x3FFF);
         sprintf(osd_buf, "1:%d, %08X", xxxx, eeee);
@@ -1422,7 +1504,7 @@ void gui_draw_debug_vals_osd()
                 get_property_case(p, &r, 4);
                 sprintf(osd_buf, "%3d: %d              ", p, r);
                 osd_buf[20]=0;
-                draw_string(64,16+16*i,osd_buf, col);
+                draw_string(64,FONT_HEIGHT+FONT_HEIGHT*i,osd_buf, col);
             }
         }
 
@@ -1449,14 +1531,14 @@ void gui_draw_debug_vals_osd()
                     }
                     else
                     {
-                        if (len>=sizeof(s)) count=sizeof(s)-1;
+                        if (len>=(int)sizeof(s)) count=sizeof(s)-1;
                         else count=len;
                         get_parameter_data(p, &s, count);
                         s[count]=0;
                         sprintf(osd_buf, "%3d: %30s :%2d ", p, s,len);
                     }
                 }
-                draw_string(16,16+16*i,osd_buf, col);
+                draw_string(16,FONT_HEIGHT+FONT_HEIGHT*i,osd_buf, col);
             }
         }
         if (conf.debug_display == DEBUG_DISPLAY_UIPROPS)
@@ -1475,7 +1557,7 @@ void gui_draw_debug_vals_osd()
                     sprintf(osd_buf, "%3d: %hi               ", p, r);
                 }
                 osd_buf[20]=0;
-                draw_string(64,16+16*i,osd_buf, col);
+                draw_string(64,FONT_HEIGHT+FONT_HEIGHT*i,osd_buf, col);
             }
         }
     }
@@ -1537,8 +1619,10 @@ void gui_draw_osd_elements(int is_osd_edit, int is_zebra)
         }
     }
 
+#if CAM_EV_IN_VIDEO
     if (!is_zebra)
         gui_osd_draw_ev_video(is_osd_edit);
+#endif
 }
 
 void gui_draw_osd()

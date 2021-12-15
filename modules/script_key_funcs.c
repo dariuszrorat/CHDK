@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "usb_remote.h"
 
@@ -55,13 +54,16 @@ static const struct Keynames {
     { KEY_PLAYBACK,         "playback"   },
     { KEY_HELP,             "help"       },
     { KEY_MODE,             "mode"       },
+    { KEY_WIFI,             "wifi"       },
+    { KEY_FRAMING_ASSIST,   "framing_assist" },
+	{ KEY_AUTO,             "auto"       },
     { 0xFF,                 "remote"     },
     { 0xFFFF,               "no_key"     },
 };
 
 __attribute__((short_call)) int script_keyid_by_name (const char *n)
 {
-    int i;
+    unsigned i;
     for (i=0;i<sizeof(keynames)/sizeof(keynames[0]);i++)
     if (strcmp(keynames[i].keyname,n) == 0)
         return keynames[i].keyid;

@@ -1,6 +1,11 @@
 #include "stdlib.h"
+#include "string.h"
+#include "stdio.h"
+#include "ctype.h"
 #include "gui_mbox.h"
 #include "gui.h"
+#include "gui_lang.h"
+#include "lang.h"
 
 struct cpuinfo_bitfield_desc_s {
     unsigned bits;
@@ -14,12 +19,12 @@ struct cpuinfo_word_desc_s {
 };
 
 const struct cpuinfo_bitfield_desc_s cpuinf_id[] = {
-    {4,"Revision"},
-    {12,"Part"},
-    {4,"ARM Arch"},
-    {4,"Variant"},
-    {8,"Implementor"},
-    {}
+    {4,"Revision",0},
+    {12,"Part",0},
+    {4,"ARM Arch",0},
+    {4,"Variant",0},
+    {8,"Implementor",0},
+    {0}
 };
 
 static const char *reg_sizes[] = {
@@ -43,15 +48,17 @@ static const char *regperm_str(unsigned val) {
 
 #ifdef THUMB_FW
     #include "cpuinfo_v7.c"
+    // note, this is how many we know, nothing to do with how many cpuinfo_get_info knows
+    #define NUM_CPUINFO_WORDS (((sizeof(cpuinfo_desc_pmsa)>sizeof(cpuinfo_desc_vmsa))? \
+                              sizeof(cpuinfo_desc_pmsa):sizeof(cpuinfo_desc_vmsa))/ \
+                              sizeof(cpuinfo_desc_pmsa[0]) - 1)
 #else
     #include "cpuinfo_v5.c"
+    // note, this is how many we know, nothing to do with how many cpuinfo_get_info knows
+    #define NUM_CPUINFO_WORDS ((sizeof(cpuinfo_desc)/sizeof(cpuinfo_desc[0])) - 1)
 #endif
 
-// note, this is how many we know, nothing to do with how many debug_read_cpuinfo knows
-#define NUM_CPUINFO_WORDS ((sizeof(cpuinfo_desc)/sizeof(cpuinfo_desc[0])) - 1)
-
 void cpuinfo_finish(unsigned dummy);
-void cpuinfo_get_info(unsigned *results);
 
 void cpuinfo_write_file(void) {
     unsigned cpuinfo[NUM_CPUINFO_WORDS];
@@ -61,7 +68,21 @@ void cpuinfo_write_file(void) {
     FILE *finfo;
     char buf[100];
     char *p;
+#ifdef THUMB_FW
+    struct cpuinfo_word_desc_s *cpuinfo_desc;
+    if (cpu_is_vmsa()) {
+        FILE *f=fopen("A/MMU_MAP.CSV", "wb");
+        memmapping_vmsa(f);
+        cpuinfo_get_info_vmsa(cpuinfo);
+        cpuinfo_desc = (struct cpuinfo_word_desc_s*) cpuinfo_desc_vmsa;
+    }
+    else {
+        cpuinfo_get_info_pmsa(cpuinfo);
+        cpuinfo_desc = (struct cpuinfo_word_desc_s*) cpuinfo_desc_pmsa;
+    }
+#else
     cpuinfo_get_info(cpuinfo);
+#endif
     finfo=fopen("A/CPUINFO.TXT", "wb");
     for(i = 0; cpuinfo_desc[i].name; i++) {
         wordval = cpuinfo[i];
@@ -82,7 +103,8 @@ void cpuinfo_write_file(void) {
         }
     }
     fclose(finfo);
-    gui_mbox_init((int)"CPUINFO",(int)"Wrote A/CPUINFO.TXT",MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER, cpuinfo_finish);
+    sprintf(buf, lang_str(LANG_CPUINFO_WROTE), "A/CPUINFO.TXT");
+    gui_mbox_init(LANG_MENU_DEBUG_CPU_INFO,(int)buf,MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER, cpuinfo_finish);
 }
 
 int basic_module_init() {
@@ -91,7 +113,7 @@ int basic_module_init() {
 }
 // =========  MODULE INIT =================
 #include "simple_module.c"
-void cpuinfo_finish(unsigned dummy) {
+void cpuinfo_finish(__attribute__ ((unused))unsigned dummy) {
     running=0;
 }
 
@@ -104,7 +126,7 @@ ModuleInfo _module_info =
     ANY_CHDK_BRANCH, 0, OPT_ARCHITECTURE,			// Requirements of CHDK version
     ANY_PLATFORM_ALLOWED,		// Specify platform dependency
 
-    (int32_t)"CPU INFO",
+    -LANG_MENU_DEBUG_CPU_INFO,  // Module name
     MTYPE_TOOL,             //Read CPU and cache information from CP15
 
     &_librun.base,
@@ -113,6 +135,8 @@ ModuleInfo _module_info =
     ANY_VERSION,                // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

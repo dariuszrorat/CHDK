@@ -35,15 +35,12 @@
     #undef  CAM_HAS_IRIS_DIAPHRAGM
     #define CAM_HAS_ND_FILTER               1
 
-    #define  CAM_DISABLE_RAW_IN_ISO_3200    1    // For cameras that don't have valid raw in ISO3200 mode (different from low light)
-
     // long shutter is acutally user TV, may work ?
     #undef  CAM_HAS_USER_TV_MODES
     #define CAM_SHOW_OSD_IN_SHOOT_MENU      1
 
     #define CAM_AF_SCAN_DURING_VIDEO_RECORD 1
 
-    #define CAM_USE_ALT_SET_ZOOM_POINT      1   // Define to use the alternate code in lens_set_zoom_point()
 
     #undef  CAM_VIDEO_CONTROL
     #define CAM_VIDEO_QUALITY_ONLY          1
@@ -88,6 +85,10 @@
                                                 // Used to enabled bracketing in custom timer, required on many recent cameras
                                                 // see http://chdk.setepontos.com/index.php/topic,3994.405.html
     #define REMOTE_SYNC_STATUS_LED          0xc0220134  // specifies an LED that turns on while camera waits for USB remote to sync
+    #define CAM_REMOTE_ANALOG_AV                1 // Camera supports analog AV detect for remote signal
+    #define CAM_REMOTE_AtoD_CHANNEL         5   // Camera supports using 3rd battery terminal as well as USB for remote - value = A/D channel to poll
+    // D10 - Open circuit = 1023, 10k ohm = ~350, 3.5k = ~150
+    //#define CAM_REMOTE_AtoD_THRESHOLD       200 // 3rd battery terminal A/D reading threshold ( lower = 1, higher = 0 )
 
     #undef  CAMERA_MIN_DIST
     #define CAMERA_MIN_DIST                 30      // Override min subject distance
@@ -104,5 +105,6 @@
     #define CAM_SD_OVER_IN_MF               1
 
     #define CAM_IS_VID_REC_WORKS                1   // is_video_recording() function works
+    #define CAM_PTP_USE_NATIVE_BUFFER       1 // use firmware buffers to avoid problems with uncached memory
 
 //--------------------------------------------------

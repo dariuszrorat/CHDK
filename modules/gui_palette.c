@@ -1,5 +1,5 @@
 #include "camera_info.h"
-#include "stdlib.h"
+#include "color.h"
 #include "keyboard.h"
 #include "conf.h"
 #include "lang.h"
@@ -106,7 +106,7 @@ int gui_palette_kbd_process()
             }
             else
             {
-                if (--test_page < 0) test_page = 3;
+                if (--test_page < 0) test_page = 2;
             }
             gui_palette_redraw = 1;
             break;
@@ -124,7 +124,7 @@ int gui_palette_kbd_process()
             }
             else
             {
-                if (++test_page > 3) test_page = 0;
+                if (++test_page > 2) test_page = 0;
             }
             gui_palette_redraw = 1;
             break;
@@ -143,9 +143,8 @@ int gui_palette_kbd_process()
 //-------------------------------------------------------------------
 static void palette_test()
 {
-    unsigned int x, y, xl, xr, xt, w, h;
-    color c, co;
-    static char buf[64];
+    unsigned int x, y, xl, xr, w, h;
+    color c;
 
     xl = camera_screen.disp_left;
     xr = camera_screen.disp_right;
@@ -168,14 +167,14 @@ static void palette_test()
                         COLOR_MAGENTA   ,COLOR_YELLOW
                 },
                 {
-                        3   ,6  ,9  ,12 ,15,
-                        4   ,7  ,10 ,13 ,16,
-                        5   ,8  ,11 ,14 ,17,
-                        1   ,1  ,1  ,18 ,1
+                        3  ,6  ,9  ,12 ,15,
+                        4  ,7  ,10 ,13 ,16,
+                        5  ,8  ,11 ,14 ,17,
+                        0  ,1  ,2  ,18 ,19
                 }
         };
 
-        char *nams[4][20] = {
+        char *nams[3][20] = {
                 {
                         "white", "red", "dark red", "light red",
                         "green", "blue", "light blue", "yellow",
@@ -188,33 +187,8 @@ static void palette_test()
                         "red", "green", "blue", "grey", "yellow",
                         "dk red", "dk green", "dk blue", "dk grey", "dk yellow",
                         "lt red", "lt green", "lt blue", "lt grey", "lt yellow",
-                        "", "", "", "trns grey", ""
-                },
-                {
-                        "0xD2", "0xDF", "0xD3", "0xDD", "0x3F", "0x1F", "0x6F",
-                        "0x6A", "0x55", "0x51", "0x62", "0x6E", "0x6C", "0x21",
-                        "0x2E", "0x22"
+                        "transp", "black", "white", "trns grey", "magenta"
                 }
-        };
-
-        color false_colors[] =
-        {
-                0xD2, //00..15
-                0xDF, //16..31
-                0xD3, //32..47
-                0xDD, //48..63
-                0x3F, //64..79
-                0x1F, //80..95
-                0x6F, //96..111
-                0x6A, //112..127
-                0x55, //128..143
-                0x51, //144..159
-                0x62, //160..175
-                0x6E, //176..191
-                0x6C, //192..207
-                0x21, //208..223
-                0x2E, //224..239
-                0x22  //240..255
         };
 
         if (test_page == 0)
@@ -238,7 +212,6 @@ static void palette_test()
             c = 0;
             w = camera_screen.disp_width / 2;
             h = (camera_screen.height - (2 * FONT_HEIGHT)) / 3;
-
             for (y=0; y<3; y++)
             {
                 for (x=0; x<2; x++, c++)
@@ -264,23 +237,6 @@ static void palette_test()
                 }
             }
         }
-        else if (test_page == 3)
-        {
-            draw_string(xl, 0, "False Colors", MAKE_COLOR(COLOR_BLACK, COLOR_WHITE));
-            c = 0;
-            w = camera_screen.disp_width / 4;
-            h = (camera_screen.height - (2 * FONT_HEIGHT)) / 4;
-
-            for (y=0; y<4; y++)
-            {
-                for (x=0; x<4; x++, c++)
-                {
-                    co = false_colors[4*y + x];
-                    draw_rectangle(xl+(x*w), (2*FONT_HEIGHT)+(y*h), xl+(x*w)+w-1, (2*FONT_HEIGHT)+(y*h)+h-FONT_HEIGHT-6, MAKE_COLOR(co,co), RECT_BORDER0|DRAW_FILLED);
-                    draw_string(xl+(x*w),(2*FONT_HEIGHT)+(y*h)+h-FONT_HEIGHT-3, nams[test_page][c], MAKE_COLOR(COLOR_BLACK, COLOR_WHITE));
-                }
-            }
-        }
 
         gui_palette_redraw = 0;
     }
@@ -299,7 +255,7 @@ static void palette_test()
 
 static void palette_draw()
 {
-    unsigned int x, y, xl, xr;
+    int x, y, xl, xr;
     color c;
     static char buf[64];
     static int cellsize = 0, disptop, dispright, dispbottom;
@@ -377,7 +333,6 @@ static void palette_draw()
 }
 
 //-------------------------------------------------------------------
-
 void process_element(const char *str, int n, int *len, unsigned short *lo, unsigned short *hi, color *color)
 {
     const char *ptr = str;
@@ -501,7 +456,6 @@ static void palette_zone_legend()
         gui_palette_redraw = 0;
     }
 }
-//-------------------------------------------------------------------
 
 void gui_palette_draw()
 {
@@ -571,6 +525,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

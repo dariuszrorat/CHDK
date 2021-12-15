@@ -39,7 +39,7 @@ void debug_led(int state)
  *(int*)LED_PR=state ? 0x46 : 0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
 	static char led_table[2]={0,9};
 	_LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -90,9 +90,12 @@ int vid_get_palette_type()                      { return 3; }
 int vid_get_palette_size()                      { return 256 * 4; }
 
 void *vid_get_bitmap_active_palette() {
-        extern int active_palette_buffer;
-        extern char* palette_buffer[];
-        return (palette_buffer[active_palette_buffer]+8);
+    extern int active_palette_buffer;
+    extern char* palette_buffer[];
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 8;
+    return p;
 }
 
 extern char active_viewport_buffer;
@@ -106,16 +109,18 @@ void *vid_get_viewport_fb()
 
 void *vid_get_viewport_live_fb()
 {
-    if (camera_info.state.mode_video)
-        return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
+    int b = (active_viewport_buffer-1)&3;
+    if ((b == 3) && (camera_info.state.mode_video || is_video_recording()))
+        b = 2;  // Video only seems to use the first 3 viewport buffers.
 
-   // Hopefully return the most recently used viewport buffer
-    return viewport_buffers[(active_viewport_buffer-1)&3];
+    // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
+    return viewport_buffers[b];
 }
+
 
 #ifdef CAM_LOAD_CUSTOM_COLORS
 // Function to load CHDK custom colors into active Canon palette
- 
+
 void load_chdk_palette() {
 
         extern int active_palette_buffer;
@@ -123,7 +128,7 @@ void load_chdk_palette() {
         if ((active_palette_buffer == 0) || (active_palette_buffer == 4))
         {
             int *pal = (int*)vid_get_bitmap_active_palette();
-            if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+            if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
             {
                 pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
                 pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red
@@ -163,13 +168,13 @@ void load_chdk_palette() {
 
 static int af_locked_in_movierec = 0;
 
-void _MakeAFScan(int *a, int b) {
+void _MakeAFScan(__attribute__ ((unused))int *a, __attribute__ ((unused))int b) {
     _DoAFLock();
     af_locked_in_movierec = 1;
 }
 
 void state_check_for_movie_af() {
-    if ((movie_status != VIDEO_RECORD_IN_PROGRESS) && af_locked_in_movierec) {
+    if ((get_movie_status() != VIDEO_RECORD_IN_PROGRESS) && af_locked_in_movierec) {
         af_locked_in_movierec = 0;
         _UnlockAF();
     }

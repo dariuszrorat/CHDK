@@ -5,7 +5,6 @@
 #include "platform.h"
 #include "core.h"
 #include "keyboard.h"
-#include "stdlib.h"
 
 /* Ours stuff */
 extern long link_bss_start;
@@ -13,7 +12,7 @@ extern long link_bss_end;
 extern void boot();
 extern void mykbd_task(long ua, long ub, long uc, long ud, long ue, long uf);
 
-static void core_hook_task_create(void *tcb)
+static void core_hook_task_create(__attribute__ ((unused))void *tcb)
 {
 }
 
@@ -38,6 +37,7 @@ static void (*taskfsprev)(
 
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
     core_spytask();
 }
 
@@ -72,6 +72,7 @@ static void capt_seq_hook(
     long p0,    long p1,    long p2,    long p3,    long p4,
     long p5,    long p6,    long p7,    long p8,    long p9)
 {
+    (void)p0; (void)p1; (void)p2; (void)p3; (void)p4; (void)p5; (void)p6; (void)p7; (void)p8; (void)p9;
     capt_seq_task();
 }
 
@@ -80,6 +81,7 @@ static void movie_record_hook(
     long p0,    long p1,    long p2,    long p3,    long p4,
     long p5,    long p6,    long p7,    long p8,    long p9)
 {
+    (void)p0; (void)p1; (void)p2; (void)p3; (void)p4; (void)p5; (void)p6; (void)p7; (void)p8; (void)p9;
     movie_record_task();
 }
 
@@ -188,7 +190,7 @@ static const struct {
     { 105,  61400 },
     { 128,  72000 },
 };
-#define NUM_FL (sizeof(fl_tbl)/sizeof(fl_tbl[0]))
+#define NUM_FL (int)(sizeof(fl_tbl)/sizeof(fl_tbl[0]))
 #define CF_EFL 6000
 
 const int zoom_points = 129;

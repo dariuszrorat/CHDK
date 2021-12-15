@@ -105,6 +105,25 @@ enum {
     MODE_VIDEO_TIME_LAPSE   ,
 
     MODE_HYBRID_AUTO        , // sx280
+    MODE_BACKGROUND_DEFOCUS , // g7x
+    MODE_STAR_PORTRAIT      , // g7x
+    MODE_STAR_NIGHTSCAPE    , // g7x
+    MODE_STAR_TRAILS        , // g7x
+
+    MODE_VIDEO_M            , // g7x manual video
+    MODE_VIDEO_STAR_TIME_LAPSE, // g7x not clear if this should be VIDEO
+
+    MODE_ART_BOLD           , // art bold, m10
+    MODE_WATERPAINTING      , // water painting, m10
+    MODE_CLOSEUP            , // close-up, m10
+    MODE_FOOD               , // food, m10
+    MODE_SELFIE             , // self portrait, m10
+
+    MODE_VIDEO_SHORT_CLIP   , // sx710 (short clips with special effects like slomo, individual effects don't get their own mode)
+    MODE_ZOOM_BLUR          , // ixus990_sd970 "The optical zoom operates automatically during shooting"
+
+    MODE_PANNING            , // G7X2
+
 };
 
 #endif

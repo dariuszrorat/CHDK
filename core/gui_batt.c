@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "battery.h"
 #include "conf.h"
@@ -26,7 +25,7 @@ static long get_batt_average() {
 
 //-------------------------------------------------------------------
 unsigned long get_batt_perc() {
-    unsigned long v;
+    long v;
 
     v = get_batt_average();
     if (v>conf.batt_volts_max) v=conf.batt_volts_max;

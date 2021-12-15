@@ -63,6 +63,18 @@
 //S90/S95/S100/S110
 #define KEY_RING_FUNC       42
 
+// dedicated wifi connect button (G7x)
+#define KEY_WIFI            43
+
+//SX530 - Framing Assist Lock feature to help reduce camera shake on the telephoto end.
+#define KEY_FRAMING_ASSIST  44
+
+//SX520 - drive mode button
+#define KEY_DRIVE_MODE      45
+
+//SX400/SX410 - Switching from the AUTO mode to another mode and vice versa.
+#define KEY_AUTO            46
+
 #define JOGDIAL_LEFT        100
 #define JOGDIAL_RIGHT       101
 #define FRONTDIAL_LEFT      102
@@ -81,13 +93,20 @@ extern long kbd_get_autoclicked_key();
 extern long kbd_use_zoom_as_mf();
 extern void kbd_set_extra_button(short);
 extern long get_jogdial_direction(void);
+extern int kbd_force_analog_av(int);
 
 extern void JogDial_CW(void);
 extern void JogDial_CCW(void);
 
-extern void enter_alt();
+extern void enter_alt(int script_mode);
 extern void exit_alt();
 
+// get HDMI hotplug status from as seen by canon firmware (possibly modified by CHDK)
+int get_hdmi_hpd_physw_mod(void);
+// get analog video status from as seen by canon firmware (possibly modified by CHDK)
+int get_analog_av_physw_mod(void);
+// get USB bit from as seen by canon firmware (possibly modified by CHDK)
+int get_usb_bit_physw_mod(void);
 /******************************************************************/
 
 #endif

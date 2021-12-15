@@ -394,7 +394,9 @@ static char * sub_hex8(firmware *fw, char * op, t_value w)
 
     char *s = op;
 
-    w = followBranch(fw,w,1);           // If call to Branch then follow branch
+    // If call to Branch then follow branch; but only if original branch is in main FW (not code copied to RAM)
+    if (w >= fw->base)
+        w = followBranch(fw,w,1);
     osig *o = find_sig_val_by_type(fw->sv->stubs, w, TYPE_NHSTUB);
 
     if ((options.flags & disopt_patch_branch) && patch_func_name)
@@ -480,7 +482,7 @@ static char * reg(char * op, char c, t_value n) {
 /* op = num(op,n) appends n in decimal or &n in hex
  * depending on whether n<decmax. It's assumed that n>=0.
  */
-static char * num(char * op, t_value w, int decmax)
+static char * num(char * op, t_value w, t_value decmax)
 {
     char tmpbuf[16] ;
     char * tptr ;
@@ -1459,6 +1461,6 @@ t_address find_end(firmware *fw, t_address start)
 
 //------------------------------------------------------------------------------------------------------------
 
-void swiname(t_value w, char * s, size_t sz) { return; }
+void swiname(__attribute__ ((unused))t_value w, __attribute__ ((unused))char * s, __attribute__ ((unused))size_t sz) { return; }
 
 //------------------------------------------------------------------------------------------------------------

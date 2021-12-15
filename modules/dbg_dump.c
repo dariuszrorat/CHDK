@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "script.h"
 #include "meminfo.h"
@@ -7,6 +6,7 @@
 #include "module_load.h"
 #include "clock.h"
 #include "cachebit.h"
+#include "time.h"
 
 // to keep format simple, we always write meminfo for each
 // but can skip actual getmeminfo since call might crash on mem corruption

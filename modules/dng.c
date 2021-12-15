@@ -17,6 +17,7 @@
 #include "task.h"
 #include "cachebit.h"
 #include "remotecap.h"
+#include "time.h"
 
 #include "dng.h"
 #include "module_def.h"
@@ -385,7 +386,7 @@ static void process_entries(ifd_entry* ifd, void (*f)(ifd_entry*, dir_entry*))
 
 // Functions to count the number of valid (non-skipped) entries in an IFD
 // (called via process_ifd_list & process_entries)
-static void inc_ifd_count(ifd_entry* ifd, dir_entry* e)
+static void inc_ifd_count(ifd_entry* ifd, __attribute__ ((unused))dir_entry* e)
 {
     ifd->count++;
 }
@@ -400,7 +401,7 @@ static void calc_ifd_count(ifd_entry* ifd)
 // (called via process_ifd_list & process_entries)
 static int raw_offset;
 
-static void inc_raw_offset(ifd_entry* ifd, dir_entry* e)
+static void inc_raw_offset(__attribute__ ((unused))ifd_entry* ifd, dir_entry* e)
 {
     raw_offset += 12; // IFD directory entry size
     int size_ext = get_type_size(e->type) * e->count;
@@ -424,7 +425,7 @@ static void calc_extra_offset(ifd_entry* ifd)
 
 // Functions to add the IFDs and IFD entries to the save buffer
 // (called via process_ifd_list & process_entries)
-static void add_entry_to_buffer(ifd_entry* ifd, dir_entry* e)
+static void add_entry_to_buffer(__attribute__ ((unused))ifd_entry* ifd, dir_entry* e)
 {
     add_val_to_buf(e->tag, sizeof(short));
     add_val_to_buf(e->type & 0xFF, sizeof(short));
@@ -457,7 +458,7 @@ static void add_ifd_to_buffer(ifd_entry* ifd)
 
 // Functions to add the extra data to the save buffer
 // (called via process_ifd_list & process_entries)
-static void add_entry_extra_data_to_buffer(ifd_entry* ifd, dir_entry* e)
+static void add_entry_extra_data_to_buffer(__attribute__ ((unused))ifd_entry* ifd, dir_entry* e)
 {
     int size_ext = get_type_size(e->type) * e->count;
     if (size_ext > 4)
@@ -480,7 +481,7 @@ if minimal is set, don't pad to 512 byte boundery or create thumbnail
 
 void create_dng_header(int ver1_1, int minimal)
 {
-    int i,j;
+    int i;
 
     // Set version and opcodes
     if (ver1_1)
@@ -790,7 +791,7 @@ static int convert_dng_to_chdk_raw(char* fn)
 #define BUF_SIZE (32768)
     FILE *dng, *raw;
     int *buf;
-    int i;
+    unsigned i;
     struct stat st;
     struct utimbuf t;
 
@@ -947,7 +948,7 @@ int init_badpixel_bin_flag; // contants above to count/create file, > 0 num bad 
 int raw_init_badpixel_bin()
 {
     int count;
-    unsigned int x, y, xlen, ylen;
+    int x, y, xlen, ylen;
     unsigned short c[9];
 
     FILE*f;
@@ -1070,7 +1071,7 @@ int badpixel_list_loaded_b(void)
 
 // -----------------------------------------------
 
-static unsigned int badpix_cnt1;
+static int badpix_cnt1;
 
 static int action_stack_BADPIX_S3()
 {
@@ -1239,7 +1240,6 @@ void reverse_bytes_task() {
     // the portions of the buffer which have been written out, waiting as needed
     if(rb_state.src == rb_state.dst) {
         src = rb_state.src;
-        int offset = 0;
         while(src < rb_state.end) {
             int chunk_size = rb_state.written - src;
             if(!chunk_size) {
@@ -1419,6 +1419,8 @@ ModuleInfo _module_info =
     ANY_VERSION,                // CAM SCREEN version
     CAM_SENSOR_VERSION,         // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

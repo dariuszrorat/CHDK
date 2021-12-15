@@ -40,7 +40,7 @@ void debug_led(int state)
  *(int*)LED_PR=state ? 0x46 : 0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[2]={0,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -50,11 +50,11 @@ int get_flash_params_count(void){
 }
 
 void JogDial_CW(void){
- _PostLogicalEventForNotPowerType(0x86E, 1);  // @FF416880 (100c)
+	_PostLogicalEventToUI(0x86E, 1);  // RotateJogDialRight
 }
 
 void JogDial_CCW(void){
- _PostLogicalEventForNotPowerType(0x86F, 1);  // @FF41688C (100c)
+	_PostLogicalEventToUI(0x86F, 1);  // RotateJogDialLeft
 }
 
 
@@ -111,7 +111,10 @@ void *vid_get_bitmap_active_palette()
 {
     extern int active_palette_buffer;
     extern char* palette_buffer[];
-    return (palette_buffer[active_palette_buffer]+8);
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 8;
+    return p;
 }
 
 // Function to load CHDK custom colors into active Canon palette
@@ -122,7 +125,7 @@ void load_chdk_palette()
     if ((active_palette_buffer == 0) || (active_palette_buffer == 4))
     {
         int *pal = (int*)vid_get_bitmap_active_palette();
-        if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+        if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
         {
             pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
             pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red

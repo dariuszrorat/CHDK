@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "lang.h"
 #include "modes.h"
 #include "keyboard.h"
@@ -34,7 +33,7 @@ static struct {
         { MBOX_BTN_CANCEL,  LANG_MBOX_BTN_CANCEL}
 };
 #define BUTTON_SIZE     6
-#define BUTTONSNUM      (sizeof(buttons)/sizeof(buttons[0]))
+#define BUTTONSNUM      (int)(sizeof(buttons)/sizeof(buttons[0]))
 #define MAX_BUTTONS     3
 static int      mbox_buttons[MAX_BUTTONS], mbox_buttons_num, mbox_button_active;
 static coord    mbox_buttons_x, mbox_buttons_y;

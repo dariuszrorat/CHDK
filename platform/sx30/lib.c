@@ -55,7 +55,7 @@ void shutdown()
 #define LED_PR 0xC0220134	// Power LED
 
 // TODO = this uses power LED, need to disable later (so power LED doesn't flicker)
-void debug_led(int state)
+void debug_led(__attribute__ ((unused))int state)
 {
  //*(int*)LED_PR=state ? 0x46 : 0x44;
 }
@@ -63,7 +63,7 @@ void debug_led(int state)
 // SX30 has two 'lights' - Power LED, and AF assist lamp
 // Power Led = first entry in table (led 0)
 // AF Assist Lamp = second entry in table (led 1)
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[2]={3,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -95,7 +95,7 @@ void *vid_get_viewport_fb()
 
 void *vid_get_viewport_live_fb()
 {
-    if (camera_info.state.mode_video || (movie_status==VIDEO_RECORD_IN_PROGRESS))
+    if (camera_info.state.mode_video || (get_movie_status()==VIDEO_RECORD_IN_PROGRESS))
         return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
 
     // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
@@ -208,7 +208,10 @@ void *vid_get_bitmap_active_palette()
 {
     extern int active_palette_buffer;
     extern char* palette_buffer[];
-    return (palette_buffer[active_palette_buffer]+8);
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 8;
+    return p;
 }
 
 // Function to load CHDK custom colors into active Canon palette
@@ -219,7 +222,7 @@ void load_chdk_palette()
     if ((active_palette_buffer == 0) || (active_palette_buffer == 4) || (active_palette_buffer == 6))
     {
         int *pal = (int*)vid_get_bitmap_active_palette();
-        if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+        if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
         {
             pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
             pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red

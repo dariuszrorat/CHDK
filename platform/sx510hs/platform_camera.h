@@ -57,7 +57,6 @@
     #define cam_CalibrationIlluminant1      21      // D65
 
     #undef  CAM_USE_ZOOM_FOR_MF
-    #define CAM_HAS_ND_FILTER               1
 
     #define CAM_HAS_VIDEO_BUTTON            1
 
@@ -70,8 +69,7 @@
     #undef CAM_CHDK_HAS_EXT_VIDEO_MENU
 //    #define CAM_VIDEO_QUALITY_ONLY            1
 //    #define CAM_CHDK_HAS_EXT_VIDEO_MENU       1
-    #define CAM_HAS_MOVIE_DIGEST_MODE       1   //Camera doesn't actually have MOVIE_DIGEST_MOVIE, but this is required by is_video_recording.
-                                                //See http://chdk.setepontos.com/index.php?topic=9986.msg118892#msg118892
+    #define CAM_HAS_MOVIE_DIGEST_MODE       1   //See http://chdk.setepontos.com/index.php?topic=9986.msg118892#msg118892
     #define CAM_IS_VID_REC_WORKS            1   // is_video_recording() function works    
 
     // TODO
@@ -110,9 +108,6 @@
     #define  CAM_HAS_FILEWRITETASK_HOOK     1 // FileWriteTask hook is available (local file write can be prevented)
     #define  CAM_FILEWRITETASK_SEEKS        1 // Camera's FileWriteTask can do Lseek() - DryOS r50 or higher, the define could also be CAM_DRYOS_2_3_R50
 
-    #define CAM_USE_OPTICAL_MAX_ZOOM_STATUS 1 // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom
-    #define CAM_USE_ALT_SET_ZOOM_POINT      1 // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt 1 // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
 
 //  only non-AF led available
     #define REMOTE_SYNC_STATUS_LED          0xC022302C  // specifies an LED that turns on while camera waits for USB remote to sync
@@ -130,5 +125,7 @@
     #define DRAW_ON_ACTIVE_BITMAP_BUFFER_ONLY 1
 
     #define CAM_3ARG_DebugAssert                1   // DebugAssert takes 3 arguments
+
+    #define CAM_HAS_WIFI                        1   // Camera has wifi support
 
 //----------------------------------------------------------

@@ -145,8 +145,11 @@ int idx_valid(firmware *fw, int i)
     }
     if (fw->dryos_ver >= 50)
     {
-        i = ((i * 4) + (fw->base - fw->base2)) / 4;
-        if ((i >= 0) && (i < fw->size2))
+        int i2 = ((i * 4) + (fw->base - fw->base2)) / 4;
+        if ((i2 >= 0) && (i2 < fw->size2))
+            return 1;
+        // RAM code can also reference ROM, check for that
+        if (idx2adr(fw,i)>=fw->base && idx2adr(fw,i)<(fw->base+fw->size*4))
             return 1;
     }
     return 0;
@@ -181,6 +184,27 @@ char* adr2ptr(firmware *fw, uint32_t adr)
     return ((char*)fw->buf) + (adr - fw->base);
 }
 
+// check for code copied to RAM, correct idx if needed
+int idxcorr(firmware *fw, int idx)
+{
+    static int inited = 0;
+    static int b2oidx, b2idx;
+    if (!inited)
+    {
+        b2oidx = adr2idx(fw, fw->base_copied);
+        b2idx = adr2idx(fw, fw->base2);
+        inited = 1;
+    }
+
+    if (fw->base2)
+    {
+        if ((idx >= b2oidx) && (idx < b2oidx + fw->size2))
+        {
+            idx = idx - b2oidx + b2idx;
+        }
+    }
+    return idx;
+}
 //------------------------------------------------------------------------------------------------------------
 
 static int ignore_errors = 0;
@@ -340,6 +364,7 @@ uint32_t ALUop2a(firmware *fw, int offset)
         case 0x02800000:    // ADD Immed
         case 0x03A00000:    // MOV Immed
         case 0x03C00000:    // BIC Immed
+        case 0x03800000:    // ORR Immed
             fadr = offst;
             break;
     }
@@ -516,6 +541,12 @@ int isBX_LR(firmware *fw, int offset)
     return (fwval(fw,offset) == 0xE12FFF1E);
 }
 
+// BLX
+int isBLX(firmware *fw, int offset)
+{
+    return ((fwval(fw,offset) & 0xFFFFFFF0) == 0xE12FFF30);
+}
+
 // BL
 int isBL(firmware *fw, int offset)
 {
@@ -562,6 +593,24 @@ int isMOV(firmware *fw, int offset)
 int isMOV_immed(firmware *fw, int offset)
 {
     return ((fwval(fw,offset) & 0xFFF00000) == 0xE3A00000);
+}
+
+// ORR Rd, Rn, #
+int isORR(firmware *fw, int offset)
+{
+    return ((fwval(fw,offset) & 0xFFF00000) == 0xE3800000);
+}
+
+// ADD
+int isADD(firmware *fw, int offset)
+{
+    return ((fwval(fw,offset) & 0xfff00000) == 0xe2800000);
+}
+
+// SUB
+int isSUB(firmware *fw, int offset)
+{
+    return ((fwval(fw,offset) & 0xfff00000) == 0xe2400000);
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -737,7 +786,7 @@ int find_strptr_ref(firmware *fw, char *str)
 int find_str_ref(firmware *fw, char *str)
 {
     int k = find_str(fw, str);
-    if (k >= 0)
+    if (k >= fw->lowest_idx)
     {
         uint32_t sadr = idx2adr(fw,k);        // string address
         for (k=0; k<fw->size; k++)
@@ -758,7 +807,7 @@ int find_str_ref(firmware *fw, char *str)
 // Finds the next reference to a string
 int find_nxt_str_ref(firmware *fw, int str_adr, int ofst)
 {
-    if (str_adr >= 0)
+    if (str_adr >= fw->lowest_idx)
     {
         int k;
         uint32_t sadr = idx2adr(fw,str_adr);        // string address
@@ -777,15 +826,33 @@ int find_nxt_str_ref(firmware *fw, int str_adr, int ofst)
     return -1;
 }
 
+// Finds the next reference to a string
+int find_nxt_str_ref_alt(firmware *fw, char *str, int ofst, int limit)
+{
+    int k;
+    for (k=ofst; k<ofst+limit; k++)
+    {
+        if (isADR_PC_cond(fw,k) && idx_valid(fw,adr2idx(fw,ADR2adr(fw,k))) && (strcmp(str,adr2ptr(fw,ADR2adr(fw,k))) == 0))
+        {
+            return k;
+        }
+        else if (isLDR_PC_cond(fw,k) && idx_valid(fw,adr2idx(fw,LDR2val(fw,k))) && (strcmp(str,adr2ptr(fw,LDR2val(fw,k))) == 0))
+        {
+            return k;
+        }
+    }
+    return -1;
+}
+
 //------------------------------------------------------------------------------------------------------------
 
 // Checks if the instruction at index 'k' is a BL to address 'v1'
 // Used with the 'search_fw' below
-int find_BL(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int find_BL(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isBL(fw,k))
     {
-        int n = idxFollowBranch(fw, k, 0x01000001);
+        uint32_t n = idxFollowBranch(fw, k, 0x01000001);
         if (n == v1)
             return k;
     }
@@ -794,11 +861,11 @@ int find_BL(firmware *fw, int k, uint32_t v1, uint32_t v2)
 
 // Checks if the instruction at index 'k' is a BL to address 'v1'
 // Used with the 'search_fw' below
-int find_B(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int find_B(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isB(fw,k))
     {
-        int n = idxFollowBranch(fw, k, 0x00000001);
+        uint32_t n = idxFollowBranch(fw, k, 0x00000001);
         if (n == v1)
             return k;
     }
@@ -865,6 +932,11 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
         usage("firmware open");
     }
 
+    // these are used regardless of camera generation, have to be initialized here
+    fw->buf2 = 0;
+    fw->base2 = 0;
+    fw->size2 = 0;
+
     fw->os_type = os_type;
 
     // File length
@@ -903,13 +975,13 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
         }
     }
     // Get DRYOS version
-    fw->dryos_ver = 0;
+    fw->real_dryos_ver = fw->dryos_ver = 0;
     if (os_type == OS_DRYOS)
     {
         k = find_str(fw, "DRYOS version 2.3, release #");
         if (k != -1)
         {
-            fw->dryos_ver = atoi(((char*)&fw->buf[k])+28);
+            fw->real_dryos_ver = fw->dryos_ver = atoi(((char*)&fw->buf[k])+28);
             fw->dryos_ver_str = (char*)&fw->buf[k];
         }
     }
@@ -943,6 +1015,7 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
     fw->pid = 0;
     if (os_type == OS_DRYOS)
     {
+        if (fw->dryos_ver > 59) fw->dryos_ver = 59; // UPDATE when support is added for higher DryOS versions
         switch (fw->dryos_ver)
         {
             case 20:
@@ -990,6 +1063,7 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
                 fw->pid_adr = (fw->base==0xFF010000)?0xFFFE0040:0xFFFF0040;
                 break;
             case 58:
+            case 59:
                 fw->cam_idx = adr2idx(fw,(fw->base==0xFF010000)?0xFFFE03A0:0xFFFF03A0);
                 fw->pid_adr = (fw->base==0xFF010000)?0xFFFE0270:0xFFFF0270;
                 break;
@@ -1000,7 +1074,7 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
         //                             IXUS 700    IXUS 30/40  IXUS 50     Other
         uint32_t vx_name_offsets[] = { 0xFFD70110, 0xFFD70120, 0xFFF80110, 0xFFFE0110 };
         uint32_t vx_pid_offsets[] =  { 0xFFD70130, 0xFFD7014E, 0xFFF80130, 0xFFFE0130 };
-        for (i=0; i<sizeof(vx_name_offsets)/sizeof(vx_name_offsets[0]); i++)
+        for (i=0; i<(int)(sizeof(vx_name_offsets)/sizeof(vx_name_offsets[0])); i++)
         {
             int k = adr2idx(fw,vx_name_offsets[i]);
             if (idx_valid(fw,k) && (strncmp((char*)fwadr(fw,k),"Canon ",6) == 0))
@@ -1145,17 +1219,19 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
                 {
                     // Note: only check first word of key (assumes Canon won't release a new key with the same initial value as an existing one)
                     // (Avoid storing full encryption key in this source code).
-                    case 0x70726964:    fw->ksys = "d3   "; break;
+                    case 0x70726964:    fw->ksys = "d3"; break;
                     case 0x646C726F:    fw->ksys = "d3enc"; break;
-                    case 0x774D450B:    fw->ksys = "d4   "; break;
-                    case 0x80751A95:    fw->ksys = "d4a  "; break;
-                    case 0x76894368:    fw->ksys = "d4b  "; break;
-                    case 0x50838EF7:    fw->ksys = "d4c  "; break;
-                    case 0xCCE4D2E6:    fw->ksys = "d4d  "; break;
-                    case 0x66E0C6D2:    fw->ksys = "d4e  "; break;
-                    case 0xE1268DB4:    fw->ksys = "d4f  "; break;
-                    case 0x216EA8C8:    fw->ksys = "d4g  "; break;
-                    case 0x45264974:    fw->ksys = "d4h  "; break;
+                    case 0x774D450B:    fw->ksys = "d4"; break;
+                    case 0x80751A95:    fw->ksys = "d4a"; break;
+                    case 0x76894368:    fw->ksys = "d4b"; break;
+                    case 0x50838EF7:    fw->ksys = "d4c"; break;
+                    case 0xCCE4D2E6:    fw->ksys = "d4d"; break;
+                    case 0x66E0C6D2:    fw->ksys = "d4e"; break;
+                    case 0xE1268DB4:    fw->ksys = "d4f"; break;
+                    case 0x216EA8C8:    fw->ksys = "d4g"; break;
+                    case 0x45264974:    fw->ksys = "d4h"; break;
+					case 0x666363FC:    fw->ksys = "d4i"; break;
+					case 0xAE8DB5AF:    fw->ksys = "d4j"; break;
                 }
             }
 
@@ -1236,14 +1312,13 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
 
     int dx = 3;
 
+    fw->lowest_idx = 0;
+
     // DryOS R50/R51/R52 etc. copies a block of ROM to RAM and then uses that copy
     // Need to allow for this in finding addresses
     // Seen on SX260HS
     if (fw->dryos_ver >= 50)
     {
-        fw->buf2 = 0;
-        fw->base2 = 0;
-        fw->size2 = 0;
 
         // Try and find ROM address copied, and location copied to
         for (i=3 + fw->main_offs; i<(100 + fw->main_offs); i++)
@@ -1259,6 +1334,7 @@ void load_firmware(firmware *fw, const char *filename, const char *base_addr, co
                     fw->base2 = dadr;
                     fw->base_copied = fadr;
                     fw->size2 = (eadr - dadr) / 4;
+                    fw->lowest_idx = adr2idx(fw,fw->base2);
                     dx = i+3;
                     break;
                 }

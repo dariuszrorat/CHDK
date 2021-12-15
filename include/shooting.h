@@ -65,6 +65,10 @@ extern short shooting_get_flash_mode();
 
 /******************************************************************/
 
+// returned by shooting_get_tv96_from_shutter_speed for invalid input
+// and get_current_tv96 when imager not active
+#define SHOOTING_TV96_INVALID -10000
+
 extern int shooting_get_user_tv_id();
 extern short shooting_get_tv96();
 extern short shooting_get_tv96_from_shutter_speed(float t);
@@ -79,25 +83,33 @@ extern void shooting_set_user_tv_by_id_rel(int v);
 /******************************************************************/
 
 extern short shooting_get_aperture_sizes_table_size();
-extern short shooting_get_aperture_from_av96(short av96);
-extern short shooting_get_av96_from_aperture(short aperture);
+extern int shooting_get_aperture_from_av96(short av96);
+extern short shooting_get_av96_from_aperture(int aperture);
 extern int shooting_get_user_av_id();
 extern void shooting_set_user_av_by_id(int v);
 extern short shooting_get_av96();
+extern short shooting_get_min_av96();
+extern short shooting_get_max_av96();
 extern void shooting_set_av96(short av96,short is_now);
 extern void shooting_set_av96_direct(short av96, short is_now);
 extern short shooting_get_user_av96();
 extern void shooting_set_user_av96(short av96);
 extern void shooting_set_user_av_by_id_rel(int v);
-extern short shooting_get_real_aperture();
+extern int shooting_get_real_aperture();
 extern short shooting_get_av96_override_value();
 extern void shooting_set_nd_filter_state(short v, short is_now);
+extern short shooting_get_nd_value_ev96(void);
+extern short shooting_get_nd_current_ev96(void);
 
 /******************************************************************/
 
 extern short shooting_get_is_mode();
 extern short shooting_get_resolution();
 extern short shooting_get_display_mode();
+#define SHOOTING_CANON_FMT_JPG  1
+#define SHOOTING_CANON_FMT_RAW  2
+extern int shooting_get_canon_image_format();
+extern int shooting_set_canon_image_format(int fmt);
 
 /******************************************************************/
 
@@ -105,6 +117,11 @@ extern int shooting_get_zoom();
 extern void shooting_set_zoom(int v);
 extern void shooting_set_zoom_rel(int v);
 extern void shooting_set_zoom_speed(int v);
+
+// mode: 0 = off or standard, 2 or 3 digital tele
+int shooting_get_digital_zoom_mode(void);
+// state: 0 = off or digital tele, 1 = standard
+int shooting_get_digital_zoom_state(void);
 
 /******************************************************************/
 
@@ -168,10 +185,14 @@ extern int EngDrvRead(int gpio_reg);
 
 extern void PutInNdFilter();
 extern void PutOutNdFilter();
-extern long GetCurrentAvValue();
+extern long shooting_get_current_av96();
+extern long shooting_get_current_tv96();
+extern long shooting_get_current_delta_sv96();
+extern long shooting_get_current_base_sv96();
 extern long IsStrobeChargeCompleted();
 extern void SetCurrentCaptureModeType();
-
+extern int shooting_get_imager_active();
+extern int shooting_get_analog_video_standard(void);
 extern int get_ev_video_avail(void);
 extern void set_ev_video_avail(int);
 extern int get_ev_video(void);
@@ -203,9 +224,11 @@ int get_zoom_x(int zp);
 /******************************************************************/
 
 // Video recording current status constants, see movie_status variable 
+// values actually used in pre-DIGIC 6 firmware
 #define VIDEO_RECORD_NEVER_STARTED  0  
 #define VIDEO_RECORD_STOPPED        1  
 #define VIDEO_RECORD_IN_PROGRESS    4
+#define VIDEO_RECORD_STOPPING       5
 
 //Optical & digital zoom status constants, see zoom_status variable 
 #define ZOOM_OPTICAL_MIN            1
@@ -223,11 +246,21 @@ int get_zoom_x(int zp);
 
 // return whether video is actually being recorded
 extern int is_video_recording();
+// set movie status, not effective on CAM_SIMPLE_MOVIE_STATUS cams
+extern void set_movie_status(int status);
+// get movie status, emulated on CAM_SIMPLE_MOVIE_STATUS cams
+extern int get_movie_status();
+
 
 extern void change_video_tables(int a, int b);
 extern void shooting_video_bitrate_change(int v);
 
-extern int movie_status;
+// for CAM_MOVIEREC_NEWSTYLE:
+void shooting_video_minbitrate_change(int);
+unsigned int shooting_get_video_recorded_size_kb();
+extern void change_video_minbitrate(int, int);
+extern unsigned int get_video_recorded_size_kb();
+
 extern int zoom_status;
 extern const int zoom_points;
 extern int recreview_hold;

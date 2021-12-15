@@ -127,6 +127,8 @@
  99 "Enable Autoscroll"
 100 "Autoscroll Delay (sec)"
 
+101 "Rotate OSD"
+
 102 "Reversi"
 103 "Sokoban"
 
@@ -203,11 +205,6 @@
 156 "*** Wrong move ***"
 157 "You can't place here!"
 158 "This cell is not empty!"
-
-159 "Move: You     "
-160 "Move: Computer"
-161 "  GAME  OVER  "
-162 " White  Black "
 
 163 "*** About ***"
 
@@ -307,9 +304,9 @@
 241 "  Long Exp. Value"
 242 "Override Av"
 243 "Override ISO"
-244 "Short Exp. Value"
+244 "  Short Exp. Value"
 245 "Override Subj. Dist."
-246 "Change by +/-"
+246 "  Change by +/-"
 
 247 "Bracketing in Continuous Mode"
 248 "Bracketing in Continuous Mode"
@@ -343,6 +340,7 @@
 
 272 "Show OSD in Review Mode"
 273 "Task List start"
+274 "Show Hidden Files"
 
 275 "Disable Bracketing on Startup"
 
@@ -379,7 +377,7 @@
 300 "User Menu"
 301 "User Menu Edit"
 
-302 "Adapter Lens Scale, 100=1x"
+302 " Adapter Lens Scale, 100=1x"
 303 "Show Space Bar"
 304 "  Size on screen"
 305 "  Width/Height"
@@ -758,12 +756,68 @@
 635 "Log"
 636 "SD Test"
 637 "Text output   :"
-638 "Load Zones From File..."
-639 "Select Zone File"
-640 "Current Zone System"
-641 "Show Zone Legend"
-642 "Waveform parade mode"
-643 "Color Temperature & Tint"
-644 "Show percent overexposed"
-645 "Show auto EV compensation"
-646 "Zebra RGB as"
+
+638 "Enable RAW Toggle Shortcut Key"
+
+// CPU Info
+639 "CPU Info"
+640 "Wrote %s"
+
+// Sudoku
+641 "Sudoku"
+
+// Sudoku menu (15 chars max)
+642 " Check sudoku "
+643 " Solve sudoku "
+644 " New sudoku "
+645 " Enter sudoku "
+646 " Info "
+647 " Exit "
+648 " Save and Exit "
+649 " Del save game "
+
+650 "Congratulations!"
+651 "You did it!"
+652 "Everything's correct!"
+653 "Tada!"
+654 "0 mistakes!"
+655 "Info"
+656 "A number occurs twice"
+657 "Solved"
+658 "Not complete"
+659 "Not solvable"
+660 "Couldn't find a mistake"
+661 "There's something wrong here..."
+
+// Snake
+662 "Snake"
+663 "Points: %d"
+
+// Module names
+664 "uBASIC Scripting"
+665 "Lua Scripting"
+666 "Motion Detection"
+667 "Popup Menu"
+
+668 "VBR Minimum Bitrate"
+
+669 "Disable Raw @ Canon RAW"
+
+670 "Clear Canon Overlays"
+
+671 "Enable video out in rec"
+
+672 "Possible Canon ROM corruption!\nPlease report on CHDK forum."
+673 "Failed chunks:"
+674 "Click OK to dump ROM"
+675 "Checksum ROM at boot"
+
+676 "Load Zones From File..."
+677 "Select Zone File"
+678 "Current Zone System"
+679 "Show Zone Legend"
+680 "Waveform parade mode"
+681 "Color Temperature & Tint"
+682 "Show percent overexposed"
+683 "Show auto EV compensation"
+684 "Zebra RGB as"

@@ -7,9 +7,14 @@
 //   Canon PowerShot A700
 
 // Values for makefile.inc
-//   PLATFORMID = 12567 (0x3117) // Found @ 0xfffe0130
+//   DIGIC = 20# DIGIC II
+//   PLATFORMID = 12567# (0x3117) Found @ 0xfffe0130
 //   MAXRAMADDR = 0x01ffffff
 //   MEMISOSTART = 0x0009c090
+
+// Detected address ranges:
+// ROM      0xffc00000 - 0xffffffff (4194304 bytes)
+// RAM data 0x00001900 - 0x0000d260 copied from 0xffefb340 (  47456 bytes)
 
 // Stubs below should be checked. Stub not matched 100%, or difference found to current 'stubs_entry_2.S'
 //    Name                                     Address      Rule  %  Comp to stubs_entry_2.S
@@ -29,12 +34,10 @@ NHSTUB(PutInNdFilter                          ,0xffe9e938) //  1 92%
 // ALT: NHSTUB(PutInNdFilter, 0xffea08d4) // 2 25/2
 // ALT: NHSTUB(PutInNdFilter, 0xffea091c) // 2 25/2
 NHSTUB(PutOutNdFilter                         ,0xffe9ed8c) //  1 94%
-//NHSTUB(Remove                               ,0xffcb8394) //  3 52%
 NHSTUB(SetParameterData                       ,0xffd5ddf4) //  1 86%
 NHSTUB(UnsetZoomForMovie                      ,0xffd95090) //  1 89%
 NHSTUB(WriteSDCard                            ,0xffc6c4f0) //  3 64%
 NHSTUB(add_ptp_handler                        ,0xffe4e284) //  1 96%
-NHSTUB(exmem_alloc                            ,0xffc02818) //  2 93%
 // ERROR: free is not found.                               //--- ---    *** != 0xffee84c8
 NHSTUB(malloc                                 ,0xffee84bc) //  1 53%
 NHSTUB(taskIdListGet                          ,0xffef50e4) //  1 82%
@@ -50,7 +53,12 @@ NHSTUB(Mount_FileSystem                       ,0xffc5cdf8) //  1 90%
 DEF(levent_table                            ,0xffd51f94) // Found @0xffd51f94
 DEF(FlashParamsTable                        ,0xffd5b6e4) // Found @0xffd5b6e4
 DEF(fileio_semaphore                        ,0x000027b0) // Found @0xffc5b21c
+DEF(exmem_alloc_table                       ,0x00001bcc) // Found @0xffc01f14
+DEF(exmem_types_table                       ,0xffc01d2c) // Found @0xffc01d2c
+DEF_CONST(exmem_type_count                  ,0x0000000d)
+DEF(imager_active                           ,0x0000547c) // Found @0xffcbb2b8 (0x547c + 0)
 DEF_CONST(uiprop_count                      ,0x00000057) // Found @0xffd5d144
+DEF(cameracon_state                         ,0x00006b38) // Found @0xffd81df0
 
 // Values below go in 'lib.c':
 //int get_flash_params_count(void) { return 0x6c; }                          // Found @0xffd5df40
@@ -59,6 +67,22 @@ DEF_CONST(uiprop_count                      ,0x00000057) // Found @0xffd5d144
 //#define PARAM_CAMERA_NAME 3 // Found @0xffd5aea0
 
 // Misc stuff
+
+// EXMEM types:
+// EXMEM_RAMDISK   0
+// EXMEM_COM       1
+// EXMEM_COMTMP    2
+// EXMEM_FORMATTER 3
+// EXMEM_SHADING   4
+// EXMEM_FAMODE    5
+// EXMEM_FIRMUP    6
+// EXMEM_FILESTORE 7
+// EXMEM_MOVIE_REC 8
+// EXMEM_MOVIE_PLY 9
+// EXMEM_WIDE      10
+// EXMEM_NARROW    11
+// EXMEM_PCEVF     12
+
 // LED table init @ 0xffc1d300
 // LED #1: 0xc022008c, offset 0x4
 // LED #2: 0xc0220088, offset 0x44
@@ -66,8 +90,6 @@ DEF_CONST(uiprop_count                      ,0x00000057) // Found @0xffd5d144
 // LED #4: 0xc0220094, offset 0xc4
 // LED #5: 0xc0220084, offset 0x204
 // LED #6: 0xc0220080, offset 0x244
-
-// canon_data_src: 0xffefb340, canon_data_len: 0xb960
 
 // Stubs below matched 100%.
 //    Name                                     Address                Comp to stubs_entry_2.S
@@ -77,6 +99,7 @@ NHSTUB(CreateBinarySemaphore                  ,0xffc108ac) //115
 NHSTUB(CreateTask                             ,0xffc1125c) //120
 NHSTUB(DebugAssert                            ,0xffc03ae8) //1100
 NHSTUB(DeleteFile_Fut                         ,0xffc56cc4) //  1
+NHSTUB(DeleteSemaphore                        ,0xffc10aa0) //120
 NHSTUB(DoAELock                               ,0xffd42540) //120
 NHSTUB(DoAFLock                               ,0xffd423e8) //120
 NHSTUB(ExecuteEventProcedure                  ,0xffc06808) //  1
@@ -93,6 +116,9 @@ NHSTUB(Fwrite_Fut                             ,0xffc56f38) //120
 NHSTUB(GetBatteryTemperature                  ,0xffc1c9bc) //102
 NHSTUB(GetCCDTemperature                      ,0xffc1c9a8) //102
 NHSTUB(GetCurrentAvValue                      ,0xffe9e924) //120
+NHSTUB(GetCurrentShutterSpeed                 ,0xffe9e57c) //120
+NHSTUB(GetUsableMaxAv                         ,0xffe9eb50) //120
+NHSTUB(GetUsableMinAv                         ,0xffe9eb2c) //120
 NHSTUB(GetDrive_ClusterSize                   ,0xffc5d2b4) //119
 NHSTUB(GetDrive_FreeClusters                  ,0xffc5d32c) //1103
 NHSTUB(GetDrive_TotalClusters                 ,0xffc5d2f0) //119
@@ -119,6 +145,7 @@ NHSTUB(Restart                                ,0xffc12774) //  1
 NHSTUB(SetAE_ShutterSpeed                     ,0xffea481c) //102
 NHSTUB(SetAutoShutdownTime                    ,0xffd58dd0) //120
 NHSTUB(SetCurrentCaptureModeType              ,0xffd89ee0) //120
+NHSTUB(SetDate                                ,0xffea6994) //120
 NHSTUB(SetFileAttributes                      ,0xffc5dc80) //  1
 NHSTUB(SetLogicalEventActive                  ,0xffd56bc4) //1104
 NHSTUB(SetPropertyCase                        ,0xffc143d4) //  1
@@ -141,6 +168,11 @@ NHSTUB(_pow                                   ,0xffed7548) //121
 NHSTUB(_sqrt                                  ,0xffed92e4) //  1
 NHSTUB(apex2us                                ,0xffc9f300) //  1
 NHSTUB(close                                  ,0xffee547c) //109
+NHSTUB(exmem_alloc                            ,0xffc02964) //122
+NHSTUB(exmem_ualloc                           ,0xffc02818) //122
+NHSTUB(exmem_ufree                            ,0xffc028e8) //122
+NHSTUB(get_current_deltasv                    ,0xffca02bc) //122
+NHSTUB(GetCurrentDriveBaseSvValue             ,0xffca8e04) //107
 NHSTUB(kbd_p1_f                               ,0xffc168e8) //  1
 NHSTUB(kbd_p1_f_cont                          ,0xffc168f4) //109
 NHSTUB(kbd_p2_f                               ,0xffc16ccc) //  1
@@ -210,3 +242,5 @@ NHSTUB(SetHPTimerAfterNow                     ,0xffc05578) //119
 NHSTUB(MFOn                                   ,0xffd42ebc) //120
 NHSTUB(MFOff                                  ,0xffd42eec) //120
 NHSTUB(GetAdChValue                           ,0xffc1911c) //120
+NHSTUB(get_ptp_buf_size                       ,0xffe3f70c) //122
+NHSTUB(get_ptp_file_buf                       ,0xffe5e924) //121

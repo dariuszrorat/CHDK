@@ -22,7 +22,7 @@ void shutdown()
 // IXUS160/ELPH160 has two 'lights' - Power LED, and AF assist lamp
 // Power Led = first entry in table (led 0)
 // AF Assist Lamp = second entry in table (led 1)
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
     static char led_table[2]={0,4};
     _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);    
 }
@@ -103,12 +103,6 @@ void vid_bitmap_refresh()
     full_screen_refresh |= 3;
     _ScreenLock();
     _ScreenUnlock();
-}
-
-//see viewport.h
-int vid_get_aspect_ratio()
-{
-    return 0; // 4:3
 }
 
 int vid_get_palette_type()   { return 5; }

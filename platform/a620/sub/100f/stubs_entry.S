@@ -7,9 +7,14 @@
 //   Canon PowerShot A620
 
 // Values for makefile.inc
-//   PLATFORMID = 12540 (0x30fc) // Found @ 0xfffe0130
+//   DIGIC = 20# DIGIC II
+//   PLATFORMID = 12540# (0x30fc) Found @ 0xfffe0130
 //   MAXRAMADDR = 0x01ffffff
 //   MEMISOSTART = 0x0009f990
+
+// Detected address ranges:
+// ROM      0xffc00000 - 0xffffffff (4194304 bytes)
+// RAM data 0x00001900 - 0x00010330 copied from 0xffeda440 (  59952 bytes)
 
 // Stubs below should be checked. Stub not matched 100%, or difference found to current 'stubs_entry_2.S'
 //    Name                                     Address      Rule  %  Comp to stubs_entry_2.S
@@ -48,7 +53,12 @@ NHSTUB(Mount_FileSystem                       ,0xffc5c140) //  1 90%
 DEF(levent_table                            ,0xffd4317c) // Found @0xffd4317c
 DEF(FlashParamsTable                        ,0xffd4c4e8) // Found @0xffd4c4e8
 DEF(fileio_semaphore                        ,0x00002838) // Found @0xffc5a564
+DEF(exmem_alloc_table                       ,0x00001c30) // Found @0xffc02034
+DEF(exmem_types_table                       ,0xffc01d94) // Found @0xffc01d94
+DEF_CONST(exmem_type_count                  ,0x0000000d)
+DEF(imager_active                           ,0x000054d8) // Found @0xffcb2d9c (0x54d8 + 0)
 DEF_CONST(uiprop_count                      ,0x00000057) // Found @0xffd4e360
+DEF(cameracon_state                         ,0x000077d4) // Found @0xffd6fb00
 
 // Values below go in 'lib.c':
 //int get_flash_params_count(void) { return 0x5e; }                          // Found @0xffd4f3bc
@@ -57,6 +67,22 @@ DEF_CONST(uiprop_count                      ,0x00000057) // Found @0xffd4e360
 //#define PARAM_CAMERA_NAME 3 // Found @0xffd4bdbc
 
 // Misc stuff
+
+// EXMEM types:
+// EXMEM_RAMDISK   0
+// EXMEM_COM       1
+// EXMEM_COMTMP    2
+// EXMEM_FORMATTER 3
+// EXMEM_SHADING   4
+// EXMEM_FAMODE    5
+// EXMEM_FIRMUP    6
+// EXMEM_FILESTORE 7
+// EXMEM_MOVIE_REC 8
+// EXMEM_MOVIE_PLY 9
+// EXMEM_WIDE      10
+// EXMEM_NARROW    11
+// EXMEM_PCEVF     12
+
 // LED table init @ 0xffc1ce60
 // LED #1: 0xc022008c, offset 0x4
 // LED #2: 0xc0220088, offset 0x44
@@ -65,7 +91,6 @@ DEF_CONST(uiprop_count                      ,0x00000057) // Found @0xffd4e360
 // LED #5: 0xc0220084, offset 0x204
 // LED #6: 0xc0220080, offset 0x244
 
-// canon_data_src: 0xffeda440, canon_data_len: 0xea30
 
 // For capt_seq.c
 DEF(_nrflag,0x6d44) // Found @ ffd3a320 (0x6d44)
@@ -79,6 +104,7 @@ NHSTUB(CreateBinarySemaphore                  ,0xffc10840) //115
 NHSTUB(CreateTask                             ,0xffc11230) //120
 NHSTUB(DebugAssert                            ,0xffc03ad0) //1100
 NHSTUB(DeleteFile_Fut                         ,0xffc56340) //  1
+NHSTUB(DeleteSemaphore                        ,0xffc10a34) //120
 NHSTUB(DoAELock                               ,0xffd33ca4) //120
 NHSTUB(DoAFLock                               ,0xffd33b2c) //120
 NHSTUB(ExecuteEventProcedure                  ,0xffc067f0) //  1
@@ -95,6 +121,9 @@ NHSTUB(Fwrite_Fut                             ,0xffc565b4) //120
 NHSTUB(GetBatteryTemperature                  ,0xffc1c468) //102
 NHSTUB(GetCCDTemperature                      ,0xffc1c454) //102
 NHSTUB(GetCurrentAvValue                      ,0xffe77ff0) //120
+NHSTUB(GetCurrentShutterSpeed                 ,0xffe77c48) //120
+NHSTUB(GetUsableMaxAv                         ,0xffe7821c) //120
+NHSTUB(GetUsableMinAv                         ,0xffe781f8) //120
 NHSTUB(GetDrive_ClusterSize                   ,0xffc5c668) //119
 NHSTUB(GetDrive_FreeClusters                  ,0xffc5c6e0) //1103
 NHSTUB(GetDrive_TotalClusters                 ,0xffc5c6a4) //119
@@ -123,6 +152,7 @@ NHSTUB(Restart                                ,0xffc127e0) //  1
 NHSTUB(SetAE_ShutterSpeed                     ,0xffe7d6dc) //102
 NHSTUB(SetAutoShutdownTime                    ,0xffd49c94) //120
 NHSTUB(SetCurrentCaptureModeType              ,0xffd78174) //120
+NHSTUB(SetDate                                ,0xffe7f234) //120
 NHSTUB(SetFileAttributes                      ,0xffc5d044) //  1
 NHSTUB(SetLogicalEventActive                  ,0xffd47e3c) //1104
 NHSTUB(SetParameterData                       ,0xffd4f270) //  1
@@ -147,7 +177,10 @@ NHSTUB(_pow                                   ,0xffeafc98) //121
 NHSTUB(_sqrt                                  ,0xffeb3fe4) //  1
 NHSTUB(apex2us                                ,0xffc98f9c) //  1
 NHSTUB(close                                  ,0xffec2b80) //109
-NHSTUB(exmem_alloc                            ,0xffc02830) //  1
+NHSTUB(exmem_ualloc                           ,0xffc02830) //122
+NHSTUB(exmem_ufree                            ,0xffc0287c) //122
+NHSTUB(get_current_deltasv                    ,0xffc99f94) //122
+NHSTUB(GetCurrentDriveBaseSvValue             ,0xffca2890) //107
 NHSTUB(kbd_p1_f                               ,0xffc16164) //  1
 NHSTUB(kbd_p1_f_cont                          ,0xffc16170) //109
 NHSTUB(kbd_p2_f                               ,0xffc16548) //  1
@@ -218,3 +251,5 @@ NHSTUB(SetHPTimerAfterNow                     ,0xffc05560) //119
 NHSTUB(MFOn                                   ,0xffd347dc) //120
 NHSTUB(MFOff                                  ,0xffd3480c) //120
 NHSTUB(GetAdChValue                           ,0xffc18d40) //120
+NHSTUB(get_ptp_buf_size                       ,0xffe155c0) //122
+NHSTUB(get_ptp_file_buf                       ,0xffe34780) //121

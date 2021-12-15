@@ -15,6 +15,12 @@ Sity: Kharkiv
 
 20101201 CHDKLover: speed optimization
 
+20160710 62ndidiot: prelim digic 6 mods for test
+                    need vid_get_viewport_byte_width() properly defined in lib.c to
+                    override the non-digic 6 one in generic/wrappers.c
+                    so correct width for 640x480 lcd in digic6 is 1280 bytes not 1080...
+20170207 62ndidiot: fix RGB calculation for Digic6
+
 */
 
 #ifdef OPT_MD_DEBUG
@@ -36,6 +42,7 @@ Sity: Kharkiv
 
 #include "motion_detector.h"
 #include "module_def.h"
+#include "gui_lang.h"
 
 // Forward references
 static int md_detect_motion(void);
@@ -102,7 +109,7 @@ struct motion_detector_s
     int pixels_step;
     int msecs_before_trigger;
 
-    int points ;
+    int points;
 
     // debug
 #ifdef OPT_MD_DEBUG
@@ -192,8 +199,8 @@ static void md_kbd_sched_immediate_shoot(int no_release)
 
 static int clip(int v)
 {
-    if (v<0) v=0;
-    else if (v>255) v=255;
+    if (v<0) return 0;
+    if (v>255) return 255;
     return v;
 }
 
@@ -255,6 +262,12 @@ int md_init_motion_detector
     {
         pixels_step=1;
     }
+#ifdef THUMB_FW
+    if (((pixel_measure_mode == MD_MEASURE_MODE_U) || (pixel_measure_mode == MD_MEASURE_MODE_V)) && (pixels_step < 2))
+    {
+        pixels_step = 2;    //uv is sampled every 4 bytes in X, prevent double counting
+    }
+#endif
 
     if(detection_timeout<0)
     {
@@ -328,6 +341,7 @@ int md_init_motion_detector
 }
 
 #ifdef OPT_MD_DEBUG
+
 static void md_save_calls_history(){
     char buf[200], fn[30];
     char big[MD_INFO_BUF_SIZE];
@@ -347,20 +361,20 @@ static void md_save_calls_history(){
     if( fd>=0) {
         console_add_line("Writing info file...");
         lseek(fd,0,SEEK_END);
-	    ttm = get_localtime();
-        big_ln=sprintf(big, 
-				"\r\n--- %04u-%02u-%02u  %02u:%02u:%02u\r\n"
-				"CHDK Ver: %s [ #%s ]\r\nBuild Date: %s %s\r\nCamera:  %s [ %s ]\r\n"
-				"[%dx%d], threshold: %d, interval: %d, pixels step: %d\r\n"
-				"region: [%d,%d-%d,%d], region type: %d\r\n"
-				"wait interval: %d, parameters: %d, calls: %d, detected cells: %d\r\n", 
-				1900+ttm->tm_year, ttm->tm_mon+1, ttm->tm_mday, ttm->tm_hour, ttm->tm_min, ttm->tm_sec,
-				camera_info.chdk_ver, camera_info.build_number, camera_info.build_date, camera_info.build_time, camera_info.platform, camera_info.platformsub,
-				motion_detector.columns, motion_detector.rows, motion_detector.threshold, motion_detector.measure_interval, motion_detector.pixels_step,
-				motion_detector.clipping_region_column1, motion_detector.clipping_region_row1, motion_detector.clipping_region_column2, motion_detector.clipping_region_row2, motion_detector.clipping_region_mode,
-				motion_detector.msecs_before_trigger, motion_detector.parameters, motion_detector.comp_calls_cnt,
-				motion_detector.detected_cells
-		);
+        ttm = get_localtime();
+        big_ln=sprintf(big,
+                "\r\n--- %04u-%02u-%02u  %02u:%02u:%02u\r\n"
+                "CHDK Ver: %s [ #%s ]\r\nBuild Date: %s %s\r\nCamera:  %s [ %s ]\r\n"
+                "[%dx%d], threshold: %d, interval: %d, pixels step: %d\r\n"
+                "region: [%d,%d-%d,%d], region type: %d\r\n"
+                "wait interval: %d, parameters: %d, calls: %d, detected cells: %d\r\n",
+                1900+ttm->tm_year, ttm->tm_mon+1, ttm->tm_mday, ttm->tm_hour, ttm->tm_min, ttm->tm_sec,
+                camera_info.chdk_ver, camera_info.build_number, camera_info.build_date, camera_info.build_time, camera_info.platform, camera_info.platformsub,
+                motion_detector.columns, motion_detector.rows, motion_detector.threshold, motion_detector.measure_interval, motion_detector.pixels_step,
+                motion_detector.clipping_region_column1, motion_detector.clipping_region_row1, motion_detector.clipping_region_column2, motion_detector.clipping_region_row2, motion_detector.clipping_region_mode,
+                motion_detector.msecs_before_trigger, motion_detector.parameters, motion_detector.comp_calls_cnt,
+                motion_detector.detected_cells
+        );
 
         calls = ( motion_detector.comp_calls_cnt < MD_REC_CALLS_CNT) ?motion_detector.comp_calls_cnt: MD_REC_CALLS_CNT;
 
@@ -380,7 +394,8 @@ static void md_save_calls_history(){
     }
 }
 
-static void mx_dump_memory(void *img){
+static void mx_dump_memory(void *img)
+{
     char fn[36];
     int fd, i;
     static int cnt=0;
@@ -388,27 +403,29 @@ static void mx_dump_memory(void *img){
     started();
     mkdir("A/MD");
 
-        do {
-            cnt++;
-            sprintf(fn, "A/MD/%04d.FB", cnt);
-            fd = open(fn, O_RDONLY, 0777);
+    do
+    {
+        cnt++;
+        sprintf(fn, "A/MD/%04d.FB", cnt);
+        fd = open(fn, O_RDONLY, 0777);
 
-            if(fd>=0){
-                close(fd);
-            }
-        } while(fd>=0);
+        if(fd>=0)
+        {
+            close(fd);
+        }
+    } while(fd>=0);
 
-
-		sprintf(fn, "A/MD/%04d.FB", cnt );
-		fd = open(fn, O_WRONLY|O_CREAT, 0777);
-		if (fd>=0) {
-	    write(fd, img, camera_screen.width*vid_get_viewport_height()*3);
-	    close(fd);
-		}
-  vid_bitmap_refresh();
-  finished();
-
+    sprintf(fn, "A/MD/%04d.FB", cnt );
+    fd = open(fn, O_WRONLY|O_CREAT, 0777);
+    if (fd>=0)
+    {
+        write(fd, img, vid_get_viewport_byte_width()*vid_get_viewport_height_proper());
+        close(fd);
+    }
+    vid_bitmap_refresh();
+    finished();
 }
+
 #else
 #define md_save_calls_history()
 #define mx_dump_memory(x)
@@ -417,16 +434,176 @@ static void mx_dump_memory(void *img){
 
 static int md_running()
 {
-	return motion_detector.running;
+    return motion_detector.running;
 }
 
+// Shared variable for the measure functions
+static unsigned char* img;
+static int x_start, x_end, x_step;
+static int y_start, y_end, y_step;
+
+// Pre Digic6:
+//      ARRAY of UYVYYY values
+//      6 bytes - 4 pixels
+// Digic6:
+//      ARRAY of UYVY values
+//      4 bytes - 2 pixels
+
+// Pre Digic6: U & V are signed char values (-128 - 127)
+//      R = Y + 1.402 * V + 0.5
+//      G = Y - 0.34414 * U - 0.71414 * V + 0.5
+//      B = Y + 1.772 * V + 0.5
+// Digi6: U & V are unsigned (0 - 255) subtract 128 to get signed value
+//      R = Y + 1.402 * (V-128) + 0.5
+//      G = Y - 0.34414 * (U-128) - 0.71414 * (V-128) + 0.5
+//      B = Y + 1.772 * (V-128) + 0.5
+
+// Functions for inner loops for each measure mode
+
+static int md_measure_y()
+{
+    register int x, y;
+    register int curr = 0;
+
+    for (y=y_start; y<y_end; y+=y_step)
+    {
+        for (x=x_start; x<x_end; x+=x_step)
+        {
+            curr += img[y + x + 1];  //Y always 2nd byte in each block
+        }
+    }
+
+    return curr;
+}
+
+static int md_measure_u()
+{
+    register int x, y, uvx;
+    register int curr = 0;
+
+    for (y=y_start; y<y_end; y+=y_step)
+    {
+        for (x=x_start; x<x_end; x+=x_step)
+        {
+            // Calc offset to U & V components in uvx
+#ifdef THUMB_FW
+            uvx = x & 0xFFFFFFFC;           // U is in 1st two bytes of each 4 byte block V is in 2nd two bytes
+            curr += (int)img[y + uvx] - 128;    //U
+#else
+            uvx = (x&1)?x-3:x;
+            curr += (signed char)img[y + uvx];  //U
+#endif
+        }
+    }
+
+    return curr;
+}
+
+static int md_measure_v()
+{
+    register int x, y, uvx;
+    register int curr = 0;
+
+    for (y=y_start; y<y_end; y+=y_step)
+    {
+        for (x=x_start; x<x_end; x+=x_step)
+        {
+            // Calc offset to U & V components in uvx
+#ifdef THUMB_FW
+            uvx = x & 0xFFFFFFFC;               // U is in 1st two bytes of each 4 byte block V is in 2nd two bytes
+            curr += (int)img[y + uvx + 2] - 128;    //V
+#else
+            uvx = (x&1)?x-3:x;
+            curr += (signed char)img[y + uvx + 2];  //V
+#endif
+        }
+    }
+
+    return curr;
+}
+
+static int md_measure_r()
+{
+    register int x, y, uvx, cy, cv;
+    register int curr = 0;
+
+    for (y=y_start; y<y_end; y+=y_step)
+    {
+        for (x=x_start; x<x_end; x+=x_step)
+        {
+            cy = img[y + x + 1];
+            // Calc offset to U & V components in uvx
+#ifdef THUMB_FW
+            uvx = x & 0xFFFFFFFC;               // U is in 1st two bytes of each 4 byte block V is in 2nd two bytes
+            cv = (int)img[y + uvx + 2] - 128;
+#else
+            uvx = (x&1)?x-3:x;
+            cv = (signed char)img[y + uvx + 2];
+#endif
+            curr += clip(((cy<<12) + cv*5743 + 2048)>>12);      // R
+        }
+    }
+
+    return curr;
+}
+
+static int md_measure_g()
+{
+    register int x, y, uvx, cy, cu, cv;
+    register int curr = 0;
+
+    for (y=y_start; y<y_end; y+=y_step)
+    {
+        for (x=x_start; x<x_end; x+=x_step)
+        {
+            cy = img[y + x + 1];
+            // Calc offset to U & V components in uvx
+#ifdef THUMB_FW
+            uvx = x & 0xFFFFFFFC;               // U is in 1st two bytes of each 4 byte block V is in 2nd two bytes
+            cu = (int)img[y + uvx] - 128;
+            cv = (int)img[y + uvx + 2] - 128;
+#else
+            uvx = (x&1)?x-3:x;
+            cu = (signed char)img[y + uvx];
+            cv = (signed char)img[y + uvx + 2];
+#endif
+            curr += clip(((cy<<12) - cu*1411 - cv*2925 + 2048)>>12);    // G
+        }
+    }
+
+    return curr;
+}
+
+static int md_measure_b()
+{
+    register int x, y, uvx, cy, cu;
+    register int curr = 0;
+
+    for (y=y_start; y<y_end; y+=y_step)
+    {
+        for (x=x_start; x<x_end; x+=x_step)
+        {
+            cy = img[y + x + 1];
+            // Calc offset to U & V components in uvx
+#ifdef THUMB_FW
+            uvx = x & 0xFFFFFFFC;               // U is in 1st two bytes of each 4 byte block V is in 2nd two bytes
+            cu = (int)img[y + uvx] - 128;
+#else
+            uvx = (x&1)?x-3:x;
+            cu = (signed char)img[y + uvx];
+#endif
+            curr += clip(((cy<<12) + cu*7258 + 2048)>>12);      // B
+        }
+    }
+
+    return curr;
+}
 
 static int md_detect_motion(void)
 {
     int idx, tick, rv;
-    int val, cy, cv, cu;
 
-    register int col, row, x, y;
+    register int col, row;
 
     if(!md_running())
     {
@@ -459,7 +636,7 @@ static int md_detect_motion(void)
 
     motion_detector.last_measure_time = tick;
 
-    unsigned char* img = vid_get_viewport_active_buffer();
+    img = vid_get_viewport_active_buffer();
     if (!img) return 0;
 
 #ifdef OPT_MD_DEBUG
@@ -471,20 +648,28 @@ static int md_detect_motion(void)
 
     motion_detector.detected_cells = 0;
 
-    img += vid_get_viewport_image_offset();		// offset into viewport for when image size != viewport size (e.g. 16:9 image on 4:3 LCD)
+    img += vid_get_viewport_image_offset();     // offset into viewport for when image size != viewport size (e.g. 16:9 image on 4:3 LCD)
 
-	int vp_h = vid_get_viewport_height();
-    int vp_w = vid_get_viewport_width();
-	int vp_bw = vid_get_viewport_byte_width() * vid_get_viewport_yscale();
+    int vp_bw = vid_get_viewport_byte_width();
+    int vp_h = vid_get_viewport_height_proper();
 
-	int x_step = motion_detector.pixels_step * 3;
-	int y_step = motion_detector.pixels_step * vp_bw;
+#ifdef THUMB_FW
+    int vp_w = vid_get_viewport_width_proper();
+    x_step = motion_detector.pixels_step * 2;
+    y_step = motion_detector.pixels_step * vp_bw;
+#else
+    int vp_w = vid_get_viewport_width_proper() / 2; // Row width in 3 byte units (half UYVYYY block)
+    x_step = motion_detector.pixels_step * 3;
+    y_step = motion_detector.pixels_step * vp_bw * vid_get_viewport_yscale();
+#endif
+
+    motion_detector.points = ((vp_w / motion_detector.columns + motion_detector.pixels_step - 1) / motion_detector.pixels_step) * ((vp_h / motion_detector.rows + motion_detector.pixels_step - 1) / motion_detector.pixels_step);
 
     for (idx=0, row=0; row < motion_detector.rows; row++)
     {
         // Calc img y start and end offsets (use same height for all cells so 'points' is consistent)
-        int y_start = ((row * vp_h) / motion_detector.rows) * vp_bw;
-        int y_end = y_start + ((vp_h / motion_detector.rows) * vp_bw);
+        y_start = ((row * vp_h) / motion_detector.rows) * vp_bw;
+        y_end = y_start + ((vp_h / motion_detector.rows) * vp_bw);
 
         for (col=0; col < motion_detector.columns; col++, idx++)
         {
@@ -508,69 +693,39 @@ static int md_detect_motion(void)
                )
             {
                 // Calc img x start and end offsets (use same width for all cells so 'points' is consistent)
-                int x_start = ((col * vp_w) / motion_detector.columns) * 3;
-                int x_end = x_start + ((vp_w / motion_detector.columns) * 3);
+#ifdef THUMB_FW
+                x_start = ((col * vp_w) / motion_detector.columns) * 2;
+                x_end = x_start + ((vp_w / motion_detector.columns) * 2);
+#else
+                x_start = ((col * vp_w) / motion_detector.columns) * 3;
+                x_end = x_start + ((vp_w / motion_detector.columns) * 3);
+#endif
 
-                int points = 0;
-
-                for (y=y_start; y<y_end; y+=y_step)
+                // Do mode check and call function to do inner loops for mode
+                // See comments above on mode calulations
+                switch (motion_detector.pixel_measure_mode)
                 {
-                    for (x=x_start; x<x_end; x+=x_step)
-                    {
-                        // ARRAY of UYVYYY values
-                        // 6 bytes - 4 pixels
-
-                        if (motion_detector.pixel_measure_mode == MD_MEASURE_MODE_Y)
-                        {
-                            val = img[y + x + 1];				                        //Y
-                        }
-                        else
-                        {
-                            // Calc offset to UYV component
-                            int uvx = x;
-                            if (uvx & 1) uvx -= 3;
-
-                            switch(motion_detector.pixel_measure_mode)
-                            {
-                            case MD_MEASURE_MODE_U:
-                                val = (signed char)img[y + uvx];		                //U
-                                break;
-
-                            case MD_MEASURE_MODE_V:
-                                val = (signed char)img[y + uvx + 2];	                //V
-                                break;
-
-                            case MD_MEASURE_MODE_R:
-                                cy = img[y + x + 1];
-                                cv = (signed char)img[y + uvx + 2];
-                                val = clip(((cy<<12)           + cv*5743 + 2048)>>12); // R
-                                break;
-
-                            case MD_MEASURE_MODE_G:
-                                cy = img[y + x + 1];
-                                cu = (signed char)img[y + uvx];
-                                cv = (signed char)img[y + uvx + 2];
-                                val = clip(((cy<<12) - cu*1411 - cv*2925 + 2048)>>12); // G
-                                break;
-
-                            case MD_MEASURE_MODE_B:
-                                cy = img[y + x + 1];
-                                cu = (signed char)img[y + uvx];
-                                val = clip(((cy<<12) + cu*7258           + 2048)>>12); // B
-                                break;
-
-                            default:
-                                val = 0;    // Stop compiler warning
-                                break;
-                            }
-                        }
-
-                        curr += val;
-                        points++;
-                    }
+                    case MD_MEASURE_MODE_Y:
+                        curr += md_measure_y();
+                        break;
+                    case MD_MEASURE_MODE_U:
+                        curr += md_measure_u();
+                        break;
+                    case MD_MEASURE_MODE_V:
+                        curr += md_measure_v();
+                        break;
+                    case MD_MEASURE_MODE_R:
+                        curr += md_measure_r();
+                        break;
+                    case MD_MEASURE_MODE_G:
+                        curr += md_measure_g();
+                        break;
+                    case MD_MEASURE_MODE_B:
+                        curr += md_measure_b();
+                        break;
                 }
-                motion_detector.points = points ;
-                diff = (curr - motion_detector.prev[idx]) / points;
+
+                diff = (curr - motion_detector.prev[idx]) / motion_detector.points;
                 if (diff < 0) diff = -diff;
                 if ((diff > motion_detector.threshold) &&
                     (motion_detector.start_time+motion_detector.msecs_before_trigger < tick))
@@ -581,7 +736,7 @@ static int md_detect_motion(void)
 
             motion_detector.diff[idx] = diff;
             motion_detector.prev[idx] = curr;
-	}
+        }
     }
 
     if (motion_detector.previous_picture_is_ready == 0)
@@ -640,14 +795,14 @@ void md_draw_grid()
     if (!md_running() || motion_detector.draw_grid==0 || camera_info.state.state_kbd_script_run==0)
     {
         return;
-	}
+    }
 
-	int xoffset = vid_get_viewport_display_xoffset();	// used when image size != viewport size
-	int yoffset = vid_get_viewport_display_yoffset();	// used when image size != viewport size
+    int xoffset = vid_get_viewport_display_xoffset();   // used when image size != viewport size
+    int yoffset = vid_get_viewport_display_yoffset();   // used when image size != viewport size
 
     // display area size
-	int x_size = camera_screen.width-xoffset * 2;
-	int y_size = camera_screen.height-yoffset * 2;
+    int x_size = camera_screen.width-xoffset * 2;
+    int y_size = camera_screen.height-yoffset * 2;
 
     // initial display offsets
     int y_start, y_end = yoffset;
@@ -745,12 +900,12 @@ ModuleInfo _module_info =
 {
     MODULEINFO_V1_MAGICNUM,
     sizeof(ModuleInfo),
-    MOTION_DETECTOR_VERSION,	// Module version
+    MOTION_DETECTOR_VERSION,    // Module version
 
-    ANY_CHDK_BRANCH, 0, OPT_ARCHITECTURE,			// Requirements of CHDK version
-    ANY_PLATFORM_ALLOWED,		// Specify platform dependency
+    ANY_CHDK_BRANCH, 0, OPT_ARCHITECTURE,           // Requirements of CHDK version
+    ANY_PLATFORM_ALLOWED,       // Specify platform dependency
 
-    (int32_t)"Motion Detect",
+    -LANG_MODULE_MOTION_DETECT, // Module name
     MTYPE_EXTENSION,
 
     &_libmotiondetect.base,
@@ -759,6 +914,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

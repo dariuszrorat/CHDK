@@ -7,10 +7,12 @@
 
 #include "stubs_load.h"
 #include "firmware_load.h"
+#include "ptp_op_names.h"
 
 //------------------------------------------------------------------------------------------------------------
 // #define LIST_IMPORTANT_FUNCTIONS 1   // always list functions with 'LIST_ALWAYS' flag, even when not found
 // #define LIST_PHYSW_TABLE 1           // print all physw events to file
+// #define PRINT_LEVENT_TABLE 1         // print all levents to file
 //------------------------------------------------------------------------------------------------------------
 
 // Buffer output into header and body sections
@@ -228,7 +230,7 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "DebugAssert", OPTIONAL|LIST_ALWAYS },
     { "DeleteDirectory_Fut" },
     { "DeleteFile_Fut" },
-    { "DeleteSemaphore", UNUSED|LIST_ALWAYS },
+    { "DeleteSemaphore", },
     { "DoAELock" },
     { "DoAFLock" },
     { "EnterToCompensationEVF" },
@@ -250,6 +252,9 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "GetBatteryTemperature" },
     { "GetCCDTemperature" },
     { "GetCurrentAvValue" },
+    { "GetCurrentShutterSpeed" },
+    { "GetUsableMaxAv", OPTIONAL },
+    { "GetUsableMinAv", OPTIONAL },
     { "GetDrive_ClusterSize" },
     { "GetDrive_FreeClusters" },
     { "GetDrive_TotalClusters" },
@@ -277,6 +282,7 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "MoveFocusLensToDistance" },
     { "MoveIrisWithAv", OPTIONAL },
     { "MoveZoomLensWithPoint" },
+    { "MoveOpticalZoomAt", OPTIONAL },
     { "NewTaskShell", UNUSED },
     { "Open" },
     { "PB2Rec" },
@@ -299,6 +305,7 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "SetAE_ShutterSpeed" },
     { "SetAutoShutdownTime" },
     { "SetCurrentCaptureModeType" },
+    { "SetDate" },
     { "SetFileAttributes" },
     { "SetFileTimeStamp" },
     { "SetLogicalEventActive" },
@@ -329,9 +336,19 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "apex2us" },
     { "close" },
     { "err_init_task", OPTIONAL },
-    { "exmem_alloc" },
-    { "exmem_free", OPTIONAL|LIST_ALWAYS },
+    { "exmem_alloc", OPTIONAL },
+    { "exmem_free", UNUSED|OPTIONAL },
+    { "exmem_ualloc" },
+    { "exmem_ufree" },
+    { "exmem_assert", UNUSED|OPTIONAL|LIST_ALWAYS }, // helper, r23 or lower
     { "free" },
+    { "get_nd_value", OPTIONAL },
+    { "get_current_exp", UNUSED | OPTIONAL }, // helper, underlying function of ShowCurrentExp
+    { "get_current_nd_value", OPTIONAL },
+    { "get_current_deltasv", },
+    { "GetUsableAvRange", OPTIONAL|UNUSED },
+    { "GetBaseSv", OPTIONAL|UNUSED },
+    { "GetCurrentDriveBaseSvValue", },
 
     { "kbd_p1_f" },
     { "kbd_p1_f_cont" },
@@ -399,6 +416,8 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "PTM_PrevItem", OPTIONAL|UNUSED|LIST_ALWAYS },
     { "PTM_SetPropertyEnable", OPTIONAL|UNUSED|LIST_ALWAYS },
 
+    { "DisableISDriveError", OPTIONAL },
+
     // OS functions, mostly to aid firmware analysis. Order is important!
     { "_GetSystemTime", OPTIONAL|UNUSED|LIST_ALWAYS }, // only for locating timer functions
     { "SetTimerAfter", OPTIONAL|UNUSED|LIST_ALWAYS },
@@ -408,6 +427,7 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "SetHPTimerAfterTimeout", OPTIONAL|UNUSED|LIST_ALWAYS },
     { "SetHPTimerAfterNow" },
     { "CreateTaskStrictly", OPTIONAL|UNUSED|LIST_ALWAYS },
+    { "CreateTaskStrictly_alt", OPTIONAL|UNUSED|LIST_ALWAYS }, // widely used in r59, identical to CreateTaskStrictly
     { "CreateMessageQueue", OPTIONAL|UNUSED|LIST_ALWAYS },
     { "CreateRecursiveLock", OPTIONAL|UNUSED|LIST_ALWAYS },
     { "GetSemaphoreValue", OPTIONAL|UNUSED|LIST_ALWAYS },
@@ -477,6 +497,39 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "malloc_strictly", OPTIONAL|UNUSED|LIST_ALWAYS }, // name made up
     { "GetCurrentMachineTime", OPTIONAL|UNUSED|LIST_ALWAYS }, // reads usec counter, name from ixus30
     { "HwOcReadICAPCounter", OPTIONAL|UNUSED|LIST_ALWAYS }, // reads usec counter, name from ixus30
+    { "get_self_task_id", OPTIONAL|UNUSED|LIST_ALWAYS }, // gets ID of own task
+    { "get_task_properties", OPTIONAL|UNUSED|LIST_ALWAYS }, // gets copy of task's data (different struct, not the real TCB)
+    { "get_self_task_errno_pointer", OPTIONAL|UNUSED|LIST_ALWAYS }, // gets pointer to own task's errno
+    { "EnableDispatch", OPTIONAL|UNUSED }, // enables task switching (high level wrapper)
+    { "DisableDispatch", OPTIONAL|UNUSED }, // disables task switching (high level wrapper)
+    { "EnableDispatch_low", OPTIONAL|UNUSED }, // enables task switching
+    { "DisableDispatch_low", OPTIONAL|UNUSED }, // disables task switching
+    { "GetValidSystemCalender", OPTIONAL|UNUSED }, // name from ixus30
+    { "SetValidSystemCalender", OPTIONAL|UNUSED }, // name from ixus30
+    { "GetTimeFromRTC", OPTIONAL|UNUSED },
+    { "IsInvalidTime", OPTIONAL|UNUSED }, // name from ixus30
+    { "PauseTimeOfSystem", OPTIONAL|UNUSED }, // name from ixus30
+    { "ResumeTimeOfSystem", OPTIONAL|UNUSED }, // name from ixus30
+
+    { "cache_flush_and_enable", OPTIONAL|UNUSED }, // older dryos
+    { "cache_clean_flush_and_disable", OPTIONAL|UNUSED }, // older dryos
+    { "cache_flush_range", OPTIONAL|UNUSED }, // older dryos
+    { "cache_clean_flush_range", OPTIONAL|UNUSED }, // older dryos
+    { "cache_clean_range", OPTIONAL|UNUSED }, // older dryos
+
+    { "icache_flush_and_enable", OPTIONAL|UNUSED }, // newer dryos
+    { "icache_disable_and_flush", OPTIONAL|UNUSED }, // newer dryos
+    { "dcache_flush_and_enable", OPTIONAL|UNUSED }, // newer dryos
+    { "dcache_clean_flush_and_disable", OPTIONAL|UNUSED }, // newer dryos
+    { "dcache_flush_range", OPTIONAL|UNUSED }, // newer dryos
+    { "dcache_clean_range", OPTIONAL|UNUSED }, // newer dryos
+    { "dcache_clean_flush_range", OPTIONAL|UNUSED }, // newer dryos
+    { "icache_flush_range", OPTIONAL|UNUSED }, // newer dryos
+
+    // various dryos memory functions, made up names
+    { "bzero", OPTIONAL|UNUSED },
+    { "dry_memzero", OPTIONAL|UNUSED },
+    { "dry_memcpy", OPTIONAL|UNUSED },
 
     // Other stuff needed for finding misc variables - don't export to stubs_entry.S
     { "GetSDProtect", UNUSED },
@@ -489,6 +542,11 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "GUISrv_StartGUISystem", OPTIONAL|UNUSED|LIST_ALWAYS },
     { "get_resource_pointer", OPTIONAL|UNUSED|LIST_ALWAYS }, // name made up, gets a pointer to a certain resource (font, dialog, icon)
     { "CalcLog10", OPTIONAL|UNUSED|LIST_ALWAYS }, // helper
+    { "ImagerActivate", OPTIONAL|UNUSED }, // helper
+    { "DoMovieFrameCapture", OPTIONAL|UNUSED },
+    { "SetImageMode", OPTIONAL|UNUSED },
+    { "MenuIn", OPTIONAL|UNUSED },
+    { "MenuOut", OPTIONAL|UNUSED },
 
     { "MFOn", OPTIONAL },
     { "MFOff", OPTIONAL },
@@ -498,6 +556,19 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "SS_MFOff", OPTIONAL },
 
     { "GetAdChValue", OPTIONAL },
+    { "EnableHDMIPower", OPTIONAL },
+    { "DisableHDMIPower", OPTIONAL },
+
+    { "get_ptp_buf_size", OPTIONAL },
+    { "get_ptp_file_buf", OPTIONAL },
+
+    { "SetVideoOutType", OPTIONAL },
+    { "GetVideoOutType", OPTIONAL },
+
+    { "cameracon_set_state", UNUSED }, // made up name, helper for cameracon_state variable
+    { "cameracon_get_state", OPTIONAL|UNUSED }, // for information only, match doesn't work on early dry
+
+    { "IsWirelessConnect", OPTIONAL },
 
     { 0, 0, 0 }
 };
@@ -596,6 +667,7 @@ sig_stuff min_ver[] = {
     { "ScreenUnlock", 39 },
     { "MakeSDCardBootable", 47 },
     { "hook_CreateTask", 51 },
+    { "CreateTaskStrictly_alt", 59 },
 
     { 0, 0 }
 };
@@ -661,7 +733,11 @@ typedef struct {
     int     dryos55_offset;
     int     dryos57_offset;
     int     dryos58_offset;
+    int     dryos59_offset;
 } string_sig;
+
+// used to early out for wifi related functions, valid after tasks found
+int cam_has_wifi;
 
 // Load old signature matching data generated by gensig_dryos
 #include "signatures_dryos.h"
@@ -673,12 +749,12 @@ uint32_t apex2us_test[] = { 0x3D09000, 0x3BBA304, 0x3A728D2, 0x3931EF4, 0x37F830
 uint32_t apex2us_test2[] = { 0x3d090000, 0x3bba3040, 0x3a728d1f, 0x3931ef45, 0x37f8302c, 0x36c52a26, 0x3598b852, 0x3472b699, 0 }; // r52+?
 
 // Special case for apex2us
-int match_apex2us(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_apex2us(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw,k) && (LDR2val(fw,k) == v1) && ((fwRd(fw,k) == 1) || (fwRd(fw,k) == 2)))
     {
         k = find_inst_rev(fw, isSTMFD_LR, k, 200);
-        if (k != 0)
+        if (k != -1)
         {
             if (fwval(fw,k-2) == 0xE3700D09)    // CMN R0, #0x240
                 k -= 2;
@@ -689,12 +765,12 @@ int match_apex2us(firmware *fw, int k, uint32_t v1, uint32_t v2)
     }
     return 0;
 }
-int match_apex2us2(firmware *fw, int k, uint32_t v1, uint32_t v2) // r52+?
+int match_apex2us2(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2) // r52+?
 {
     if (isLDR_PC(fw,k) && (LDR2val(fw,k) == v1) && ((fwRd(fw,k) == 1) || (fwRd(fw,k) == 2)))
     {
         k = find_inst_rev(fw, isSTMFD_LR, k, 200);
-        if (k != 0)
+        if (k != -1)
         {
             if (fwval(fw,k+1) != 0xe3700d0f)    // CMN R0, #0x3c0
                 return 0;
@@ -705,7 +781,7 @@ int match_apex2us2(firmware *fw, int k, uint32_t v1, uint32_t v2) // r52+?
     }
     return 0;
 }
-int find_apex2us(firmware *fw, string_sig *sig, int j)
+int find_apex2us(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     int i;
     int fnd = 1;
@@ -733,12 +809,21 @@ int find_apex2us(firmware *fw, string_sig *sig, int j)
 }
 
 // Special case for mkdir
-int find_mkdir(firmware *fw, string_sig *sig, int k)
+int find_mkdir(firmware *fw, __attribute__ ((unused))string_sig *sig, int k)
 {
     if (fwval(fw,k) == 0x12CEA600)
     {
-        k = find_inst_rev(fw, isSTMFD_LR, k-20, 200);
-        if (k != 0)
+        int kk;
+        if (fw->dryos_ver > 58)
+        {
+            kk = k-26;
+        }
+        else
+        {
+            kk = k-20;
+        }
+        k = find_inst_rev(fw, isSTMFD_LR, kk, 200);
+        if (k != -1)
         {
             if ((((fwval(fw,k+12) & 0xFFF0FFFF) == 0xE350002F) && ((fwval(fw,k+15) & 0xFFF0FFFF) == 0xE3500021) && ((fwval(fw,k+19) & 0xFFF0FFFF) == 0xE3500020)) ||
                 (((fwval(fw,k+11) & 0xFFF0FFFF) == 0xE350002F) && ((fwval(fw,k+14) & 0xFFF0FFFF) == 0xE3500021) && ((fwval(fw,k+18) & 0xFFF0FFFF) == 0xE3500020)))
@@ -764,7 +849,7 @@ int find_mkdir(firmware *fw, string_sig *sig, int k)
 }
 
 // Special case for _pow
-int find_pow(firmware *fw, string_sig *sig, int j)
+int find_pow(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     // Find values passed to _pow
     if ((fwval(fw,j) == 0x00000000) && (fwval(fw,j+1) == 0x40000000) && (fwval(fw,j+2) == 0x00000000) && (fwval(fw,j+3) == 0x408F4000))
@@ -807,7 +892,7 @@ int find_pow(firmware *fw, string_sig *sig, int j)
 }
 
 // Special case for rand
-int find_rand(firmware *fw, string_sig *sig, int j)
+int find_rand(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     if (fwval(fw,j) == 0x41C64E6D)
     {
@@ -831,6 +916,66 @@ int find_rand(firmware *fw, string_sig *sig, int j)
 
     return 0;
 }
+// helper used for get_ptp_file_buf and get_ptp_buf_size
+int get_ptp_file_buf_id(firmware *fw) {
+    // ID of the file buffer appears to be 5 for r43-r52
+    if(fw->dryos_ver >= 43 && fw->dryos_ver <= 52) {
+        return 5;
+    } else {
+        return 4;
+    }
+}
+
+// Special case for get_ptp_file_buf
+int find_get_ptp_file_buf(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
+{
+    /*
+     * looking for
+     * MOV r0,#ptp_file_buf_id
+     * bl get_ptp_buf_size
+     * bic r1, r0, #1
+     * MOV r0,#ptp_file_buf_id
+     * bl sub...
+    */
+    if(!(isMOV_immed(fw,j)
+        && (fwRn(fw,j) == 0)
+        && isBL(fw,j+1)
+        && ((fwval(fw,j+2) & 0xFFF00000) == 0xe3C00000) // BIC
+        && (ALUop2(fw,j+2) == 1)
+        && isMOV_immed(fw,j+3)
+        && (fwRn(fw,j+3) == 0)
+        && isBL(fw,j+4))) {
+        return 0;
+    }
+    uint32_t file_buf_id = get_ptp_file_buf_id(fw);
+    if(ALUop2(fw,j) != file_buf_id || ALUop2(fw,j+3) != file_buf_id) {
+        return 0;
+    }
+    uint32_t f1 = followBranch(fw,idx2adr(fw,j+1),0x01000001);
+    int i = get_saved_sig(fw,"get_ptp_buf_size");
+    // if sig not found, end search completely
+    if(i < 0) {
+        // fprintf(stderr,"find_get_ptp_file_buf func missing @0x%08x\n",idx2adr(fw,j));
+        return 1;
+    }
+    if(f1 != func_names[i].val) {
+        // fprintf(stderr,"find_get_ptp_file_buf func mismatch @0x%08x\n",idx2adr(fw,j));
+        return 0;
+    }
+
+    // search backwards for push
+    int k = find_inst_rev(fw, isSTMFD_LR, j-1, 8);
+    if(k < 0) {
+        // fprintf(stderr,"find_get_ptp_file_buf failed to find push @0x%08x\n",idx2adr(fw,j));
+        return 0;
+    }
+    // functions could have a MOV, LDR etc before the push, but not seen for this function
+    uint32_t fadr = idx2adr(fw, k);
+    fwAddMatch(fw,fadr,32,0,121);
+    // fprintf(stderr,"find_get_ptp_file_buf match @0x%08x\n",fadr);
+
+    return 1;
+}
 
 // Special case for 'closedir'
 int find_closedir(firmware *fw)
@@ -847,6 +992,316 @@ int find_closedir(firmware *fw)
         }
     }
 
+    return 0;
+}
+
+int find_GetTimeFromRTC_and_more(firmware *fw, int i)
+{
+    int j = fw->main_offs;
+    int k = -1;
+    while (j < fw->size)
+    {
+        if (isLDR(fw, j) && LDR2val(fw, j) == 0x7FE8177F)
+        {
+            if (i == 2)
+            {
+                k = find_inst(fw, isBL, j+1, 6);
+                if (k > j)
+                {
+                    k = adr2idx(fw, followBranch(fw, idx2adr(fw, k), 0x01000001));
+                    uint32_t fadr = idx2adr(fw, k);
+                    fwAddMatch(fw,fadr,32,0,122); // SetValidSystemCalender
+                    return 1;
+                }
+            }
+            k = find_Nth_inst(fw, isBL, j+1, 6, 2);
+            break;
+        }
+        j++;
+    }
+    if (k > j)
+    {
+        k = adr2idx(fw, followBranch(fw, idx2adr(fw, k), 0x01000001));
+        j = find_inst(fw, isBLEQ, k+1, 30);
+        if (j != -1) // newer cam
+        {
+            if (i == 0)
+            {
+                j = adr2idx(fw, followBranch(fw, idx2adr(fw, j), 0xe1000001));
+                uint32_t fadr = idx2adr(fw, j);
+                fwAddMatch(fw,fadr,32,0,122); // GetTimeFromRTC
+                return 1;
+            }
+            k = find_Nth_inst_rev(fw, isBL, j-1, 14, 2);
+            j = adr2idx(fw, followBranch(fw, idx2adr(fw, k), 0x01000001));
+            if (!isSTMFD_LR(fw,j))
+            {
+                uint32_t fadr = idx2adr(fw, j);
+                fwAddMatch(fw,fadr,32,0,122); // GetValidSystemCalender
+                return 1;
+            }
+            return 0;
+        }
+        k = find_Nth_inst(fw, isBL, k+1, 20, 2);
+        if (k == -1)
+        {
+            return 0;
+        }
+        j = adr2idx(fw, followBranch2(fw, idx2adr(fw, k), 0x01000001)); // followBranch2 to support s110
+        if (isSTMFD_LR(fw,j))
+        {
+            k = find_inst(fw, isBL, k+1, 8);
+            if (k == -1)
+            {
+                return 0;
+            }
+            j = adr2idx(fw, followBranch(fw, idx2adr(fw, k), 0x01000001));
+        }
+        if (isSTMFD_LR(fw,j))
+        {
+            return 0;
+        }
+        if (i == 1) // GetValidSystemCalender (ixus30/40, sic)
+        {
+            uint32_t fadr = idx2adr(fw, j);
+            fwAddMatch(fw,fadr,32,0,122);
+            return 1;
+        }
+        k = find_inst(fw, isBL, k+1, 8);
+        if (k == -1)
+        {
+            return 0;
+        }
+        j = adr2idx(fw, followBranch(fw, idx2adr(fw, k), 0x01000001));
+        if (i == 0 && isSTMFD_LR(fw,j)) // GetTimeFromRTC
+        {
+            uint32_t fadr = idx2adr(fw, j);
+            fwAddMatch(fw,fadr,32,0,122);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int find_arm_cache_funcs(firmware *fw, int ii)
+{
+    static int cfe=0, ccfd=0, cfr=0, ccfr=0, ccr=0;
+    static int beenhere = 0;
+    int i, j=0;
+    if (!beenhere)
+    {
+        beenhere++;
+        if (ii != 2)
+        {
+            j = get_saved_sig(fw,"cache_flush_range");
+        }
+        if (j >= 0 && cfr == 0)
+        {
+            cfr = adr2idx(fw,func_names[j].val);
+            i = cfr - 1;
+            while (i > cfr - 0x100)
+            {
+                if (fwval(fw,i) == 0xe3500000) // cmp r0, #0
+                {
+                    if (ccfd == 0)
+                    {
+                        ccfd = i;
+                    }
+                    else if (cfe == 0)
+                    {
+                        cfe = i;
+                        break;
+                    }
+                }
+                i--;
+            }
+            i = cfr + 1;
+            while (i < cfr + 0x140)
+            {
+                if (fwval(fw,i) == 0xe3500000) // cmp r0, #0
+                {
+                    if (ccfr == 0)
+                    {
+                        ccfr = i;
+                    }
+                    else if (ccr == 0)
+                    {
+                        ccr = i;
+                        break;
+                    }
+                }
+                i++;
+            }
+        }
+        else if (ccr == 0)
+        {
+            if (ii != 4)
+            {
+                j = get_saved_sig(fw,"cache_clean_range");
+            }
+            if (j >= 0)
+            {
+                ccr = adr2idx(fw,func_names[j].val);
+                i = ccr - 1;
+                while (i > ccr - 0x300)
+                {
+                    if (fwval(fw,i) == 0xe3500000) // cmp r0, #0
+                    {
+                        if (ccfr == 0)
+                        {
+                            ccfr = i;
+                        }
+                        else if (cfr == 0)
+                        {
+                            cfr = i;
+                        }
+                        else if (ccfd == 0)
+                        {
+                            ccfd = i;
+                        }
+                        else if (cfe == 0)
+                        {
+                            cfe = i;
+                            break;
+                        }
+                    }
+                    i--;
+                }
+            }
+        }
+    }
+    if (cfe&&ccfd&&cfr&&ccfr&&ccr)
+    {
+        i = 0;
+        switch (ii)
+        {
+            case 0: i = cfe; break;
+            case 1: i = ccfd; break;
+            case 2: i = cfr; break;
+            case 3: i = ccfr; break;
+            case 4: i = ccr; break;
+        }
+        uint32_t fadr = idx2adr(fw, i);
+        fwAddMatch(fw,fadr,32,0,122);
+        return 1;
+    }
+
+    return 0;
+}
+
+int find_arm_cache_funcs2(firmware *fw, int ii)
+{
+    static int ife=0, idf=0, dfe=0, dcfd=0, dfr=0, dcr=0, dcfr=0, ifr=0;
+    static int beenhere = 0;
+    int i, j=0;
+    if (!beenhere)
+    {
+        beenhere++;
+        j = get_saved_sig(fw,"dcache_flush_range");
+        if (j >= 0 && dfr == 0)
+        {
+            dfr = adr2idx(fw,func_names[j].val);
+            i = dfr - 1;
+            while (i > dfr - 0x100)
+            {
+                if (fwval(fw,i) == 0xe10f3000) // mrs r3, cpsr
+                {
+                    if (dcfd == 0)
+                    {
+                        dcfd = i;
+                    }
+                    else if (dfe == 0)
+                    {
+                        dfe = i;
+                    }
+                    else if (idf == 0)
+                    {
+                        idf = i;
+                    }
+                    else if (ife == 0)
+                    {
+                        ife = i;
+                        break;
+                    }
+                }
+                i--;
+            }
+            i = dfr + 1;
+            while (i < dfr + 0x140)
+            {
+                if (fwval(fw,i) == 0xe3510a02) // cmp r1, #0x2000
+                {
+                    if (dcr == 0)
+                    {
+                        dcr = i;
+                    }
+                    else if (dcfr == 0)
+                    {
+                        dcfr = i;
+                    }
+                    else if (ifr == 0)
+                    {
+                        ifr = i;
+                        break;
+                    }
+                }
+                i++;
+            }
+        }
+    }
+    if (ife&&idf&&dfe&&dcfd&&dfr&&dcr&&dcfr&&ifr)
+    {
+        i = 0;
+        switch (ii)
+        {
+            case 0: i = ife; break;
+            case 1: i = idf; break;
+            case 2: i = dfe; break;
+            case 3: i = dcfd; break;
+            case 4: i = dcr; break;
+            case 5: i = dcfr; break;
+            case 6: i = ifr; break;
+        }
+        uint32_t fadr = idx2adr(fw, i);
+        fwAddMatch(fw,fadr,32,0,122);
+        return 1;
+    }
+
+    return 0;
+}
+
+int find_IsWirelessConnect(firmware *fw, __attribute__ ((unused))int ii)
+{
+    // matches might pick up the wrong function if wifi not present
+    if(!cam_has_wifi) {
+        return 0;
+    }
+    if (fw->dryos_ver < 53) {
+        int j = find_str_ref(fw,"WiFiDisconnect");
+        if(j < 0) {
+            return 0;
+        }
+        int k = find_Nth_inst_rev(fw, isBL, j-1, 5, 1);
+        if(k < 0) {
+            return 0;
+        }
+        uint32_t fadr = followBranch(fw, idx2adr(fw, k), 0x01000001);
+        fwAddMatch(fw,fadr,32,0,122);
+        return 1;
+    } else {
+        int j = find_str_ref(fw,"USBDisconnect");
+        if(j < 0) {
+            return 0;
+        }
+        int k = find_Nth_inst_rev(fw, isBL, j-1, 5, 1);
+        if(k < 0) {
+            return 0;
+        }
+        uint32_t fadr = followBranch(fw, idx2adr(fw, k), 0x01000001);
+        fwAddMatch(fw,fadr,32,0,122);
+        return 1;
+    }
     return 0;
 }
 
@@ -915,7 +1370,7 @@ int find_Restart(firmware *fw)
 }
 
 // Special case for 'add_ptp_handler'
-int find_add_ptp_handler(firmware *fw, string_sig *sig, int k)
+int find_add_ptp_handler(firmware *fw, __attribute__ ((unused))string_sig *sig, int k)
 {
     uint32_t vals[] = { 0x9801, 0x9802, 0x9803, 0x9804, 0x9805, 0 };
     uint32_t fadr = 0;
@@ -924,12 +1379,12 @@ int find_add_ptp_handler(firmware *fw, string_sig *sig, int k)
     while ((vals[i] != 0) && isLDR_PC(fw,k) && (fwRd(fw,k) == 0) && (LDR2val(fw,k) == vals[i]))
     {
         k = find_inst(fw, isBL, k+1, 5);
-        if (k == 0) return 0;
+        if (k == -1) return 0;
         if (fadr == 0)
             fadr = followBranch(fw, idx2adr(fw,k), 0x01000001);
         k = find_inst(fw, isLDR_PC, k+1, 5);
-        if (k == 0) return 0;
         i++;
+        if (k == -1 && vals[i] != 0) return 0;
     }
 
     if (fadr != 0)
@@ -1074,7 +1529,7 @@ int find_GetImageFolder(firmware *fw)
 }
 
 // Special case for 'GetDrive_ClusterSize'
-int match_GetDrive_ClusterSize(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_GetDrive_ClusterSize(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isBL_cond(fw,k))
     {
@@ -1183,7 +1638,7 @@ int find_malloc_strictly(firmware *fw)
     if (s1 < s2-16) // the two strings should be close
         s1 = find_Nth_str(fw,"Size: %ld",2); // this string has multiple instances, try the next one
     f1 = adr2idx(fw, func_names[f1].val);
-    
+
     int r1 = find_nxt_str_ref(fw, s1, 0);
     int r2 = find_nxt_str_ref(fw, s2, 0);
     int l1 = 0;
@@ -1228,10 +1683,10 @@ int find_DisplayBusyOnScreen(firmware *fw)
 
     if ((j>=0)&&(s1>=0)&&(s2>=0))
     {
-        int m1 = find_Nth_inst(fw,isBL,j+1,12,fw->dryos_ver<54?4:3);
+        int m1 = find_Nth_inst(fw,isBL,j+1,12,fw->dryos_ver<54?4:fw->dryos_ver==59?2:3);
         int m2, k;
 
-        if (fw->dryos_ver > 57)
+        if (fw->dryos_ver == 58)
         {
             // 1st B after str ref branches to DisplayBusyOnScreen
             m1 = find_inst(fw,isB,j+1,12);
@@ -1245,9 +1700,9 @@ int find_DisplayBusyOnScreen(firmware *fw)
                 return 0;
             }
         }
-        else if (fw->dryos_ver > 56)
+        else if (fw->dryos_ver == 57)
         {
-            // these functions are called indirectly in this part of fw on r57+
+            // these functions are called indirectly in this part of fw on r57
             int found = 0;
             for (k=-1; k>-3; k--)
             {
@@ -1484,6 +1939,206 @@ int find_get_string_by_id(firmware *fw)
     return 0;
 }
 
+int find_get_self_task_errno_pointer(firmware *fw)
+{
+    int f1 = get_saved_sig(fw,"malloc");
+    int f2 = get_saved_sig(fw,"close");
+    if ((f1<0) && (f2<0))
+        return 0;
+    f1 = adr2idx(fw, func_names[f1].val);
+    f1 = find_inst(fw, isLDMFD_PC, f1, 24);
+    if (f1>0)
+    {
+        f1 = find_inst_rev(fw, isBL, f1, 6);
+        if (f1>0)
+        {
+            if (fwval(fw,f1+2) == 0xe5801000) // str r1, [r0]
+            {
+                f1 = idxFollowBranch(fw,f1,0x01000001);
+                fwAddMatch(fw,idx2adr(fw,f1),32,0,122);
+                return 1;
+            }
+        }
+    }
+    // older cams don't set errno on malloc failure
+    f1 = adr2idx(fw, func_names[f2].val);
+    f1 = find_Nth_inst(fw, isBL, f1, 8, 2); // second BL
+    if (f1>0)
+    {
+        if (fwval(fw,f1+2) == 0xe5801000) // str r1, [r0]
+        {
+            f1 = idxFollowBranch(fw,f1,0x01000001);
+            fwAddMatch(fw,idx2adr(fw,f1),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int find_get_nd_value(firmware *fw)
+{
+
+    int f1 = get_saved_sig(fw,"PutInNdFilter_FW");
+    int f2 = get_saved_sig(fw,"ClearEventFlag");
+    int f3 = find_saved_sig("get_nd_value");
+    if ((f3 >= 0) && (func_names[f3].val != 0)) // return if func already found
+        return 0;
+    if ((f1 < 0) || (f2 < 0))
+        return 0;
+    f1 = adr2idx(fw, func_names[f1].val);
+    f2 = adr2idx(fw, func_names[f2].val);
+    int k1 = find_Nth_inst(fw,isBL,f1,10,2);
+    int k2 = find_inst(fw,isBL,f1,6);
+    if ((k1 == -1) || (k2 == -1))
+        return 0;
+    // note for the following line: same address can have different index on cams with multiple fw regions
+    // followBranch2 is for veneer support (s110)
+    if ( followBranch2(fw,idx2adr(fw,k2),0x01000001) != idx2adr(fw,f2) ) // ClearEventFlag?
+        return 0;
+    k1 = idxFollowBranch(fw,k1,0x01000001); // PutInNdFilter_low
+    k2 = find_inst(fw,isBL,k1,6);
+    if (k2 == -1)
+        return 0;
+    // check for signs of other functions (GetUsableAvRange, etc)
+    int k3;
+    int k4 = 0;
+    for (k3=k2-1;k3>k2-3;k3--)
+    {
+        uint32_t v1 = fwval(fw, k3);
+        k4 += (v1 == 0xe28d0004)?1:(v1 == 0xe1a0100d)?4: // add r0,sp,#4 ; mov r1,sp - GetUsableAvRange
+              ((v1 & 0xffffff00) == 0xe3a00000)?0x10:0; // mov r0, #small_imm - sx400
+    }
+    if (k4 == 0) // probably get_nd_value
+    {
+        k2 = idxFollowBranch(fw,k2,0x01000001);
+        fwAddMatch(fw,idx2adr(fw,k2),32,0,122);
+        return 1;
+    }
+
+    return 0;
+}
+
+// for cams with both ND and iris
+int find_get_current_nd_value_iris(firmware *fw)
+{
+    // match is only for cams with both, task is mostly a good indicator
+    if(get_saved_sig(fw,"task_Nd") < 0 || get_saved_sig(fw,"task_IrisEvent") < 0) {
+        return 0;
+    }
+    int f1 = get_saved_sig(fw,"get_current_exp");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int blcnt, i;
+    // expect
+    // bleq DebugAssert
+    // followed by 5 bl with other instruction between
+    // looking for 5th
+    for(i=0, blcnt=0; i<16 && blcnt < 7; i++) {
+        if(!blcnt) {
+            if(isBL_cond(fw,f1+i)) {
+                blcnt++;
+            } else if(isBL(fw,f1+i)) {
+                return 0;
+            }
+            continue;
+        }
+        if(!isBL(fw,f1+i)) {
+            continue;
+        }
+        blcnt++;
+        if(blcnt == 6) {
+            int f2 = idxFollowBranch(fw,f1+i,0x01000001);
+            // non-ND cameras have a call to return 0
+            if(isMOV(fw,f2) && (fwRd(fw,f2) == 0) && (fwOp2(fw,f2) == 0)) // MOV R0, 0
+                return 0;
+            // veneer (might be better to require veneer)
+            if(isB(fw,f2)) {
+                f2 = idxFollowBranch(fw,f2,0x00000001);
+            }
+            fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int find_get_current_nd_value(firmware *fw)
+{
+
+    // string only present on ND-only cameres
+    if(find_str(fw, "IrisSpecification.c") < 0) {
+        return find_get_current_nd_value_iris(fw);
+    }
+
+    int f1 = get_saved_sig(fw,"GetCurrentAvValue");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    // expect
+    // adreq r0, "IrisController.c"
+    // bleq DebugAssert
+    // bl j_get_current_nd_value
+    int sadr = find_str(fw, "IrisController.c");
+    int j = find_nxt_str_ref(fw, sadr, f1);
+    if (j < 0)
+        return 0;
+
+    if(isBL_cond(fw,j+1) && isBL(fw,j+2)) {
+        f1 = idxFollowBranch(fw,j+2,0x01000001);
+        // veneer
+        if(isB(fw,f1)) {
+            f1 = idxFollowBranch(fw,f1,0x00000001);
+        }
+        fwAddMatch(fw,idx2adr(fw,f1),32,0,122);
+        return 1;
+    }
+
+    return 0;
+}
+
+// get live view "DeltaSV" value
+int find_get_current_deltasv(firmware *fw)
+{
+    int f1 = get_saved_sig(fw,"get_current_exp");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int blcnt, i;
+    // expect
+    // bleq DebugAssert
+    // followed by at least 3 bl with other instructions between
+    // looking for 3rd
+    for(i=0, blcnt=0; i<16 && blcnt < 4; i++) {
+        if(!blcnt) {
+            if(isBL_cond(fw,f1+i)) {
+                blcnt++;
+            } else if(isBL(fw,f1+i)) {
+                return 0;
+            }
+            continue;
+        }
+        if(!isBL(fw,f1+i)) {
+            continue;
+        }
+        blcnt++;
+        if(blcnt == 4) {
+            int f2 = idxFollowBranch(fw,f1+i,0x01000001);
+            // veneer?
+            if(isB(fw,f2)) {
+                f2 = idxFollowBranch(fw,f2,0x00000001);
+            }
+            fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 int find_getcurrentmachinetime(firmware *fw)
 {
     int f1 = get_saved_sig(fw,"SetHPTimerAfterTimeout");
@@ -1529,6 +2184,347 @@ int find_sethptimeraftertimeout(firmware *fw)
     return 0;
 }
 
+uint32_t frsp_buf = 0;
+uint32_t frsp_buf_at = 0;
+int frsp_param = -1;
+int frsp_argcnt = 0;
+int find_DoMovieFrameCapture(firmware *fw)
+{
+    void add_func_name(char*, uint32_t, char*);
+    // we need the uncached bit
+    int match_CAM_UNCACHED_BIT(firmware*, int, int);
+    search_saved_sig(fw, "FreeUncacheableMemory", match_CAM_UNCACHED_BIT, 0, 0, 8);
+
+    int j = get_saved_sig(fw,"SetImageMode");
+    if (j < 0)
+        return 0;
+    j = adr2idx(fw, func_names[j].val);
+    int k = 0;
+    int k1 = 0;
+    int l = j + 20;
+    while (j < l)
+    {
+        j = find_inst(fw, isBL, j+1, 20);
+        if (j == -1)
+            break;
+        int j1 = idxFollowBranch(fw,j,0x01000001);
+        if (j != j1)
+        {
+            int j2;
+            for (j2=j1; j2<j1+6; j2++)
+            {
+                if ((fwval(fw,j2) & 0xFF000000) == 0x1A000000) // bne
+                {
+                    int j3 = idxFollowBranch(fw,j2,0xF1000001);
+                    if (j3-j2>0 && j3-j2<5)
+                    {
+                        if (isBL(fw,j3))
+                        {
+                            // buffer adr is embedded in routine, evaluate later
+                            k = idxFollowBranch(fw,j3,0x01000001);
+                            fwAddMatch(fw,idx2adr(fw,k),32,0,122);
+                            // add_func_name("DoMovieFrameCapture_helper1", idx2adr(fw,k), ""); // for visual verification
+                            k1 = 1;
+                            break;
+                        }
+                        else
+                        {
+                            // buffer and param are func args, evaluate here
+                            int m = 0;
+                            while (m < 4)
+                            {
+                                if ((fwval(fw,j3+m) & 0xFE1F0000) == 0xE41F0000) // ldr rx,
+                                {
+                                    frsp_argcnt = fwRd(fw,j3+m) + 1; // this should be loaded in the right register directly
+                                    frsp_buf = LDR2val(fw,j3+m);
+                                    frsp_buf_at = idx2adr(fw,j3+m);
+                                    if (!((frsp_buf > fw->uncached_adr) &&
+                                          (fw->uncached_adr+fw->maxram))) // has to be uncached ram
+                                        frsp_buf = 0;
+                                }
+                                if ((fwval(fw,j3+m) & 0xFFF00000) == 0xE3A00000) // mov rx,
+                                {
+                                    uint32_t u1 = ALUop2a(fw,j3+m);
+                                    if (u1>fw->uncached_adr && u1<(fw->uncached_adr+fw->maxram))
+                                    {
+                                        frsp_buf = u1;
+                                        frsp_buf_at = idx2adr(fw,j3+m);
+                                        frsp_argcnt = fwRd(fw,j3+m) + 1; // this should be loaded in the right register directly
+                                    }
+                                    else
+                                    {
+                                        frsp_param = u1;
+                                    }
+                                }
+                                if (isBL(fw,j3+m))
+                                {
+                                    k = idxFollowBranch(fw,j3+m,0x01000001);
+                                    fwAddMatch(fw,idx2adr(fw,k),32,0,122);
+                                    // add_func_name("DoMovieFrameCapture_helper2", idx2adr(fw,j1), ""); // for visual verification
+                                    break;
+                                }
+                                m++;
+                            }
+                            if (k)
+                                break;
+                        }
+                    }
+                }
+            }
+            if (k)
+                break;
+        }
+    }
+    if (k && k1)
+    {
+        k1 = k+1;
+        while (k1>0 && k1<k+20)
+        {
+            if (isLDR_PC(fw,k1))
+            {
+                uint32_t v = LDR2val(fw,k1);
+                if (v>fw->uncached_adr && v<fw->uncached_adr+fw->maxram && (v&3)==0)
+                {
+                    frsp_buf = v;
+                    frsp_param = 0;
+                    frsp_buf_at = idx2adr(fw,k1);
+                    break;
+                }
+            }
+            k1++;
+        }
+    }
+    if (k)
+        return 1;
+    return 0;
+}
+
+int find_get_ptp_buf_size(firmware *fw)
+{
+    int j = get_saved_sig(fw,"handle_PTP_OC_SendObject"); // same handler as CANON_SendObjectByPath
+    if(j < 0) {
+        // fprintf(stderr,"find_get_ptp_buf_size missing handle_PTP_OC_SendObject\n");
+        return 0;
+    }
+    int k=adr2idx(fw,func_names[j].val);
+    int k_max=k+80;
+    uint32_t adr=0;
+    uint32_t file_buf_id=get_ptp_file_buf_id(fw);
+
+    for(; k < k_max;k++) {
+        // look for
+        // mov r0,#file_buf_id
+        // bl ...
+        if(isMOV_immed(fw,k) && fwRn(fw,k) == 0 && ALUop2(fw,k) == file_buf_id && isBL(fw, k+1)) {
+            adr = followBranch(fw,idx2adr(fw,k+1),0x01000001);
+            // fprintf(stderr,"find_get_ptp_buf_size match 1 0x%08x @0x%08x\n",adr,idx2adr(fw,k+1));
+            break;
+        }
+    }
+    if(!adr) {
+        // fprintf(stderr,"find_get_ptp_buf_size no match\n");
+        return 0;
+    }
+    // look for same seq again, within 6 ins
+    k_max = k+6;
+    for(; k < k_max;k++) {
+        if(isMOV_immed(fw,k) && fwRn(fw,k) == 0 && ALUop2(fw,k) == file_buf_id && isBL(fw, k+1)) {
+            uint32_t adr2 = followBranch(fw,idx2adr(fw,k+1),0x01000001);
+            // is it the same address?
+            if(adr2 == adr) {
+                // fprintf(stderr,"find_get_ptp_buf_size match 2 @0x%08x\n",idx2adr(fw,k+1));
+                fwAddMatch(fw,adr,32,0,122);
+                return 0;
+            }
+            // fprintf(stderr,"find_get_ptp_buf_size match 2 mismatch 0x%08x != 0x%08x @0x%08x\n",adr,adr2,idx2adr(fw,k+1));
+        }
+    }
+    return 0;
+}
+
+int find_GetBaseSv(firmware *fw)
+{
+    int j = get_saved_sig(fw,"SetPropertyCase");
+    if (j < 0)
+        return 0;
+    j = adr2idx(fw, func_names[j].val);
+
+    int sadr = find_str(fw, "Sensitive.c");
+    if (sadr < fw->lowest_idx)
+        return 0;
+    int s1 = find_nxt_str_ref(fw, sadr, -1/*fw->lowest_idx*/);
+    int hist[3] = {0, 0, 0};
+    while (s1 >= 0)
+    {
+        hist[2] = hist[1];
+        hist[1] = hist[0];
+        hist[0] = s1;
+        if (hist[0] && hist[1] && hist[2])
+        {
+            if ((hist[0]-hist[1]<6) && (hist[1]-hist[2]<7))
+            {
+                int n;
+                for (n=s1+1; n<s1+26; n++)
+                {
+                    if ( isBL(fw, n) )
+                    {
+                        int k;
+                        k = idxFollowBranch(fw,n,0x01000001);
+                        if ( idx2adr(fw, k) == idx2adr(fw, j) )
+                        {
+                            // SetPropertyCase call found
+                            k = find_inst(fw, isBL, s1+2, 6);
+                            if (k != -1)
+                            {
+                                // first BL following BLEQ DebugAssert
+                                int l = idxFollowBranch(fw,k,0x01000001);
+                                if ( isB(fw, l) )
+                                {
+                                    // in most cases there's a veneer (exception: sx1)
+                                    void add_func_name(char*, uint32_t, char*);
+                                    k = idxFollowBranch(fw,l,0x01000001);
+                                    if ( isB(fw, k) )
+                                    {
+                                        int m = idxFollowBranch(fw,k,0x01000001);
+                                        add_func_name("j_j_GetBaseSv", idx2adr(fw,l), "");
+                                        add_func_name("j_GetBaseSv", idx2adr(fw,k), "");
+                                        fwAddMatch(fw,idx2adr(fw,m),32,0,122);
+                                    }
+                                    else
+                                    {
+                                        add_func_name("j_GetBaseSv", idx2adr(fw,l), "");
+                                        fwAddMatch(fw,idx2adr(fw,k),32,0,122);
+                                    }
+                                }
+                                else
+                                {
+                                    fwAddMatch(fw,idx2adr(fw,l),32,0,122);
+                                }
+                                return 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        s1 = find_nxt_str_ref(fw, sadr, s1+1);
+    }
+
+    return 0;
+}
+
+int find_Remove(firmware *fw)
+{
+    int f1 = get_saved_sig(fw,"Close");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int f2, blcnt, i;
+    f2 = find_str_ref(fw,"File Write Fail.");
+    if(f2 == -1)
+        return 0;
+    // looking for 1st bl after Close
+    for(i=1, blcnt=0; i<8 && blcnt < 2; i++) {
+        if(!isBL(fw,f2+i)) {
+            continue;
+        }
+        // is it Close?
+        if(idxFollowBranch(fw,f2+i,0x01000001)==f1) {
+            blcnt++;
+            continue;
+        }
+        else if(idxFollowBranch(fw,idxFollowBranch(fw,f2+i,0x01000001),0x01000001)==f1) {
+            blcnt++;
+            continue;
+        }
+        if (blcnt == 1) {
+            f2 = idxFollowBranch(fw,f2+i,0x01000001);
+            fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int find_dispatch_funcs(firmware *fw, int param)
+{
+    int f1;
+    if (param==0) {
+        f1= get_saved_sig(fw,"EnableDispatch_low");
+    }
+    else if (param==1) {
+        f1= get_saved_sig(fw,"DisableDispatch_low");
+    }
+    else {
+        return 0;
+    }
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int r0, r1, cnt;
+    r0 = find_str(fw,"Booting"); // for sx230 (extra task on a few models)
+    if (r0 == -1) {
+        r0 = find_str(fw,"Startup"); // locating taskcreate_Startup
+        r1 = find_str(fw,"Startup.c");
+        if (r0 == r1) { // for s5is
+            r0 = find_Nth_str(fw,"Startup",2);
+        }
+    }
+    r0 = find_nxt_str_ref(fw,r0,r0-1024);
+    if(r0 < 0)
+        return 0;
+    r0 = adr2idx(fw,idx2adr(fw,r0)); // needed on cams with code copied to RAM
+    cnt = 0;
+    while (r0!=-1 && cnt<5) {
+        r0 = find_inst_rev(fw,isBL,r0-1,10);
+        int b1 = idxFollowBranch(fw,r0,0x01000001);
+        b1 = adr2idx(fw,idx2adr(fw,b1)); // needed on cams with code copied to RAM
+        if (isLDR_PC(fw,b1)) { // for s110
+            b1 = idxFollowBranch(fw,b1,0x01000001);
+        }
+        if (param==0) { // EnableDispatch
+            r1 = find_nxt_str_ref_alt(fw, "KerSys.c", b1, 24);
+            int i1 = find_inst(fw,isLDMFD_PC,b1,24);
+            if (r1!=-1 && i1>r1) {
+                int j1 = find_Nth_inst(fw,isBL,b1,24,1);
+                if (j1 != -1) {
+                    if (idx2adr(fw,idxFollowBranch(fw,j1,0x01000001))==idx2adr(fw,f1)) {
+                        fwAddMatch(fw,idx2adr(fw,b1),32,0,122);
+                        return 1;
+                    }
+                }
+            }
+        }
+        else if (param==1) { // DisableDispatch
+            int c = 1;
+            while (c<3) {
+                int b2 = find_Nth_inst(fw,isBL,b1,12,c);
+                if (b2 == -1) {
+                    break;
+                }
+                b2 = idxFollowBranch(fw,b2,0x01000001);
+                b2 = adr2idx(fw,idx2adr(fw,b2)); // needed on cams with code copied to RAM
+                r1 = find_nxt_str_ref_alt(fw, "KerSys.c", b2, 24);
+                int i1 = find_inst(fw,isLDMFD_PC,b2,24);
+                if (r1!=-1 && i1>r1) {
+                    int j1 = find_Nth_inst(fw,isBL,b2,24,1);
+                    if (j1 != -1) {
+                        if (idx2adr(fw,idxFollowBranch(fw,j1,0x01000001))==idx2adr(fw,f1)) {
+                            fwAddMatch(fw,idx2adr(fw,b2),32,0,122);
+                            return 1;
+                        }
+                    }
+                }
+                c++;
+            }
+        }
+        cnt++;
+    }
+    return 0;
+}
+
 //------------------------------------------------------------------------------------------------------------
 
 // Data for matching the '_log' function
@@ -1563,6 +2559,9 @@ string_sig string_sigs[] =
     {20, "GetSDProtect", "GetSDProtect_FW", 1 },
     {20, "GetSystemTime", "GetSystemTime_FW", 1 },
     {20, "GetCurrentAvValue", "GetCurrentAvValue_FW", 1 },
+    {20, "GetCurrentShutterSpeed", "GetCurrentShutterSpeed_FW", 1 },
+    {20, "GetUsableMaxAv", "GetUsableMaxAv_FW", 1 },
+    {20, "GetUsableMinAv", "GetUsableMinAv_FW", 1 },
     {20, "GetOpticalTemperature", "GetOpticalTemperature_FW", 1 },
     {20, "GetVRAMHPixelsSize", "GetVRAMHPixelsSize_FW", 1 },
     {20, "GetVRAMVPixelsSize", "GetVRAMVPixelsSize_FW", 1 },
@@ -1593,6 +2592,7 @@ string_sig string_sigs[] =
     {20, "SavePaletteData", "SavePaletteData_FW", 1 },
     {20, "SetAutoShutdownTime", "SetAutoShutdownTime_FW", 1 },
     {20, "SetCurrentCaptureModeType", "SetCurrentCaptureModeType_FW", 1 },
+    {20, "SetDate", "SetDate_FW", 1 },
     {20, "SetScriptMode", "SetScriptMode_FW", 1 },
     {20, "SleepTask", "SleepTask_FW", 1 },
     {20, "strcmp", "j_strcmp_FW", 0 },
@@ -1631,6 +2631,10 @@ string_sig string_sigs[] =
     {20, "GetAdChValue", "GetAdChValue_FW", 0 },
     {20, "CalcLog10", "CalcLog10_FW", 4 },
     {20, "HwOcReadICAPCounter", "GetCurrentMachineTime", 1 },
+    {20, "DisableISDriveError", "DisableISDriveError_FW", 1},
+    {20, "SetImageMode", "SetImageMode_FW", 0x01000002 },
+    {20, "GetVideoOutType", "GetVideoOutType_FW", 1},
+    {20, "GetCurrentDriveBaseSvValue", "GetCurrentDriveBaseSvValue_FW", 0x01000002 },
 
     { 1, "ExportToEventProcedure_FW", "ExportToEventProcedure", 1 },
     { 1, "AllocateMemory", "AllocateMemory", 1 },
@@ -1640,6 +2644,8 @@ string_sig string_sigs[] =
     { 1, "ExitTask", "ExitTask", 1 },
     { 1, "exmem_alloc", "ExMem.AllocCacheable", 4 },
     { 1, "exmem_free", "ExMem.FreeCacheable", 0x01000003 },
+    { 1, "exmem_ualloc", "ExMem.AllocUncacheable", 4 },
+    { 1, "exmem_ufree", "ExMem.FreeUncacheable", 0x01000003 },
     { 1, "Fclose_Fut", "Fclose_Fut", 1 },
     { 1, "Feof_Fut", "Feof_Fut", 1 },
     { 1, "Fflush_Fut", "Fflush_Fut", 1 },
@@ -1738,6 +2744,8 @@ string_sig string_sigs[] =
     { 2, "EngDrvBits", "EngDrvBits", 0x01000005 },
     { 2, "exmem_alloc", "ExMem.AllocCacheable", 4 },
     { 2, "exmem_free", "ExMem.FreeCacheable", 0x01000003 },
+    { 2, "exmem_ualloc", "ExMem.AllocUncacheable", 4 },
+    { 2, "exmem_ufree", "ExMem.FreeUncacheable", 0x01000003 },
 
     { 2, "PTM_GetCurrentItem", "PTM_GetCurrentItem", 2 }, // s5is
     { 2, "PTM_SetCurrentItem", "PTM_SetCurrentItem", 4 }, // s5is
@@ -1764,6 +2772,8 @@ string_sig string_sigs[] =
     { 3, "PT_PlaySound", "PT_PlaySound", 1 },
     { 3, "exmem_alloc", "ExMem.AllocCacheable", 4 },
     { 3, "exmem_free", "ExMem.FreeCacheable", 0x01000003 },
+    { 3, "exmem_ualloc", "ExMem.AllocUncacheable", 4 },
+    { 3, "exmem_ufree", "ExMem.FreeUncacheable", 0x01000003 },
     { 3, "GetSDProtect", "GetSDProtect", 1 },
 
     { 4, "TurnOnBackLight", "TurnOnBackLight", 1 },
@@ -1801,9 +2811,9 @@ string_sig string_sigs[] =
     { 5, "SleepTask", "SleepTask", 1 },
     { 5, "DeleteSemaphore", "DeleteSemaphore", 1 },
     { 5, "CreateCountingSemaphore", "CreateCountingSemaphore", 1 },
-    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58
-    { 5, "UpdateMBROnFlash", "MakeBootDisk", 0x01000003,                  11,   11,   11,   11,   11,   11,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
-    { 5, "MakeSDCardBootable", "MakeBootDisk", 0x01000003,                 1,    1,    1,    1,    1,    1,    8,    8,    8,    8,    8,    9,    9,    9,    9 },
+    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58   R59
+    { 5, "UpdateMBROnFlash", "MakeBootDisk", 0x01000003,                  11,   11,   11,   11,   11,   11,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 5, "MakeSDCardBootable", "MakeBootDisk", 0x01000003,                 1,    1,    1,    1,    1,    1,    8,    8,    8,    8,    8,    9,    9,    9,    9,    9 },
 
     { 5, "PTM_GetCurrentItem", "PTM_GetCurrentItem", 1 },
     { 5, "PTM_SetCurrentItem", "PTM_SetCurrentItem", 1 },
@@ -1815,85 +2825,99 @@ string_sig string_sigs[] =
     { 6, "reboot_fw_update", "FirmUpgrade.c", 0 },
 
     { 7, "CreateTaskStrictly", "PhySw", 0x01000001 },
+    { 7, "CreateTaskStrictly_alt", "FsIoNotifyTask", 0x01000001 },
     { 7, "RegisterInterruptHandler", "WdtInt", 0x01000001 },
     { 7, "LogCameraEvent", "BufAccBeep", 0x01000001 },
     { 7, "LogCameraEvent", "MyCamFunc_PlaySound_MYCAM_COVER_OPEN", 0x01000001 },
     { 7, "DebugAssert", "Console.c", 0x01000001 },
+    { 7, "exmem_assert", "Type < MAX_NUM_OF_EXMEMORY_TYPE", 0x01000001 },
 
     { 8, "WriteSDCard", "Mounter.c", 0 },
 
     // Ensure ordering in func_names is correct for dependencies here
-    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58
-    { 9, "kbd_p1_f", "task_PhySw", 0,                                      5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5 },
-    { 9, "kbd_p2_f", "task_PhySw", 0,                                      7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7 },
-    { 9, "kbd_read_keys", "kbd_p1_f", 0,                                   2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
-    { 9, "kbd_p1_f_cont", "kbd_p1_f", -1,                                  3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
-    { 9, "kbd_read_keys_r2", "kbd_read_keys", 0,                          11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11 },
-    { 9, "GetKbdState", "kbd_read_keys", 0,                                8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8 },
-    { 9, "GetKbdState", "kbd_read_keys", 0,                                9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9 },
-    { 9, "strtolx", "strtol", 0,                                           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
-    { 9, "mkdir", "MakeDirectory_Fut", 0x01000001,                        17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17 },
-    { 9, "mkdir", "MakeDirectory_Fut", 0x01000002,                        17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17 },
-    { 9, "time", "MakeDirectory_Fut", 0,                                  12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12 },
-    { 9, "stat", "_uartr_req", 0,                                          0,    0,    0,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4 },
-    { 9, "PostMessageQueue", "PostMessageQueueStrictly", 0,                3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
-    { 9, "WaitForAnyEventFlag", "WaitForAnyEventFlagStrictly", 0,          3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
-    { 9, "WaitForAllEventFlag", "WaitForAllEventFlagStrictly", 0,          3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
-    { 9, "CreateMessageQueue", "CreateMessageQueueStrictly", 0,            1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
-    { 9, "CreateRecursiveLock", "CreateRecursiveLockStrictly", 0,          1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
-    { 9, "CreateEventFlag", "CreateEventFlagStrictly", 0,                  1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
-    { 9, "_GetSystemTime", "GetSystemTime", 0,                             2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
-    { 9, "close", "Close", 0,                                              2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
-    { 9, "open", "Open", 0,                                                3,    3,    3,    3,   16,   16,   35,   35,   35,   35,   35,   35,   35,   35,   35 },
-    { 9, "open", "Open", 0,                                                3,    3,    3,   13,   16,   16,   35,   35,   35,   35,   35,   35,   35,   35,   35 },
-    { 9, "_divmod_signed_int", "PT_mod_FW", 0,                             4,    7,    7,    7,    7,    7,    6,    6,    6,    6,    6,    6,    6,    6,    6 },
-    { 9, "_divmod_signed_int", "PT_mod_FW", 0,                             0,    4,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },
-    { 9, "_divmod_signed_int", "mod_FW", 0,                                0,    0,    0,    0,    0,    0,    0,    0,    0,    4,    4,    4,    4,    4,    4 },
-    { 9, "_divmod_unsigned_int", "SetTimerAfter", 0,                      23,   23,   23,   23,   23,   23,   23,   23,   23,   23,   23,    0,    0,    0,    0 },
-    { 9, "_divmod_unsigned_int", "DispCon_ShowWhiteChart_FW", 0,           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   15,   15,   15,   15,   13 },
-    { 9, "_divmod_unsigned_int", "DispCon_ShowWhiteChart_FW", 0,           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    8,    8,    8,    0,    0 },
-    { 9, "_dflt", "CalcLog10", 0,                                          9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9 },
-    { 9, "_dfltu", "CalcLog10", 0,                                         4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4 },
-    { 9, "_dmul", "CalcLog10", 0,                                         12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12 },
-    { 9, "_dfix", "CalcLog10", 0,                                         14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14 },
-    { 9, "_dadd", "_pow", 0,                                              26,   26,   26,   26,   26,   26,   29,   29,   29,   29,   29,   29,   29,   29,   29 },
-    { 9, "_dadd", "_pow", 0,                                               1,    1,    1,    1,    1,    1,   24,   24,    1,    1,    1,    1,    1,    1,    1 }, // s100, sx230 (100c only...)
-    { 9, "_scalbn", "_log", 0,                                            19,   19,   19,   19,   19,   19,   18,   18,   18,   18,   18,   18,   18,   18,   18 },
-    { 9, "_scalbn", "_log", 0,                                             1,    1,    1,    1,    1,    1,   14,   14,    1,    1,    1,    1,    1,    1,    1 }, // s100, sx230 (100c only...)
-    { 9, "_safe_sqrt", "CalcSqrt_FW", 0,                                   0,    0,   -3,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6 },
-    { 9, "_ddiv", "ConvertApexStdToApex_FW", 0,                            0,    0,    0,   21,   21,   21,    0,    0,    0,    0,    0,    0,    0,    0,    0 },
-    { 9, "_fflt", "ConvertApexStdToApex_FW", 0,                           -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7 },
-    { 9, "_ffix", "ConvertApexStdToApex_FW", 0,                           -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4 },
-    { 9, "_fmul", "ConvertApexStdToApex_FW", 0,                           -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5 },
-    { 9, "_fdiv", "ConvertApexToApexStd_FW", 0,                           -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3 },
-    { 9, "GetSRAndDisableInterrupt", "_GetSystemTime", 0,                  9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9 },
-    { 9, "SetSR", "_GetSystemTime", 0,                                    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12 },
+    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58   R59
+    { 9, "kbd_p1_f", "task_PhySw", 0,                                      5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    5 },
+    { 9, "kbd_p2_f", "task_PhySw", 0,                                      7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7,    7 },
+    { 9, "kbd_read_keys", "kbd_p1_f", 0,                                   2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
+    { 9, "kbd_p1_f_cont", "kbd_p1_f", -1,                                  3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 9, "kbd_read_keys_r2", "kbd_read_keys", 0,                          11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11,   11 },
+    { 9, "GetKbdState", "kbd_read_keys", 0,                                8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8,    8 },
+    { 9, "GetKbdState", "kbd_read_keys", 0,                                9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9 },
+    { 9, "strtolx", "strtol", 0,                                           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 9, "mkdir", "MakeDirectory_Fut", 0x01000001,                        17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17 },
+    { 9, "mkdir", "MakeDirectory_Fut", 0x01000002,                        17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17,   17 },
+    { 9, "time", "MakeDirectory_Fut", 0,                                  12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12 },
+    { 9, "stat", "_uartr_req", 0,                                          0,    0,    0,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4 },
+    { 9, "PostMessageQueue", "PostMessageQueueStrictly", 0,                3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 9, "WaitForAnyEventFlag", "WaitForAnyEventFlagStrictly", 0,          3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 9, "WaitForAllEventFlag", "WaitForAllEventFlagStrictly", 0,          3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 9, "CreateMessageQueue", "CreateMessageQueueStrictly", 0,            1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 9, "CreateRecursiveLock", "CreateRecursiveLockStrictly", 0,          1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 9, "CreateEventFlag", "CreateEventFlagStrictly", 0,                  1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 9, "_GetSystemTime", "GetSystemTime", 0,                             2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
+    { 9, "close", "Close", 0,                                              2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
+    { 9, "open", "Open", 0,                                                3,    3,    3,    3,   16,   16,   35,   35,   35,   35,   35,   35,   35,   35,   35,   35 },
+    { 9, "open", "Open", 0,                                                3,    3,    3,   13,   16,   16,   35,   35,   35,   35,   35,   35,   35,   35,   35,   35 },
+    { 9, "_divmod_signed_int", "PT_mod_FW", 0,                             4,    7,    7,    7,    7,    7,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6 },
+    { 9, "_divmod_signed_int", "PT_mod_FW", 0,                             0,    4,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },
+    { 9, "_divmod_signed_int", "mod_FW", 0,                                0,    0,    0,    0,    0,    0,    0,    0,    0,    4,    4,    4,    4,    4,    4,    4 },
+    { 9, "_divmod_unsigned_int", "SetTimerAfter", 0,                      23,   23,   23,   23,   23,   23,   23,   23,   23,   23,   23,    0,    0,    0,    0,    0 },
+    { 9, "_divmod_unsigned_int", "DispCon_ShowWhiteChart_FW", 0,           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   15,   15,   15,   15,   13,   13 },
+    { 9, "_divmod_unsigned_int", "DispCon_ShowWhiteChart_FW", 0,           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    8,    8,    8,    0,    0,    0 },
+    { 9, "_dflt", "CalcLog10", 0,                                          9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9 },
+    { 9, "_dfltu", "CalcLog10", 0,                                         4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4,    4 },
+    { 9, "_dmul", "CalcLog10", 0,                                         12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12 },
+    { 9, "_dfix", "CalcLog10", 0,                                         14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14 },
+    { 9, "_dadd", "_pow", 0,                                              26,   26,   26,   26,   26,   26,   29,   29,   29,   29,   29,   29,   29,   29,   29,   29 },
+    { 9, "_dadd", "_pow", 0,                                               1,    1,    1,    1,    1,    1,   24,   24,    1,    1,    1,    1,    1,    1,    1,    1 }, // s100, sx230 (100c only...)
+    { 9, "_scalbn", "_log", 0,                                            19,   19,   19,   19,   19,   19,   18,   18,   18,   18,   18,   18,   18,   18,   18,   18 },
+    { 9, "_scalbn", "_log", 0,                                             1,    1,    1,    1,    1,    1,   14,   14,    1,    1,    1,    1,    1,    1,    1,    1 }, // s100, sx230 (100c only...)
+    { 9, "_safe_sqrt", "CalcSqrt_FW", 0,                                   0,    0,   -3,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6,   -6 },
+    { 9, "_ddiv", "ConvertApexStdToApex_FW", 0,                            0,    0,    0,   21,   21,   21,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },
+    { 9, "_fflt", "ConvertApexStdToApex_FW", 0,                           -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7,   -7 },
+    { 9, "_ffix", "ConvertApexStdToApex_FW", 0,                           -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4,   -4 },
+    { 9, "_fmul", "ConvertApexStdToApex_FW", 0,                           -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5,   -5 },
+    { 9, "_fdiv", "ConvertApexToApexStd_FW", 0,                           -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3,   -3 },
+    { 9, "GetSRAndDisableInterrupt", "_GetSystemTime", 0,                  9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9,    9 },
+    { 9, "SetSR", "_GetSystemTime", 0,                                    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12,   12 },
+    { 9, "MoveOpticalZoomAt", "PT_MoveOpticalZoomAt_FW", 0,                1,    2,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 9, "MoveOpticalZoomAt", "PT_MoveOpticalZoomAt_FW", 0,                1,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 9, "MoveOpticalZoomAt", "SS.MoveOpticalZoomAt_FW", 0,                0,    0,    0,    0,    0,    0,    0,    0,    0,    3,    5,    5,    5,    5,    5,    5 },
+    { 9, "SetVideoOutType", "SetVideoOutType_FW", 0,                       1,    1,    1,    1,    1,    1,    1,    1,    1,    2,    2,    2,    2,    2,    2,    2 },
+    { 9, "cache_flush_range", "AllocateUncacheableMemory", 0,              0,    0,   12,   12,   12,   12,   12,   12,   12,   12,   12,    0,    0,    0,    0,    0 },
+    { 9, "cache_clean_range", "AllocateUncacheableMemory", 0,              9,    9,    9,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 },
+    { 9, "dcache_flush_range", "AllocateUncacheableMemory", 0,             0,    0,    0,    0,    0,    0,    0,    0,    0,    0,   11,   11,   11,   11,   11,   11 },
+    { 9, "bzero", "exec_FW", 0,                                            6,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6,    6 },
 
-    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58
+    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58   R59
 //    { 11, "DebugAssert", "\nAssert: File %s Line %d\n", 0,                 5,    5,    5,    5,    5,    5,    5,    5,    5,    5,    1,    6 },
-    { 11, "err_init_task", "\n-- %s() error in init_task() --", 0,         2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
-    { 11, "set_control_event", "Button:0x%08X:%s", 0x01000001,            14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14 },
-    { 11, "set_control_event", "Button:0x%08X:%s", 0xf1000001,            15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15 },
-    { 11, "set_control_event", "Button:0x%08X:%s", 0x01000001,            19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19 },
-    { 11, "set_control_event", "Button:0x%08X:%s", 0x01000001,            20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20 },
-    { 11, "_log", (char*)log_test, 0x01000001,                             1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
-    { 11, "_uartr_req", "A/uartr.req", 0,                                  3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 11, "err_init_task", "\n-- %s() error in init_task() --", 0,         2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2,    2 },
+    { 11, "set_control_event", "Button:0x%08X:%s", 0x01000001,            14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14,   14 },
+    { 11, "set_control_event", "Button:0x%08X:%s", 0xf1000001,            15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15,   15 },
+    { 11, "set_control_event", "Button:0x%08X:%s", 0x01000001,            19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19,   19 },
+    { 11, "set_control_event", "Button:0x%08X:%s", 0x01000001,            20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20,   20 },
+    { 11, "_log", (char*)log_test, 0x01000001,                             1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 11, "_uartr_req", "A/uartr.req", 0,                                  3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3,    3 },
+    { 11, "MenuIn", "MenuIn", 0,                                           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 11, "MenuOut", "MenuOut", 0,                                         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 11, "MenuIn", "SSAPI::MenuIn", 0,                                    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
+    { 11, "MenuOut", "SSAPI::MenuOut", 0,                                  1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },
 
-    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58
-    { 12, "DeleteFile_Fut", "DeleteFile_Fut", 1,                        0x38, 0x38, 0x4C, 0x4C, 0x4C, 0x54, 0x54, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-    { 12, "AllocateUncacheableMemory", "AllocateUncacheableMemory", 1,  0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x34, 0x34, 0x34, 0x4C, 0x4C, 0x4C, 0x4C, 0x54, 0x54, 0x54 },
-    { 12, "FreeUncacheableMemory", "FreeUncacheableMemory", 1,          0x30, 0x30, 0x30, 0x30, 0x30, 0x38, 0x38, 0x38, 0x50, 0x50, 0x50, 0x50, 0x58, 0x58, 0x58 },
-    { 12, "free", "free", 1,                                            0x28, 0x28, 0x28, 0x28, 0x28, 0x30, 0x30, 0x30, 0x48, 0x48, 0x48, 0x48, 0x50, 0x50, 0x50 },
-    { 12, "malloc", "malloc", 0x01000003,                               0x24, 0x24, 0x24, 0x24, 0x24, 0x2C, 0x2C, 0x2C, 0x44, 0x44, 0x44, 0x44, 0x4c, 0x4c, 0x4c }, // uses 'malloc_strictly'
-    { 12, "TakeSemaphore", "TakeSemaphore", 1,                          0x14, 0x14, 0x14, 0x14, 0x14, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C },
-    { 12, "GiveSemaphore", "GiveSemaphore", 1,                          0x18, 0x18, 0x18, 0x18, 0x18, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 },
-    { 12, "_log10", "_log10", 0x01000006,                              0x278,0x280,0x280,0x284,0x294,0x2FC,0x2FC,0x31C,0x354,0x35C,0x35C,0x35C,0x388,0x38c,0x390 }, // uses 'CalcLog10'
-    { 12, "_log10", "_log10", 0x01000006,                              0x000,0x278,0x27C,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x38c,0x000,0x000 },
-    { 12, "_log10", "_log10", 0x01000006,                              0x000,0x000,0x2C4,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000 },
-    { 12, "ClearEventFlag", "ClearEventFlag", 1,                        0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04 },
-    { 12, "SetEventFlag", "SetEventFlag", 1,                            0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08 },
-    { 12, "WaitForAnyEventFlag", "WaitForAnyEventFlag", 1,              0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c },
-    { 12, "WaitForAllEventFlag", "WaitForAllEventFlag", 1,              0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10 },
+    //                                                                   R20   R23   R31   R39   R43   R45   R47   R49   R50   R51   R52   R54   R55   R57   R58   R59
+    { 12, "DeleteFile_Fut", "DeleteFile_Fut", 1,                        0x38, 0x38, 0x4C, 0x4C, 0x4C, 0x54, 0x54, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+    { 12, "AllocateUncacheableMemory", "AllocateUncacheableMemory", 1,  0x2C, 0x2C, 0x2C, 0x2C, 0x2C, 0x34, 0x34, 0x34, 0x4C, 0x4C, 0x4C, 0x4C, 0x54, 0x54, 0x54, 0x54 },
+    { 12, "FreeUncacheableMemory", "FreeUncacheableMemory", 1,          0x30, 0x30, 0x30, 0x30, 0x30, 0x38, 0x38, 0x38, 0x50, 0x50, 0x50, 0x50, 0x58, 0x58, 0x58, 0x58 },
+    { 12, "free", "free", 1,                                            0x28, 0x28, 0x28, 0x28, 0x28, 0x30, 0x30, 0x30, 0x48, 0x48, 0x48, 0x48, 0x50, 0x50, 0x50, 0x50 },
+    { 12, "malloc", "malloc", 0x01000003,                               0x24, 0x24, 0x24, 0x24, 0x24, 0x2C, 0x2C, 0x2C, 0x44, 0x44, 0x44, 0x44, 0x4c, 0x4c, 0x4c, 0x4c }, // uses 'malloc_strictly'
+    { 12, "TakeSemaphore", "TakeSemaphore", 1,                          0x14, 0x14, 0x14, 0x14, 0x14, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C },
+    { 12, "GiveSemaphore", "GiveSemaphore", 1,                          0x18, 0x18, 0x18, 0x18, 0x18, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 },
+    { 12, "_log10", "_log10", 0x01000006,                              0x278,0x280,0x280,0x284,0x294,0x2FC,0x2FC,0x31C,0x354,0x35C,0x35C,0x35C,0x388,0x38c,0x390,0x394 }, // uses 'CalcLog10'
+    { 12, "_log10", "_log10", 0x01000006,                              0x000,0x278,0x27C,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x38c,0x000,0x000,0x000 },
+    { 12, "_log10", "_log10", 0x01000006,                              0x000,0x000,0x2C4,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000,0x000 },
+    { 12, "ClearEventFlag", "ClearEventFlag", 1,                        0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04 },
+    { 12, "SetEventFlag", "SetEventFlag", 1,                            0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08 },
+    { 12, "WaitForAnyEventFlag", "WaitForAnyEventFlag", 1,              0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c },
+    { 12, "WaitForAllEventFlag", "WaitForAllEventFlag", 1,              0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10 },
 
     { 13, "strftime", "Sunday", 1 },
 
@@ -1906,8 +2930,13 @@ string_sig string_sigs[] =
     { 15, "realloc", "fatal error - scanner input buffer overflow", 0x01000001 },
     { 15, "CreateBinarySemaphore", "SdPower.c", 0x01000001 },
     { 15, "get_resource_pointer", "Not found icon resource.\r\n", 0x01000001 },
-    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58
-    { 15, "SetHPTimerAfterTimeout", "FrameRateGenerator.c", 0x01000001,          0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0001, 0x0007, 0x0007, 0x0007, 0x0007 },
+    { 15, "get_self_task_id", "ASSERT!! %s Line %d\n", 0x01000001 },
+    { 15, "get_current_exp", "Exp  Av %d, Tv %d, Gain %d\r", 0x01000001 },
+    { 15, "EnableDispatch_low", "\n%s Task was Suspended.\n", 0x01000001 },
+    //{ 15, "DoMovieFrameCapture", "DoMovieFrameCapture executed.",  0x01000001 },
+    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58     R59
+    { 15, "SetHPTimerAfterTimeout", "FrameRateGenerator.c", 0x01000001,          0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007, 0x0001, 0x0007, 0x0007, 0x0007, 0x0007, 0x0007 },
+    { 15, "get_task_properties", "Task ID: %d\n", 0x01000001,                    0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003, 0x0003 }, // string not unique!
 
     { 16, "DeleteDirectory_Fut", (char*)DeleteDirectory_Fut_test, 0x01000001 },
     { 16, "MakeDirectory_Fut", (char*)MakeDirectory_Fut_test, 0x01000001 },
@@ -1917,91 +2946,95 @@ string_sig string_sigs[] =
     { 17, "ScreenUnlock", "StartRecModeMenu", 0 },
 
     // Ensure ordering in func_names is correct for dependencies here
-    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58
-    { 19, "GetSemaphoreValue", "GiveSemaphore", 0,                               0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x0014, 0x0014, 0x0014, 0x0014 },
-    { 19, "GetSemaphoreValue", "GiveSemaphore", 0,                               0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x000f, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "CreateMessageQueueStrictly", "CreateTaskStrictly", 0,                 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d },
-    { 19, "CreateMessageQueueStrictly", "CreateTaskStrictly", 0,                 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e },
-    { 19, "CreateEventFlagStrictly", "CreateMessageQueueStrictly", 0,            0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
-    { 19, "CreateEventFlagStrictly", "CreateMessageQueueStrictly", 0,            0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
-    { 19, "CreateBinarySemaphoreStrictly", "CreateEventFlagStrictly", 0,         0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
-    { 19, "CreateBinarySemaphoreStrictly", "CreateEventFlagStrictly", 0,         0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
-    { 19, "CreateCountingSemaphoreStrictly", "CreateBinarySemaphoreStrictly", 0, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
-    { 19, "CreateCountingSemaphoreStrictly", "CreateBinarySemaphoreStrictly", 0, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
-    { 19, "CreateRecursiveLockStrictly", "CreateCountingSemaphoreStrictly", 0,   0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
-    { 19, "CreateRecursiveLockStrictly", "CreateCountingSemaphoreStrictly", 0,   0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
-    { 19, "TakeSemaphoreStrictly", "CreateRecursiveLockStrictly", 0,             0x0001, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 }, // name made up
-    { 19, "TakeSemaphoreStrictly", "CreateRecursiveLockStrictly", 0,             0x0001, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a }, // name made up
-    { 19, "ReceiveMessageQueueStrictly", "TakeSemaphoreStrictly", 0,             0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x0015 }, // name made up
-    { 19, "PostMessageQueueStrictly", "ReceiveMessageQueueStrictly", 0,          0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
-    { 19, "WaitForAnyEventFlagStrictly", "PostMessageQueueStrictly", 0,          0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
-    { 19, "WaitForAllEventFlagStrictly", "WaitForAnyEventFlagStrictly", 0,       0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
-    { 19, "AcquireRecursiveLockStrictly", "WaitForAllEventFlagStrictly", 0,      0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
-                                                                                                                                                                                               
-    { 19, "PostMessageQueue", "TryReceiveMessageQueue", 0,                       0x091f, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001 },
-    { 19, "DeleteMessageQueue", "CreateMessageQueue", 0,                         0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x002c, 0x002c, 0x002c, 0x002c },
-    { 19, "DeleteMessageQueue", "CreateMessageQueue", 0,                         0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0027, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "ReceiveMessageQueue", "DeleteMessageQueue", 0,                        0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1029, 0x1029, 0x1029, 0x1028 },
-    { 19, "ReceiveMessageQueue", "DeleteMessageQueue", 0,                        0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x1025, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "TryReceiveMessageQueue", "ReceiveMessageQueue", 0,                    0x002b, 0x002b, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x073d, 0x073d, 0x073d, 0x073d },
-    { 19, "TryReceiveMessageQueue", "ReceiveMessageQueue", 0,                    0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x183e, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "TryPostMessageQueue", "PostMessageQueue", 0,                          0x0027, 0x0027, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x0031, 0x0031, 0x0031, 0x0031 },
-    { 19, "TryPostMessageQueue", "PostMessageQueue", 0,                          0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x1031, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "GetNumberOfPostedMessages", "TryPostMessageQueue", 0,                 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0015, 0x0015, 0x0015, 0x0015 },
-    { 19, "DeleteRecursiveLock", "CreateRecursiveLock", 0,                       0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0016, 0x0016, 0x0016, 0x0016 },
-    { 19, "DeleteRecursiveLock", "CreateRecursiveLock", 0,                       0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0016, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "AcquireRecursiveLock", "DeleteRecursiveLock", 0,                      0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x001a, 0x001a, 0x001a, 0x001a },
-    { 19, "AcquireRecursiveLock", "DeleteRecursiveLock", 0,                      0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0015, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "ReleaseRecursiveLock", "AcquireRecursiveLock", 0,                     0x0041, 0x0041, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x085a, 0x085a, 0x085a, 0x085a },
-    { 19, "ReleaseRecursiveLock", "AcquireRecursiveLock", 0,                     0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x004d, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "GetEventFlagValue", "ClearEventFlag", 0,                              0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x0013, 0x0013, 0x0013, 0x0013 },
-    { 19, "DeleteEventFlag", "CreateEventFlag", 0,                               0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0018, 0x0018, 0x0018, 0x0018 },
-    { 19, "DeleteEventFlag", "CreateEventFlag", 0,                               0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0018, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "CheckAnyEventFlag", "DeleteEventFlag", 0,                             0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x001a, 0x001a, 0x001a, 0x001a },
-    { 19, "CheckAnyEventFlag", "DeleteEventFlag", 0,                             0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0015, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "CheckAllEventFlag", "CheckAnyEventFlag", 0,                           0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0017, 0x0017, 0x0017, 0x0017 },
-    { 19, "TryTakeSemaphore", "DeleteSemaphore", 0,                              0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x001d, 0x001d, 0x001d, 0x001d },
-    { 19, "TryTakeSemaphore", "DeleteSemaphore", 0,                              0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0018, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "SetTimerAfter", "_GetSystemTime", 0,                                  0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x0054, 0x0054 },
-    { 19, "SetTimerWhen", "SetTimerAfter", 0,                                    0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x001b, 0x001b, 0x001b, 0x001b },
-    { 19, "SetTimerWhen", "SetTimerAfter", 0,                                    0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x001b, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "CancelTimer", "SetTimerWhen", 0,                                      0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019 },
-    { 19, "CancelHPTimer", "SetHPTimerAfterTimeout", 0,                          0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022 },
-    { 19, "SetHPTimerAfterNow", "SetHPTimerAfterTimeout", 0,                    -0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020 },
-    //{ 19, "UnregisterInterruptHandler", "RegisterInterruptHandler", 0,         0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0013, 0x0013, 0x0013, 0x0013 }, // unreliable on r52+
-    //{ 19, "GetSRAndDisableInterrupt", "UnregisterInterruptHandler", 0,         0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x004c, 0x004c, 0x004c, 0x004c }, // unreliable on r52+
-    //{ 19, "SetSR", "UnregisterInterruptHandler", 0,                            0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x104d, 0x104d, 0x104d, 0x104d }, // unreliable on r52+
-    { 19, "EnableInterrupt", "UnregisterInterruptHandler", 0,                    0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x1755, 0x1755, 0x1755, 0x1755 },
-    { 19, "EnableInterrupt", "SetSR", 0,                                         0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x1708, 0x1708, 0x1708, 0x1708, 0x1708 },
-    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58
-    { 19, "GetDrive_TotalClusters", "GetDrive_ClusterSize", 0,                   0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x000d, 0x000c, 0x000c, 0x000c, 0x000c, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001 },
-    { 19, "GetDrive_FreeClusters", "GetDrive_TotalClusters", 0,                  0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x000b, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a, 0x000b, 0x000b, 0x000b, 0x000b },
-    { 19, "GetDrive_FreeClusters", "GetDrive_TotalClusters", 0,                  0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x000b, 0x0001, 0x0001, 0x0001, 0x0001 }, // alt r52 (sx510)
-                                                                                                                                                                                               
-    { 19, "time", "GetTimeOfSystem_FW", 0,                                       0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001,-0x002c,-0x002d,-0x0c2d,-0x0c2d,-0x0c2d },
-    { 19, "time", "GetTimeOfSystem_FW", 0,                                       0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001,-0x002d, 0x0001, 0x0001, 0x0001, 0x0001 }, // alt r52 (sx510)
-                                                                                                                                                                                               
-    { 19, "CalcLog10", "CalcLog10_FW", 0,                                       -0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f },
-    { 19, "_dfixu", "_dfix", 0,                                                  0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c },
-    { 19, "_dsub", "_sqrt", 0,                                                   0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d },
-    { 19, "_drsb", "_sqrt", 0,                                                  -0x1114,-0x1114,-0x1114,-0x1114,-0x1114,-0x1114,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106 },
-    { 19, "_dcmp_reverse", "_dmul", 0,                                           0xf000, 0xf000, 0x33fc, 0x33fc, 0x33fc, 0x33fc, 0x43e2, 0x43e2, 0x43e2, 0x43e2, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 }, // has to come first
-    { 19, "_dcmp_reverse", "_dmul", 0,                                           0x2e80, 0x2e80, 0x3580, 0x3580, 0x3580, 0x3580, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474 },
-    { 19, "_dcmp", "_dfltu", 0,                                                  0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003 },
-    { 19, "_safe_sqrt", "_dadd", 0,                                              0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13 },
-    { 19, "_safe_sqrt", "_log", 0,                                              -0x132f,-0x132f,-0x1695,-0x132f,-0x132f,-0x132f, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "_safe_sqrt", "_log", 0,                                               0xf000, 0xf000,-0x132f,-0x1695, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
-    { 19, "_ddiv", "_dadd", 0,                                                   0x10aa, 0x10aa, 0x10aa, 0x10aa, 0x10aa, 0x10c3, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6 },
-    { 19, "_ffixu", "_ffix", 0,                                                  0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d },
-    { 19, "_ffltu", "_fflt", 0,                                                  0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d },
-    { 19, "_f2d", "_fdiv", 0,                                                    0xf000,-0x301f,-0x301f,-0x301f,-0x301f,-0x301f,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061 },
-    { 19, "_f2d", "_fdiv", 0,                                                   -0x306b,-0x306b,-0x306b,-0x306b,-0x306b,-0x306b, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58     R59
+    { 19, "GetSemaphoreValue", "GiveSemaphore", 0,                               0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014 },
+    { 19, "GetSemaphoreValue", "GiveSemaphore", 0,                               0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x000f, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "CreateMessageQueueStrictly", "CreateTaskStrictly", 0,                 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d },
+    { 19, "CreateMessageQueueStrictly", "CreateTaskStrictly", 0,                 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000d, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e },
+    { 19, "CreateEventFlagStrictly", "CreateMessageQueueStrictly", 0,            0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
+    { 19, "CreateEventFlagStrictly", "CreateMessageQueueStrictly", 0,            0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
+    { 19, "CreateBinarySemaphoreStrictly", "CreateEventFlagStrictly", 0,         0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
+    { 19, "CreateBinarySemaphoreStrictly", "CreateEventFlagStrictly", 0,         0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
+    { 19, "CreateCountingSemaphoreStrictly", "CreateBinarySemaphoreStrictly", 0, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
+    { 19, "CreateCountingSemaphoreStrictly", "CreateBinarySemaphoreStrictly", 0, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
+    { 19, "CreateRecursiveLockStrictly", "CreateCountingSemaphoreStrictly", 0,   0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009 },
+    { 19, "CreateRecursiveLockStrictly", "CreateCountingSemaphoreStrictly", 0,   0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a },
+    { 19, "TakeSemaphoreStrictly", "CreateRecursiveLockStrictly", 0,             0x0001, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0xf000, 0xf000 }, // name made up
+    { 19, "TakeSemaphoreStrictly", "CreateRecursiveLockStrictly", 0,             0x0001, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x000a, 0x000a, 0x000a, 0x000a, 0x0014, 0x0014 }, // name made up
+    { 19, "ReceiveMessageQueueStrictly", "TakeSemaphoreStrictly", 0,             0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
+    { 19, "PostMessageQueueStrictly", "ReceiveMessageQueueStrictly", 0,          0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
+    { 19, "WaitForAnyEventFlagStrictly", "PostMessageQueueStrictly", 0,          0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
+    { 19, "WaitForAllEventFlagStrictly", "WaitForAnyEventFlagStrictly", 0,       0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x0510 }, // name made up
+    { 19, "AcquireRecursiveLockStrictly", "WaitForAllEventFlagStrictly", 0,      0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b }, // name made up
+
+    { 19, "PostMessageQueue", "TryReceiveMessageQueue", 0,                       0x091f, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001 },
+    { 19, "DeleteMessageQueue", "CreateMessageQueue", 0,                         0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x1021, 0x002c, 0x002c, 0x002c, 0x002c, 0x002c },
+    { 19, "DeleteMessageQueue", "CreateMessageQueue", 0,                         0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0027, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "ReceiveMessageQueue", "DeleteMessageQueue", 0,                        0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1024, 0x1029, 0x1029, 0x1029, 0x1028, 0x1028 },
+    { 19, "ReceiveMessageQueue", "DeleteMessageQueue", 0,                        0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x1025, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "TryReceiveMessageQueue", "ReceiveMessageQueue", 0,                    0x002b, 0x002b, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x1032, 0x073d, 0x073d, 0x073d, 0x073d, 0x073d },
+    { 19, "TryReceiveMessageQueue", "ReceiveMessageQueue", 0,                    0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x183e, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "TryPostMessageQueue", "PostMessageQueue", 0,                          0x0027, 0x0027, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x102e, 0x0031, 0x0031, 0x0031, 0x0031, 0x0031 },
+    { 19, "TryPostMessageQueue", "PostMessageQueue", 0,                          0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x1031, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "GetNumberOfPostedMessages", "TryPostMessageQueue", 0,                 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015 },
+    { 19, "DeleteRecursiveLock", "CreateRecursiveLock", 0,                       0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016 },
+    { 19, "DeleteRecursiveLock", "CreateRecursiveLock", 0,                       0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0016, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "AcquireRecursiveLock", "DeleteRecursiveLock", 0,                      0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x001a, 0x001a, 0x001a, 0x001a, 0x001a },
+    { 19, "AcquireRecursiveLock", "DeleteRecursiveLock", 0,                      0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0015, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "ReleaseRecursiveLock", "AcquireRecursiveLock", 0,                     0x0041, 0x0041, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x0048, 0x085a, 0x085a, 0x085a, 0x0658, 0x095b },
+    { 19, "ReleaseRecursiveLock", "AcquireRecursiveLock", 0,                     0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x004d, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "GetEventFlagValue", "ClearEventFlag", 0,                              0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x000e, 0x0013, 0x0013, 0x0013, 0x0013, 0x0013 },
+    { 19, "DeleteEventFlag", "CreateEventFlag", 0,                               0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0018, 0x0018, 0x0018, 0x0018, 0x0018 },
+    { 19, "DeleteEventFlag", "CreateEventFlag", 0,                               0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0018, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "CheckAnyEventFlag", "DeleteEventFlag", 0,                             0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x001a, 0x001a, 0x001a, 0x001a, 0x001a },
+    { 19, "CheckAnyEventFlag", "DeleteEventFlag", 0,                             0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0015, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "CheckAllEventFlag", "CheckAnyEventFlag", 0,                           0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0012, 0x0017, 0x0017, 0x0017, 0x0017, 0x0017 },
+    { 19, "TryTakeSemaphore", "DeleteSemaphore", 0,                              0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x0016, 0x001d, 0x001d, 0x001d, 0x001d, 0x001d },
+    { 19, "TryTakeSemaphore", "DeleteSemaphore", 0,                              0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0018, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "SetTimerAfter", "_GetSystemTime", 0,                                  0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x004e, 0x0054, 0x0054, 0x005d },
+    { 19, "SetTimerWhen", "SetTimerAfter", 0,                                    0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x0020, 0x001b, 0x001b, 0x001b, 0x001b, 0x001b },
+    { 19, "SetTimerWhen", "SetTimerAfter", 0,                                    0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x001b, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "CancelTimer", "SetTimerWhen", 0,                                      0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019, 0x0019 },
+    { 19, "CancelHPTimer", "SetHPTimerAfterTimeout", 0,                          0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022, 0x0022 },
+    { 19, "SetHPTimerAfterNow", "SetHPTimerAfterTimeout", 0,                    -0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020,-0x0020 },
+    //{ 19, "UnregisterInterruptHandler", "RegisterInterruptHandler", 0,         0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0013, 0x0013, 0x0013, 0x0013, 0x0013 }, // unreliable on r52+
+    //{ 19, "GetSRAndDisableInterrupt", "UnregisterInterruptHandler", 0,         0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x0006, 0x004c, 0x004c, 0x004c, 0x004c, 0x004c }, // unreliable on r52+
+    //{ 19, "SetSR", "UnregisterInterruptHandler", 0,                            0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x1007, 0x104d, 0x104d, 0x104d, 0x104d, 0x104d }, // unreliable on r52+
+    { 19, "EnableInterrupt", "UnregisterInterruptHandler", 0,                    0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x170f, 0x1755, 0x1755, 0x1755, 0x1755, 0x1755 },
+    { 19, "EnableInterrupt", "SetSR", 0,                                         0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x1708, 0x1708, 0x1708, 0x1708, 0x1708, 0x1708 },
+    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58     R59
+    { 19, "GetDrive_TotalClusters", "GetDrive_ClusterSize", 0,                   0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x000d, 0x000c, 0x000c, 0x000c, 0x000c, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001 },
+    { 19, "GetDrive_FreeClusters", "GetDrive_TotalClusters", 0,                  0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x000b, 0x000a, 0x000a, 0x000a, 0x000a, 0x000a, 0x000b, 0x000b, 0x000b, 0x000b, 0x000b },
+    { 19, "GetDrive_FreeClusters", "GetDrive_TotalClusters", 0,                  0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x000b, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001 }, // alt r52 (sx510)
+
+    { 19, "time", "GetTimeOfSystem_FW", 0,                                       0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001,-0x002c,-0x002d,-0x0c2d,-0x0c2d,-0x0c2d,-0x0e2d },
+    { 19, "time", "GetTimeOfSystem_FW", 0,                                       0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001, 0x0001,-0x002d, 0x0001, 0x0001,-0x0b2d, 0x0001, 0x0001 }, // alt r52 (sx510), r57 (ixus275)
+    { 19, "IsInvalidTime", "GetValidSystemCalender", 0,                          0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008, 0x4008 },
+    { 19, "PauseTimeOfSystem", "GetValidSystemCalender", 0,                      0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e, 0x400e },
+    { 19, "ResumeTimeOfSystem", "GetValidSystemCalender", 0,                     0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012, 0x4012 },
+
+    { 19, "CalcLog10", "CalcLog10_FW", 0,                                       -0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f,-0x100f },
+    { 19, "_dfixu", "_dfix", 0,                                                  0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c, 0x1f2c },
+    { 19, "_dsub", "_sqrt", 0,                                                   0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d, 0x165d },
+    { 19, "_drsb", "_sqrt", 0,                                                  -0x1114,-0x1114,-0x1114,-0x1114,-0x1114,-0x1114,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106,-0x1106 },
+    { 19, "_dcmp_reverse", "_dmul", 0,                                           0xf000, 0xf000, 0x33fc, 0x33fc, 0x33fc, 0x33fc, 0x43e2, 0x43e2, 0x43e2, 0x43e2, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 }, // has to come first
+    { 19, "_dcmp_reverse", "_dmul", 0,                                           0x2e80, 0x2e80, 0x3580, 0x3580, 0x3580, 0x3580, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474, 0x3474 },
+    { 19, "_dcmp", "_dfltu", 0,                                                  0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003, 0x1003 },
+    { 19, "_safe_sqrt", "_dadd", 0,                                              0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13,-0x1d13 },
+    { 19, "_safe_sqrt", "_log", 0,                                              -0x132f,-0x132f,-0x1695,-0x132f,-0x132f,-0x132f, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "_safe_sqrt", "_log", 0,                                               0xf000, 0xf000,-0x132f,-0x1695, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
+    { 19, "_ddiv", "_dadd", 0,                                                   0x10aa, 0x10aa, 0x10aa, 0x10aa, 0x10aa, 0x10c3, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6, 0x10b6 },
+    { 19, "_ffixu", "_ffix", 0,                                                  0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d, 0x311d },
+    { 19, "_ffltu", "_fflt", 0,                                                  0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d, 0x400d },
+    { 19, "_f2d", "_fdiv", 0,                                                    0xf000,-0x301f,-0x301f,-0x301f,-0x301f,-0x301f,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061,-0x3061 },
+    { 19, "_f2d", "_fdiv", 0,                                                   -0x306b,-0x306b,-0x306b,-0x306b,-0x306b,-0x306b, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000 },
 
     { 21, "add_ptp_handler", (char*)find_add_ptp_handler, 0 },
     { 21, "apex2us", (char*)find_apex2us, 0 },
     { 21, "mkdir", (char*)find_mkdir, 0 },
     { 21, "_pow", (char*)find_pow, 0 },
     { 21, "rand", (char*)find_rand, 0 },
+    { 21, "get_ptp_file_buf", (char*)find_get_ptp_file_buf, 0 },
 
     { 22, "closedir", (char*)find_closedir, 0 },
     { 22, "PT_PlaySound", (char*)find_PT_PlaySound, 0 },
@@ -2021,12 +3054,53 @@ string_sig string_sigs[] =
     { 22, "malloc_strictly", (char*)find_malloc_strictly, 0 },
     { 22, "SetHPTimerAfterTimeout", (char*)find_sethptimeraftertimeout, 0},
     { 22, "GetCurrentMachineTime", (char*)find_getcurrentmachinetime, 0},
+    { 22, "get_self_task_errno_pointer", (char*)find_get_self_task_errno_pointer, 0},
+    { 22, "get_nd_value", (char*)find_get_nd_value, 0},
+    { 22, "get_current_nd_value", (char*)find_get_current_nd_value, 0},
+    { 22, "get_current_deltasv", (char*)find_get_current_deltasv, 0},
+    { 22, "GetBaseSv", (char*)find_GetBaseSv, 0},
+    { 22, "DoMovieFrameCapture", (char*)find_DoMovieFrameCapture, 0},
+    { 22, "get_ptp_buf_size", (char*)find_get_ptp_buf_size, 0},
+    { 22, "Remove", (char*)find_Remove, 0},
+    { 22, "EnableDispatch", (char*)find_dispatch_funcs, 0},
+    { 22, "DisableDispatch", (char*)find_dispatch_funcs, 1},
+    { 22, "GetTimeFromRTC", (char*)find_GetTimeFromRTC_and_more, 0},
+    { 22, "GetValidSystemCalender", (char*)find_GetTimeFromRTC_and_more, 1},
+    { 22, "SetValidSystemCalender", (char*)find_GetTimeFromRTC_and_more, 2},
+    { 22, "cache_flush_and_enable", (char*)find_arm_cache_funcs, 0},
+    { 22, "cache_clean_flush_and_disable", (char*)find_arm_cache_funcs, 1},
+    { 22, "cache_flush_range", (char*)find_arm_cache_funcs, 2},
+    { 22, "cache_clean_flush_range", (char*)find_arm_cache_funcs, 3},
+    { 22, "cache_clean_range", (char*)find_arm_cache_funcs, 4},
+    { 22, "icache_flush_and_enable", (char*)find_arm_cache_funcs2, 0},
+    { 22, "icache_disable_and_flush", (char*)find_arm_cache_funcs2, 1},
+    { 22, "dcache_flush_and_enable", (char*)find_arm_cache_funcs2, 2},
+    { 22, "dcache_clean_flush_and_disable", (char*)find_arm_cache_funcs2, 3},
+    { 22, "dcache_clean_range", (char*)find_arm_cache_funcs2, 4},
+    { 22, "dcache_clean_flush_range", (char*)find_arm_cache_funcs2, 5},
+    { 22, "icache_flush_range", (char*)find_arm_cache_funcs2, 6},
+    { 22, "IsWirelessConnect", (char*)find_IsWirelessConnect, 0},
 
-    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58
-    { 23, "UnregisterInterruptHandler", "HeadInterrupt1", 76,                    1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1 },
+    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58     R59
+    { 23, "UnregisterInterruptHandler", "HeadInterrupt1", 76,                    1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1 },
+    { 23, "get_string_by_id", "NoError", 16,                                    99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     -2 },
+    { 23, "EnableHDMIPower", "HDMIConnectCnt", 9,                               99,     99,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,},
+    { 23, "DisableHDMIPower", "HDMIConnectCnt", 9,                              99,     99,      3,      3,      3,      3,      3,      3,      3,      3,      3,      3,      3,      3,      3,      3,},
+    { 23, "get_nd_value", "IrisSpecification.c", 25,                            -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,},
+    { 23, "GetUsableAvRange", "[AE]Prog Line Error!\n", 20,                      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,},
+    { 23, "ImagerActivate", "Fail ImagerActivate(ErrorCode:%x)\r", 7,           -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,}, // two functions satisfy this, either will work for us
+    { 23, "DisableDispatch_low", "data abort", 7,                                0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,},
+    { 23, "GetCurrentDriveBaseSvValue", "KeepPreviousExposureWithProgress", 5,   2,      2,      2,      2,      2,      2,      2,     99,     99,     99,     99,     99,     99,     99,     99,     99,},
+    { 23, "cameracon_set_state", "AC:PB2Rec", 5,                                 1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1 },
+    { 23, "cameracon_get_state", "ex:PB", 5,                                    99,     99,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1 },
+    { 23, "cameracon_get_state", "exchange:PB", 5,                              99,     99,     -1,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99,     99 }, // a1000 uses this string
+    { 23, "dry_memzero", "pErrorAdr = 0x%lX : %02X\n\n", 6,                      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1,      1 },
+    { 23, "dry_memcpy", "ClassRequest, bRequest=%#02x\r\n", 4,                  -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1 },
 
-    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58
-    { 24, "get_string_by_id", "StringID[%d] is not installed!!\n", 64,           0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0000, 0x0000, 0x0000 },
+    //                                                                           R20     R23     R31     R39     R43     R45     R47     R49     R50     R51     R52     R54     R55     R57     R58     R59
+    { 24, "get_string_by_id", "StringID[%d] is not installed!!\n", 64,           0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0x0000, 0x0000, 0x0000, 0xf000 },
+
+    { 25, "", "", 0 },
 
     { 0, 0, 0, 0 }
 };
@@ -2065,6 +3139,7 @@ int dryos_offset(firmware *fw, string_sig *sig)
     case 55:    return sig->dryos55_offset;
     case 57:    return sig->dryos57_offset;
     case 58:    return sig->dryos58_offset;
+    case 59:    return sig->dryos59_offset;
     }
     return 0;
 }
@@ -2360,7 +3435,7 @@ int match_strsig5(firmware *fw, string_sig *sig, int j)
 
 // Sig pattern:
 //    Function immediately preceeding string
-int match_strsig6(firmware *fw, string_sig *sig, int j)
+int match_strsig6(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     int j1 = find_inst_rev(fw, isSTMFD_LR, j-1, j-1);
     if (j1 > 0)
@@ -2410,13 +3485,15 @@ int match_strsig7(firmware *fw, string_sig *sig, int j)
 // Sig pattern:
 //      Special case for WriteSDCard
 int ofst;
-int match_strsig8(firmware *fw, string_sig *sig, int j)
+int match_strsig8(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     int j1;
+    uint32_t u1;
     for (j1=j-2; j1<j+8; j1++)
     {
         uint32_t fadr = idx2adr(fw,j1);
-        if (fwval(fw,j1) >= fw->base)   // pointer ??
+        u1 = fwval(fw,j1);
+        if ((u1 >= fw->base) || ((u1 >= fw->base2) && (u1 < fw->base2 + fw->size2*4)))  // pointer ??
         {
             int j2;
             for (j2=j1-1; j2>=j1-1000 && j2>=0; j2--)
@@ -2662,8 +3739,10 @@ int match_strsig15a(firmware *fw, int k, uint32_t sadr, uint32_t offset)
         if (padr == sadr)
         {
             int j2 = find_inst_rev(fw, isBL, k-1, dryos_ofst);
-            if (j2 > 0)
+            if (j2 != -1)
             {
+                // cams with code copied to RAM: use RAM address
+                j2 = idxcorr(fw, j2);
                 uint32_t fa = idx2adr(fw,j2);
                 fa = followBranch2(fw,fa,offset);
                 fwAddMatch(fw,fa,32,0,115);
@@ -2829,7 +3908,7 @@ int find_strsig19(firmware *fw, string_sig *sig)
 //            ...
 //      String      DCB "str"
 // offset: interpreted as max search distance
-// dryos_ofst: 0 for 1st B/BL after str ref, 1 for 2nd, etc.
+// dryos_ofst: 0 for 1st B/BL after str ref, 1 for 2nd, etc.; -1 for 1st preceding, etc...; disable with 99
 // based on method 7
 int match_strsig23a(firmware *fw, int k, uint32_t sadr, uint32_t maxdist)
 {
@@ -2842,7 +3921,15 @@ int match_strsig23a(firmware *fw, int k, uint32_t sadr, uint32_t maxdist)
             padr = ADR2adr(fw,k);
         if (padr == sadr)
         {
-            int j2 = find_Nth_inst(fw, isBorBL, k+1, maxdist, dryos_ofst+1);
+            int j2;
+            if (dryos_ofst < 0)
+            {
+                j2 = find_Nth_inst_rev(fw, isBorBL, k, maxdist, -dryos_ofst);
+            }
+            else
+            {
+                j2 = find_Nth_inst(fw, isBorBL, k+1, maxdist, dryos_ofst+1);
+            }
             if (j2 > 0)
             {
                 uint32_t fa = idx2adr(fw,j2);
@@ -2857,6 +3944,10 @@ int match_strsig23a(firmware *fw, int k, uint32_t sadr, uint32_t maxdist)
 int match_strsig23(firmware *fw, string_sig *sig, int j)
 {
     dryos_ofst = dryos_offset(fw,sig);
+
+    if (dryos_ofst == 99)
+        return 0;
+
     return search_fw(fw, match_strsig23a, idx2adr(fw,j), sig->offset, 2);
 }
 
@@ -2958,7 +4049,7 @@ int find_strsig(firmware *fw, string_sig *sig)
             return 0;
         }
     case 21:    return fw_process(fw, sig, (int (*)(firmware*, string_sig*, int))(sig->ev_name));
-    case 22:    return ((int (*)(firmware*))(sig->ev_name))(fw);
+    case 22:    return ((int (*)(firmware*,int))(sig->ev_name))(fw,sig->offset);
     case 23:    return fw_string_process(fw, sig, match_strsig23, 1);
     case 24:    return fw_string_process(fw, sig, match_strsig24, 0);
     }
@@ -3067,7 +4158,7 @@ void find_matches(firmware *fw, const char *curr_name)
             {
                 fail = 0;
                 success = 0;
-                for (s = sig; s->offs != -1; s++)
+                for (s = sig; s->offs != 0xFFFFFFFF; s++)
                 {
                     if ((p[s->offs] & s->mask) != s->value)
                         fail++;
@@ -3078,7 +4169,7 @@ void find_matches(firmware *fw, const char *curr_name)
                 if (((p[sig->offs] & sig->mask) != sig->value) && (sig->offs == 0) && (sig->value == 0xe92d0000)) success = 0;
                 if (success > fail)
                 {
-                    if (s->mask == -2)
+                    if (s->mask == 0xFFFFFFFE)
                     {
                         int end_branch = 0;
                         int idx = 0;
@@ -3096,7 +4187,7 @@ void find_matches(firmware *fw, const char *curr_name)
                         int success2 = 0;
                         //fprintf(stderr,"\t%s %d %08x %08x %d %d\n",curr_name,idx,idx2adr(fw,idx),idx2adr(fw,i+n->off),success,fail);
                         s++;
-                        for (; s->offs != -1; s++)
+                        for (; s->offs != 0xFFFFFFFF; s++)
                         {
                             if (!end_branch || (p1[s->offs] & s->mask) != s->value){
                                 fail2++;
@@ -3126,7 +4217,7 @@ void find_matches(firmware *fw, const char *curr_name)
                         (strcmp(curr_name, "GetDrive_TotalClusters") == 0))
                     {
                         int fnd = 0;
-                        for (s = sig; s->offs != -1; s++)
+                        for (s = sig; s->offs != 0xFFFFFFFF; s++)
                         {
                             if (isLDR_PC_cond(fw,n->off+i+s->offs))
                             {
@@ -3216,7 +4307,7 @@ void print_results(firmware *fw, const char *curr_name, int k)
     if (count == 0)
     {
         if (func_names[k].flags & OPTIONAL) return;
-        char fmt[50] = "";
+        char fmt[51] = "";
         sprintf(fmt, "// ERROR: %%s is not found. %%%ds//--- --- ", (int)(34-strlen(curr_name)));
         sprintf(line+strlen(line), fmt, curr_name, "");
     }
@@ -3336,7 +4427,7 @@ void output_modemap(firmware *fw, int k)
     }
 }
 
-int match_modelist(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_modelist(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     if (isBX_LR(fw,k) && (fw->buf[k+4] == fadr))
     {
@@ -3358,7 +4449,7 @@ int match_modelist(firmware *fw, int k, uint32_t fadr, uint32_t v2)
 
 static uint32_t FlashParamsTable_address = 0;
 
-int match_FlashParamsTable2(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_FlashParamsTable2(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (fw->buf[k] == v1)
     {
@@ -3368,7 +4459,7 @@ int match_FlashParamsTable2(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_FlashParamsTable(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_FlashParamsTable(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if ((fw->buf[k] > fw->base) && (fw->buf[k+1] == 0x00010000) && (fw->buf[k+2] == 0xFFFF0002))
     {
@@ -3395,7 +4486,7 @@ void find_modemap(firmware *fw)
 
 //------------------------------------------------------------------------------------------------------------
 
-int match_CAM_UNCACHED_BIT(firmware *fw, int k, int v)
+int match_CAM_UNCACHED_BIT(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if ((fw->buf[k] & 0x0FFFF000) == 0x03C00000)    // BIC
     {
@@ -3434,6 +4525,8 @@ void find_platform_vals(firmware *fw)
         bprintf("//#define CAM_DRYOS_2_3_R39 1 // Defined for cameras with DryOS version R39 or higher\n");
     if (fw->dryos_ver >= 47)
         bprintf("//#define CAM_DRYOS_2_3_R47 1 // Defined for cameras with DryOS version R47 or higher\n");
+    if (fw->dryos_ver >= 59)
+        bprintf("//#define CAM_DRYOS_2_3_R59 1 // Defined for cameras with DryOS version R59 or higher\n");
 
     // Find 'RAW' image size
     uint32_t raw_width = 0;
@@ -3638,6 +4731,29 @@ void find_platform_vals(firmware *fw)
     }
 
     find_DebugAssert_argcount(fw);
+
+    if (cam_has_wifi) {
+        bprintf("//#define CAM_HAS_WIFI 1 // Firmware has wifi support (only define if camera has hardware)\n");
+    }
+
+    k = get_saved_sig(fw,"task_FileWrite");
+    if (k >= 0)
+    {
+        uint32_t fadr = func_names[k].val;
+        k1 = adr2idx(fw, fadr);
+        for (k=1; k<32; k++)
+        {
+            if ((fwval(fw, k1+k) & 0x0fffff00) == 0x008ff100) // add[cond] pc, pc, rx, lsl#2
+            {
+                for (k++;isB(fw,k1+k) && idxFollowBranch(fw,k1+k,1) != idxFollowBranch(fw,k1+k-1,1);k++);
+                int c = 1;
+                for (;isB(fw,k1+k) && idxFollowBranch(fw,k1+k,1) == idxFollowBranch(fw,k1+k-1,1);k++,c++);
+                bprintf("\n// Below goes in 'filewrite.c' or 'platform_camera.h':\n");
+                bprintf("//#define MAX_CHUNKS_FOR_FWT %d // Found @0x%08x\n",c,idx2adr(fw,k+k1));
+                break;
+            }
+        }
+    }
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -3667,7 +4783,7 @@ uint32_t find_viewport_address(firmware *fw, int *kout)
     return 0;
 }
 
-int match_vid_get_bitmap_fb(firmware *fw, int k, int v)
+int match_vid_get_bitmap_fb(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isBL(fw,k-1) && // BL
         isLDR_PC(fw,k))
@@ -3688,7 +4804,7 @@ int match_vid_get_bitmap_fb(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_get_flash_params_count(firmware *fw, int k, int v)
+int match_get_flash_params_count(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if ((fw->buf[k] & 0xFFF00FFF) == 0xE3C00901)    // BIC Rn, Rn, #0x4000
     {
@@ -3704,7 +4820,7 @@ int match_get_flash_params_count(firmware *fw, int k, int v)
 }
 
 // based on match_get_flash_params_count
-int match_uiprop_count(firmware *fw, int k, int v)
+int match_uiprop_count(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if ((fw->buf[k] & 0xFFF00FFF) == 0xe3c00902)    // BIC Rn, Rn, #0x8000
     {
@@ -3735,6 +4851,74 @@ int match_uiprop_count(firmware *fw, int k, int v)
         }
     }
 
+    return 0;
+}
+
+int match_imager_active(firmware *fw, int k, __attribute__ ((unused))int v)
+{
+    int gotit = 0;
+    int reg = -1;
+    int o = 0;
+    uint32_t adr,where;
+    if (isLDMFD_PC(fw,k))
+    {
+        int k1 = find_inst_rev(fw, isBL, k-1, 10);
+        if (k1 == -1)
+            return 0;
+        uint32_t a;
+        int k2 = k1 - 8;
+        for (k1=k1-1;k1>=k2;k1--)
+        {
+            if (isLDR(fw,k1) || isADR(fw,k1))
+            {
+                if (isADR(fw,k1))
+                {
+                    a = ADR2adr(fw, k1);
+                }
+                else
+                {
+                    a = LDR2val(fw, k1);
+                }
+                if ((a>fw->base) && ((a&3) == 0))
+                {
+                    int k3 = adr2idx(fw, a);
+                    if (isSTMFD_LR(fw,k3))
+                    {
+                        k3 = find_inst(fw, isBLX, k3+1, 6);
+                        if (k3 != -1)
+                        {
+                            int k4;
+                            for(k4=5; k4>0; k4--)
+                            {
+                                if (isSTR_cond(fw,k3+k4))
+                                {
+                                    reg = fwRn(fw,k3+k4);
+                                    o = fwval(fw,k3+k4) & 0xff; // offset, should be around 4
+                                    where = idx2adr(fw,k3+k4);
+                                }
+                                if (reg>=0 && isLDR_cond(fw,k3+k4) && fwRd(fw,k3+k4)==reg)
+                                {
+                                    adr = LDR2val(fw,k3+k4);
+                                    if (adr < fw->memisostart)
+                                    {
+                                        gotit = 1;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (gotit)
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (gotit)
+    {
+        bprintf("DEF(%-40s,0x%08x) // Found @0x%08x (0x%x + %i)\n","imager_active",adr+o,where,adr,o);
+        return 1;
+    }
     return 0;
 }
 
@@ -3775,7 +4959,7 @@ void find_lib_vals(firmware *fw)
         {
             if (isLDR(fw,k+fbd[f][0]) && isLDR(fw,k+fbd[f][1]) && isLDR(fw,k+fbd[f][2]))
             {
-                int reg = fw->buf[k+fbd[f][2]] & 0x000F0000;    // Index register used
+                uint32_t reg = fw->buf[k+fbd[f][2]] & 0x000F0000;    // Index register used
                 int ka = 0;
                 if (((fw->buf[k+fbd[f][0]] & 0x0000F000) << 4) == reg)      { ka = k+fbd[f][0]; }
                 else if (((fw->buf[k+fbd[f][1]] & 0x0000F000) << 4) == reg) { ka = k+fbd[f][1]; }
@@ -3850,16 +5034,125 @@ void print_stubs_min(firmware *fw, const char *name, uint32_t fadr, uint32_t ata
     bprintf("\n");
 }
 
-int match_levent_table(firmware *fw, int k, uint32_t v1, uint32_t v2)
+uint32_t exm_typ_tbl=0, exm_typ_cnt=0;
+int print_exmem_types(firmware *fw)
 {
-    if ((fw->buf[k] > fw->base) && (fw->buf[k+1] == 0x00000800) && (fw->buf[k+2] == 0x00000002))
+    if (exm_typ_tbl==0 || exm_typ_cnt==0)
+        return 1;
+    bprintf("// EXMEM types:\n");
+    int ii = adr2idx(fw, exm_typ_tbl);
+    uint32_t n;
+    for (n=0; n<exm_typ_cnt; n++)
     {
-        print_stubs_min(fw,"levent_table",idx2adr(fw,k),idx2adr(fw,k));
+        bprintf("// %s %i\n",adr2ptr(fw, fwval(fw,ii+n)),n);
+    }
+    bprintf("\n");
+    return 0;
+}
+
+int find_exmem_alloc_table(firmware *fw)
+{
+    int i = get_saved_sig(fw,"ExMem.View_FW"); // s5 and earlier don't have this
+    if (i < 0)
+    {
+        i = get_saved_sig(fw,"exmem_assert"); // s5
+    }
+    if (i < 0)
+    {
+        return 0;
+    }
+    i = adr2idx(fw, func_names[i].val);
+    uint32_t u, us;
+    uint32_t exm_typ_tbl_orig = 0;
+    int n;
+    us = 0;
+    for (n=1; n<16; n++)
+    {
+        if ( ((fwval(fw,i+n)&0xffff0000)==0xe59f0000) ) // ldr rx, [pc, #imm]
+        {
+            u = LDR2val(fw, i+n);
+            if (u>fw->data_start && u<fw->data_start+fw->data_len*4 && (fwRd(fw,i+n)>3))
+            {
+                exm_typ_tbl_orig = u;
+                u = u - fw->data_start + fw->data_init_start;
+                break;
+            }
+            else if (us==0 && u>fw->base && u<fw->base+fw->size*4-4 && (u&3)==0)
+            {
+                us = u;
+            }
+        }
+        u = 0;
+    }
+    if (!u && us)
+    {
+        u = us;
+        exm_typ_tbl_orig = u;
+    }
+    if (u)
+    {
+        exm_typ_tbl = u;
+        int ii = adr2idx(fw, exm_typ_tbl);
+        char* extyp;
+        for (n=0; n<32; n++)
+        {
+            if ( (fwval(fw,ii+n)!=0) && isASCIIstring(fw, fwval(fw,ii+n)) )
+            {
+                extyp = adr2ptr(fw, fwval(fw,ii+n));
+                if ( strncmp(extyp,"EXMEM",5)==0 )
+                {
+                    exm_typ_cnt++;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    for (n=1; n<42; n++)
+    {
+        if ( ((fwval(fw,i+n)&0xffff0000)==0xe59f0000) ) // ldr rx, [pc, #imm]
+        {
+            u = LDR2val(fw, i+n);
+            if (u>fw->data_start+fw->data_len*4 && u<fw->memisostart && (fwRd(fw,i+n)>3))
+            {
+                break;
+            }
+        }
+        u = 0;
+    }
+    if (u)
+    {
+        print_stubs_min(fw,"exmem_alloc_table",u,idx2adr(fw,i+n));
+    }
+    if (exm_typ_tbl)
+    {
+        print_stubs_min(fw,"exmem_types_table",exm_typ_tbl,exm_typ_tbl_orig);
+    }
+    if (exm_typ_cnt)
+    {
+        bprintf("DEF_CONST(%-34s,0x%08x)\n","exmem_type_count",exm_typ_cnt);
     }
     return 0;
 }
 
-int match_movie_status(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_levent_table(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
+{
+    if ((fw->buf[k] > fw->base) && (fw->buf[k+1] == 0x00000800) && (fw->buf[k+2] == 0x00000002))
+    {
+        print_stubs_min(fw,"levent_table",idx2adr(fw,k),idx2adr(fw,k));
+#ifdef PRINT_LEVENT_TABLE
+        uint32_t levent_tbl = idx2adr(fw,k);
+        void write_levent_table_dump(firmware*, uint32_t);
+        write_levent_table_dump(fw, levent_tbl);
+#endif
+    }
+    return 0;
+}
+
+int match_movie_status(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw, k) &&                              // LDR R0, =base
         ((fw->buf[k+1] & 0xFE0F0000) == 0xE20F0000) &&  // ADR R1, =sub
@@ -3902,7 +5195,7 @@ int match_movie_status(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_full_screen_refresh(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_full_screen_refresh(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fw->buf[k] & 0xFF1FF000) == 0xE51F0000) &&    // LDR R0, =base
         (fw->buf[k+1] == 0xE5D01000) &&                 // LDRB R1, [R0]
@@ -3916,7 +5209,7 @@ int match_full_screen_refresh(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_canon_shoot_menu_active(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_canon_shoot_menu_active(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fw->buf[k]   & 0xFF1FF000) == 0xE51F1000) &&  // LDR R1, =base
         ((fw->buf[k+1] & 0xFFFFF000) == 0xE5D10000) &&  // LDRB R0, [R1, #n]
@@ -3942,7 +5235,7 @@ int match_canon_shoot_menu_active(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_playrec_mode(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_playrec_mode(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fw->buf[k]    & 0xFF1FF000) == 0xE51F1000) && // LDR R1, =base
         ((fw->buf[k+1]  & 0xFFFFF000) == 0xE5810000) && // STR R0, [R1, #n]
@@ -3967,7 +5260,7 @@ int match_playrec_mode(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_some_flag_for_af_scan(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_some_flag_for_af_scan(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isB(fw,k)   &&  // B loc
         isB(fw,k+1) &&  // B loc
@@ -3993,7 +5286,7 @@ int match_some_flag_for_af_scan(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_palette_data(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_palette_data(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if ((fw->buf[k] == 0) && (fw->buf[k+1] == 0x00FF0000) &&
         (fw->buf[k+577] == 1) && (fw->buf[k+578] == 0x00FF0000) &&
@@ -4034,11 +5327,11 @@ int match_palette_buffer_offset(firmware *fw, int k)
     return 0;
 }
 
-int match_palette_data3(firmware *fw, int k, uint32_t palette_data, uint32_t v2)
+int match_palette_data3(firmware *fw, int k, uint32_t palette_data, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw, k) && (LDR2val(fw,k) == palette_data) && isLDR_PC(fw,k-1) && isLDR_PC(fw,k-6) && isLDR(fw,k-5))
     {
-        int palette_control = LDR2val(fw,k-6);
+        uint32_t palette_control = LDR2val(fw,k-6);
         int ptr_offset = fwOp2(fw,k-5);
         uint32_t fadr = find_inst_rev(fw, isSTMFD_LR, k-7, 30);
         if (fadr > 0)
@@ -4189,7 +5482,7 @@ int match_SavePaletteData(firmware *fw, int idx, int palette_data)
     return 0;
 }
 
-int match_viewport_address3(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_viewport_address3(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw,k) && (LDR2val(fw,k) == v1))
     {
@@ -4229,7 +5522,7 @@ int match_viewport_address3(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_viewport_address2(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_viewport_address2(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (fw->buf[k] == v1)
     {
@@ -4239,7 +5532,7 @@ int match_viewport_address2(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_viewport_address(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_viewport_address(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (fw->buf[k] == v1)
     {
@@ -4250,7 +5543,7 @@ int match_viewport_address(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_physw_status(firmware *fw, int k, int v)
+int match_physw_status(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isLDR_PC(fw,k))
     {
@@ -4260,7 +5553,7 @@ int match_physw_status(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_physw_run(firmware *fw, int k, int v)
+int match_physw_run(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isLDR_PC(fw,k))
     {
@@ -4276,7 +5569,7 @@ int match_physw_run(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_canon_menu_active(firmware *fw, int k, int v)
+int match_canon_menu_active(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isLDR_PC(fw,k))
     {
@@ -4295,7 +5588,7 @@ int match_canon_menu_active(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_zoom_busy(firmware *fw, int k, int v)
+int match_zoom_busy(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isBL(fw,k))
     {
@@ -4344,7 +5637,7 @@ int match_zoom_busy(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_focus_busy(firmware *fw, int k, int v)
+int match_focus_busy(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if ((fw->buf[k] & 0xFFFF0000) == 0xE8BD0000)   // LDMFD
     {
@@ -4381,7 +5674,7 @@ int match_bitmap_buffer2(firmware *fw, int k, int v)
         int k1 = adr2idx(fw,fadr);
         if (isLDR_PC(fw,k1+1))
         {
-            int reg = (fwval(fw,k1+1) & 0x0000F000) >> 12;
+            uint32_t reg = (fwval(fw,k1+1) & 0x0000F000) >> 12;
             uint32_t adr = LDR2val(fw,k1+1);
             int k2;
             for (k2=k1; k2<k1+32; k2++)
@@ -4403,13 +5696,13 @@ int match_bitmap_buffer2(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_bitmap_buffer(firmware *fw, int k, int v)
+int match_bitmap_buffer(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     search_saved_sig(fw, "ScreenLock", match_bitmap_buffer2, k, 0, 1);
     return 0;
 }
 
-int match_raw_buffer(firmware *fw, int k, uint32_t rb1, uint32_t v2)
+int match_raw_buffer(firmware *fw, int k, uint32_t rb1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fwval(fw,k) == rb1) && (fwval(fw,k+4) == rb1) && (fwval(fw,k-2) != 1) && (fwval(fw,k+2) >= fw->uncached_adr)) ||
         ((fwval(fw,k) == rb1) && (fwval(fw,k+4) == rb1) && (fwval(fw,k+20) == rb1)))
@@ -4461,6 +5754,34 @@ int match_fileiosem(firmware *fw, int k, uint32_t fadr, uint32_t nadr)
     }
     return 0;
 }
+
+int match_cameracon_state(firmware *fw, int k, __attribute__ ((unused))int v)
+{
+    /*
+     * expect
+     * LDR  Rn, =const
+     * MOV  Rm, 0
+     * STR  Rm, [Rn + 0x10] (or 0x1c, on ixus1000)
+     */
+    if (isLDR_PC(fw,k))
+    {
+        uint32_t base = LDR2val(fw,k);
+        int k1;
+        for (k1=k+1; k1<k+4; k1++)
+        {
+            if (isSTR(fw,k1))
+            {
+                uint32_t ofst = fw->buf[k1] & 0x00000FFF;
+                if(ofst == 0x10 || (fw->dryos_ver == 45 && ofst == 0x1c)) {
+                    print_stubs_min(fw,"cameracon_state",base+ofst,idx2adr(fw,k));
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 
 // Search for things that go in 'stubs_min.S'
 void find_stubs_min(firmware *fw)
@@ -4625,11 +5946,14 @@ void find_stubs_min(firmware *fw)
                 for (k1 = k + mul; (k1 < fw->size) && (fw->buf[k1] > fw->buf[k1-mul]) && (fw->buf[k1] > fw->sv->min_focus_len) && (fw->buf[k1] < fw->sv->max_focus_len); k1 += mul) ;
                 if (fw->buf[k1] == fw->sv->max_focus_len)
                 {
-                    if ((found == 0) || ((size < mul) && (len < ((k1 - k) / mul) + 1)))
+                    int nlen = ((k1 - k) / mul) + 1;
+                    // printf("FOCUS_LEN_TABLE: %08x %d %d %d %d %d\n", k+fw->base, found, size, mul, len, nlen);
+                    // Record first table found, or update if better table found - prefer longer entries or longer table with same size entries
+                    if ((found == 0) || (size < mul) || ((size == mul) && (len < nlen)))
                     {
                         found = 1;
                         pos = k;
-                        len = ((k1 - k) / mul) + 1;
+                        len = nlen;
                         size = mul;
                     }
                 }
@@ -4808,8 +6132,23 @@ void find_stubs_min(firmware *fw)
         }
     }
 
+    // Find exmem allocation table
+    find_exmem_alloc_table(fw);
+
+    // Find imager_active
+    search_saved_sig(fw, "ImagerActivate", match_imager_active, 0/*v*/, 0, 30);
+
+//    if (frsp_buf && frsp_param!=-1)
+//    {
+//        print_stubs_min(fw,"frsp_buf",frsp_buf,frsp_buf_at);
+//        bprintf("DEF_CONST(%-34s,0x%08x)\n","frsp_param",frsp_param);
+//        bprintf("DEF_CONST(%-34s,0x%08x)\n","frsp_argcnt",frsp_argcnt);
+//    }
+
     // Find UI property count
     search_saved_sig(fw, "PTM_SetCurrentItem", match_uiprop_count, 0, 0, 30);
+
+    search_saved_sig(fw, "cameracon_set_state", match_cameracon_state, 0, 1, 1);
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -4828,7 +6167,7 @@ int find_ctypes(firmware *fw, int k)
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0x10, 0x10, 0x10, 0x10, 0x20
     };
 
-    if (k < (fw->size*4 - sizeof(ctypes)))
+    if ((uint32_t)k < (fw->size*4 - sizeof(ctypes)))
     {
         if (memcmp(((char*)fw->buf)+k,ctypes,sizeof(ctypes)) == 0)
         {
@@ -4839,9 +6178,9 @@ int find_ctypes(firmware *fw, int k)
     return 0;
 }
 
-int match_nrflag3(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_nrflag3(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
-    if (isBL(fw,k) && (idxFollowBranch(fw,k,0x01000001) == v1))
+    if (isBL(fw,k) && (idxFollowBranch(fw,k,0x01000001) == (int)v1))
     {
         // Found call to function, work out R3 value passed in
         int ofst1 = 0;
@@ -4884,7 +6223,7 @@ int match_nrflag3(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_nrflag(firmware *fw, int idx, int v)
+int match_nrflag(firmware *fw, int idx, __attribute__ ((unused))int v)
 {
     int k1, k2, k3;
     int found = 0;
@@ -4926,7 +6265,7 @@ int match_nrflag(firmware *fw, int idx, int v)
     return found;
 }
 
-int match_nrflag2(firmware *fw, int k, int v)
+int match_nrflag2(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     // Found NR_GetDarkSubType function, now follow first BL call.
     if (isBL(fw,k))
@@ -4941,24 +6280,6 @@ int match_nrflag2(firmware *fw, int k, int v)
 // find LEDs
 
 // helpers for find_leds()
-int isADD(firmware *fw, int offset)
-{
-    if ((fwval(fw,offset) & 0xfff00000) == (0xe2800000)) // ADD
-    {
-        return 1;
-    }
-    return 0;
-}
-
-int isSUB(firmware *fw, int offset)
-{
-    if ((fwval(fw,offset) & 0xfff00000) == (0xe2400000)) // SUB
-    {
-        return 1;
-    }
-    return 0;
-}
-
 int isSTRw(firmware *fw, int offset)
 {
     if ((fwval(fw,offset) & 0xfff00000) == (0xe5800000)) // STR Rx, [Ry, #offs]
@@ -5451,6 +6772,101 @@ int find_leds(firmware *fw)
     return 0;
 }
 
+int find_task_related_info(firmware *fw)
+{
+    int i = get_saved_sig(fw,"get_self_task_id");
+    uint32_t u, v;
+    if (i < 0)
+    {
+        return 0;
+    }
+    i = adr2idx(fw, func_names[i].val);
+    if ( (fwval(fw,i)&0xffff0000)==0xe59f0000 ) // ldr r0, [pc, #imm]
+    {
+        // "interrupt service routine" flag
+        u = LDR2val(fw, i);
+        if ( (fwval(fw,i+3)&0xffff0000)==0x059f0000 ) // ldreq r0, [pc, #imm]
+        {
+            // pointer to current task's control block
+            v = LDR2val(fw, i+3);
+            bprintf("// ISR flag: 0x%x, pointer to current task's control block: 0x%x\n",u, v);
+        }
+    }
+    // part 2, find the TCB area
+    int j, k, n, fnd;
+    int m = 0;
+    i = find_str(fw, "DRYOS version 2.3, release ");
+    j = find_nxt_str_ref(fw, i, -1);
+    if (j == -1)
+    {
+        // special case: some r50 cams have the string in RAM and all references point there
+        u = idx2adr(fw,i);
+        if ( (u > fw->base_copied) && ((u-fw->base_copied)/4 < (uint32_t)fw->size2))
+        {
+            i = adr2idx(fw, fw->base2 + (u-fw->base_copied));
+            j = find_nxt_str_ref(fw, i, -1);
+        }
+    }
+    fnd = 0;
+    while (!fnd) {
+        if (j != -1)
+        {
+            k = find_nxt_str_ref(fw, i, j+1);
+            if (k != -1)
+            {
+                if (k-j>5)
+                {
+                    // refs too far, try again
+                    j = k;
+                }
+                else
+                {
+                    m = find_inst_rev(fw, isSTMFD_LR, j, 42);
+                    if (j-m>24)
+                    {
+                        fnd = 1;
+                    }
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+    u = 0;
+    if (fnd)
+    {
+        n = find_Nth_inst(fw, isBL, m, 6, 2);
+        if (n != -1)
+        {
+            n = idxFollowBranch(fw,n,0x01000001);
+            n = find_inst(fw, isSTR, n, 8);
+            if (n != -1)
+            {
+                m = fwRn(fw, n);    // this register holds the base address pointer of TCB area
+                n = find_inst_rev(fw, isLDR_PC, n-1, 4);
+                if (n != -1)
+                {
+                    if (fwRd(fw, n) != m)
+                    {
+                        n = find_inst_rev(fw, isLDR_PC, n-1, 3);
+                        if ((n != -1) && (fwRd(fw, n) == m))
+                        {
+                            u = LDR2val(fw, n);
+                            v = idx2adr(fw, n);
+                            bprintf("// pointer to TCB area: 0x%x, found @ 0x%x\n",u,v);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    return 0;
+}
+
 void find_AdditionAgent_RAM(firmware *fw)
 {
     int i = get_saved_sig(fw,"AdditionAgentRAM_FW");
@@ -5463,13 +6879,13 @@ void find_AdditionAgent_RAM(firmware *fw)
         int n;
         for (n=1; n<16; n++)
         {
-            if (fwval(fw,j1+n) == 0xe3500a32) // cmp  r0, #0x32000 
+            if (fwval(fw,j1+n) == 0xe3500a32) // cmp  r0, #0x32000
             {
                 ramsize = 0x32000;
                 sizeloc = idx2adr(fw,j1+n);
                 break;
             }
-            else if (fwval(fw,j1+n) == 0xe3500a22) // cmp  r0, #0x22000 
+            else if (fwval(fw,j1+n) == 0xe3500a22) // cmp  r0, #0x22000
             {
                 ramsize = 0x22000;
                 sizeloc = idx2adr(fw,j1+n);
@@ -5490,9 +6906,287 @@ void find_AdditionAgent_RAM(firmware *fw)
         }
         if (ramstart>0)
         {
-            bprintf("//   ARAM_HEAP_START = 0x%x  // Found @ 0x%08x\n",ramstart,startloc);
-            bprintf("//   ARAM_HEAP_SIZE  = 0x%x   // Found @ 0x%08x\n",ramsize,sizeloc);
+            bprintf("//   ARAM_HEAP_START = 0x%x# Found @ 0x%08x\n",ramstart,startloc);
+            bprintf("//   ARAM_HEAP_SIZE  = 0x%x# Found @ 0x%08x\n",ramsize,sizeloc);
         }
+    }
+}
+
+/* propset related stuff */
+
+// below enum lists propcases that are handled
+enum {
+    PROPCASE_AFSTEP = 0,
+    PROPCASE_FOCUS_STATE,
+    PROPCASE_AV,
+    PROPCASE_BV,
+    PROPCASE_DELTA_DIGITALGAIN,
+    PROPCASE_DELTA_SV,
+    PROPCASE_DELTA_ND,
+    PROPCASE_EV_CORRECTION_2,
+    PROPCASE_ORIENTATION_SENSOR,
+    PROPCASE_SV_MARKET,
+    PROPCASE_SVFIX,
+    PROPCASE_TV,
+    PROPCASE_HANDLED_COUNT
+};
+
+// names for all enumerated propcases (not all appear in CHDK source)
+char* prop_names[PROPCASE_HANDLED_COUNT] =
+{
+    "PROPCASE_AFSTEP",
+    "PROPCASE_FOCUS_STATE",
+    "PROPCASE_AV",
+    "PROPCASE_BV",
+    "PROPCASE_DELTA_DIGITALGAIN",
+    "PROPCASE_DELTA_SV",
+    "PROPCASE_DELTA_ND",
+    "PROPCASE_EV_CORRECTION_2",
+    "PROPCASE_ORIENTATION_SENSOR",
+    "PROPCASE_SV_MARKET",
+    "PROPCASE_SVFIX",
+    "PROPCASE_TV",
+};
+
+// for sig matching
+string_sig prop_sigs[] =
+{
+    { 1, (char*)PROPCASE_AFSTEP, "\n\rError : GetAFStepResult", 0},
+    { 1, (char*)PROPCASE_FOCUS_STATE, "\n\rError : GetAFResult", 0},
+    { 1, (char*)PROPCASE_AV, "\n\rError : GetAvResult", 0},
+    { 1, (char*)PROPCASE_BV, "\n\rError : GetBvResult", 0},
+    { 1, (char*)PROPCASE_DELTA_DIGITALGAIN, "\n\rError : GetDeltaDigitalResult", 0},
+    { 1, (char*)PROPCASE_DELTA_SV, "\n\rError : GetDeltaGainResult", 0},
+    { 1, (char*)PROPCASE_DELTA_ND, "\n\rError : GetDeltaNdResult", 0},
+    { 1, (char*)PROPCASE_EV_CORRECTION_2, "\n\rError : GetRealExposureCompensationResult", 0},
+    { 1, (char*)PROPCASE_ORIENTATION_SENSOR, "\n\rError : GetRotationAngleResult", 0},
+    { 1, (char*)PROPCASE_SV_MARKET, "\n\rError : GetSvResult", 0},
+    { 1, (char*)PROPCASE_SVFIX, "\n\rError : GetSvFixResult", 0},
+    { 1, (char*)PROPCASE_TV, "\n\rError : GetTvResult", 0},
+    {-1, 0, 0}
+};
+
+typedef struct {
+    int     num;    // internal id from enum
+    int     id;     // propcase id, as found
+    int     use;    // 0: informational only; 1: use for propset guess AND print as #define; 2: use for propset guess
+
+    int     id_ps2; // id in propset 2
+    int     id_ps3; // id in propset 3
+    int     id_ps4; // id in propset 4
+    int     id_ps5; // id in propset 5
+    int     id_ps6; // id in propset 6
+    int     id_ps7; // id in propset 7
+    int     id_ps8; // id in propset 8
+    int     id_ps9; // id in propset 9
+    int     id_ps10;// id in propset 10
+    int     id_ps11;// id in propset 11
+    int     id_ps12;// id in propset 12
+    int     id_ps13;// id in propset 13
+} known_prop_struct;
+
+
+#define KNOWN_PROPSET_COUNT 13
+
+known_prop_struct knownprops[PROPCASE_HANDLED_COUNT] =
+{   // enum                        id  u ps2 ps3 ps4 ps5 ps6 ps7 ps8 ps9 ps10 ps11 ps12 ps13
+    {PROPCASE_AFSTEP             , -1, 0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  13,  13,  13},
+    {PROPCASE_FOCUS_STATE        , -1, 1, 18, 18, 18, 18, 18, 18, 18, 18,  18,  18,  18,  18},
+    {PROPCASE_AV                 , -1, 1, 23, 23, 23, 23, 23, 23, 23, 23,  23,  23,  23,  23},
+    {PROPCASE_BV                 , -1, 1, 34, 34, 34, 34, 34, 38, 35, 38,  40,  40,  40,  40},
+    {PROPCASE_DELTA_DIGITALGAIN  , -1, 0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  85,  85,  84},
+    {PROPCASE_DELTA_SV           , -1, 1, 79, 79, 79, 79, 79, 84, 81, 84,  86,  87,  87,  86},
+    {PROPCASE_DELTA_ND           , -1, 0,  0,  0,  0,  0,  0,  0,  0,  0,   0,  88,  88,  87},
+    {PROPCASE_EV_CORRECTION_2    , -1, 1,207,209,211,211,210,216,213,216, 218, 219, 220, 218},
+    {PROPCASE_ORIENTATION_SENSOR , -1, 1,219,221,223,223,222,228,225,228, 230, 231, 232, 230},
+    {PROPCASE_SV_MARKET          , -1, 1,246,248,250,250,249,255,252,255, 257, 259, 260, 258},
+    {PROPCASE_SVFIX              , -1, 0,  0,  0,  0,  0,  0,  0,  0,  0,   0, 260,   0, 259},
+    {PROPCASE_TV                 , -1, 1,262,264,266,266,265,272,269,272, 274, 276, 277, 275},
+};
+
+static uintptr_t curr_prop_name;
+
+void add_prop_hit(int id, uintptr_t name)
+{
+    knownprops[name].id = (int)id;
+}
+
+// string ref follows GetPropertyCase call
+int match_propsig1a(firmware *fw, int k, uint32_t sadr, __attribute__ ((unused))uint32_t offset)
+{
+    if (isADR_PC_cond(fw,k) || isLDR_PC_cond(fw,k))   // LDR or ADR ?
+    {
+        uint32_t padr;
+        if (isLDR_PC_cond(fw,k)) // LDR ?
+            padr = LDR2val(fw,k);
+        else
+            padr = ADR2adr(fw,k);
+        if (padr == sadr)
+        {
+            int j1 = find_inst_rev(fw, isBL, k-1, 16);
+            if (j1 > 0)
+            {
+                int j = get_saved_sig(fw,"GetPropertyCase");
+                if (j < 0)
+                {
+                    return 0;
+                }
+                uint32_t fadr = func_names[j].val;
+                if (followBranch2(fw, idx2adr(fw,j1), 0x01000001) == fadr)
+                {
+                    // GetPropertyCase call, ID is in r0
+                    j = 0;
+                }
+                else
+                {
+                    // get_prop_with_semaphore call, ID is in r1
+                    j = 1;
+                }
+                int j2;
+                uint32_t a = 0;
+                for (j2=j1;j2>j1-8;j2--)
+                {
+                    // ID is either an immediate (MOV) or two immediates added (MOV+ADD)
+                    // larger IDs sometimes use LDR
+                    if (a==0 && isLDR_PC(fw,j2) && fwRd(fw,j2)==j)
+                    {
+                        a = LDR2val(fw,j2);
+                        if (a < 1000)
+                        {
+                            add_prop_hit(a, curr_prop_name);
+                            return 1;
+                        }
+                    }
+                    if (isADD(fw,j2) && fwRd(fw,j2)==j)
+                    {
+                        j = fwRn(fw, j2); // change the watched register on-the-fly
+                        a += ALUop2a(fw, j2);
+                    }
+                    if (isMOV_immed(fw,j2) && fwRd(fw,j2)==j)
+                    {
+                        a += ALUop2a(fw, j2);
+                        if (a < 1000)
+                        {
+                            add_prop_hit(a, curr_prop_name);
+                            return 1;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+int match_propsig1(firmware *fw, string_sig *sig, int j)
+{
+    return search_fw(fw, match_propsig1a, idx2adr(fw,j), sig->offset, 1);
+}
+
+// Call processing function based on type
+int find_strsig2(firmware *fw, string_sig *sig)
+{
+    switch (sig->type)
+    {
+    case 1:     return fw_string_process(fw, sig, match_propsig1, 1);
+    }
+
+    return 0;
+}
+
+void find_prop_matches(firmware *fw)
+{
+    int i;
+
+    for (i = 0; prop_sigs[i].type > -1; i++)
+    {
+        curr_prop_name = (uintptr_t)prop_sigs[i].name; // name (enum) has to be passed via a global
+        find_strsig2(fw, &prop_sigs[i]);
+    }
+
+}
+
+void find_propset(firmware *fw)
+{
+    uint32_t used=0;
+    uint32_t hits[KNOWN_PROPSET_COUNT];
+
+    memset(hits, 0, KNOWN_PROPSET_COUNT*sizeof(uint32_t));
+
+    find_prop_matches(fw);
+
+    bprintf("\n// Known propcases\n");
+
+    uint32_t n;
+    for (n=0; n<PROPCASE_HANDLED_COUNT; n++)
+    {
+        used += knownprops[n].use>0?1:0;
+        if (knownprops[n].id >= 0)
+        {
+            if (knownprops[n].use)
+            {
+                if (knownprops[n].id == knownprops[n].id_ps2) hits[2-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps3) hits[3-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps4) hits[4-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps5) hits[5-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps6) hits[6-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps7) hits[7-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps8) hits[8-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps9) hits[9-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps10) hits[10-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps11) hits[11-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps12) hits[12-1] += 1;
+                if (knownprops[n].id == knownprops[n].id_ps13) hits[13-1] += 1;
+            }
+            if (knownprops[n].use == 1)
+            {
+                bprintf("// #define %s %i\n", prop_names[n], knownprops[n].id);
+            }
+            else
+            {
+                // propcases not used by CHDK, name may be made up
+                bprintf("// //      %s %i\n", prop_names[n], knownprops[n].id);
+            }
+        }
+        else
+        {
+            bprintf("//         %s not found\n", prop_names[n]);
+        }
+    }
+    bprintf("// Guessed propset: ");
+    int m = 0;
+    uint32_t fmax = 0;
+    int okay = 0;
+    for (n=1; n<KNOWN_PROPSET_COUNT; n++)
+    {
+        if (hits[n] == used)
+        {
+            if (m) bprintf(", ");
+            bprintf("%i", n+1);
+            if (fw->sv->propset == n+1) okay = 1; // if the propset equals to (one of) the complete propset matches
+            m += 1;
+        }
+        if (hits[n] > fmax) fmax = hits[n];
+    }
+    if (m == 0)
+    {
+        bprintf("uncertain (%i of %u match), closest to ",fmax,used);
+        for (n=1; n<KNOWN_PROPSET_COUNT; n++)
+        {
+            if (hits[n] == fmax)
+            {
+                if (m) bprintf(", ");
+                bprintf("%i", n+1);
+                if (fw->sv->propset == n+1) okay = 1; // if the propset equals to (one of) the most complete propset matches
+                m += 1;
+            }
+        }
+    }
+    bprintf("\n");
+    if (!okay && fw->sv->propset>0)
+    {
+        // only shown when there's a clear mismatch
+        bprintf("// Port's propset (%i) may be set incorrectly\n", fw->sv->propset);
     }
 }
 
@@ -5508,6 +7202,10 @@ void find_other_vals(firmware *fw)
     {
         bprintf("//DEF(ctypes, *** Not Found ***)\n");
     }
+
+    add_blankline();
+    print_exmem_types(fw);
+    find_task_related_info(fw);
     find_leds(fw);
 
     // Look for nrflag (for capt_seq.c)
@@ -5703,7 +7401,7 @@ void print_kmvals()
     bprintf("//    { 0, 0, 0 }\n//};\n");
 }
 
-int match_GetSDProtect(firmware *fw, int k, int v)
+int match_GetSDProtect(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isB(fw,k))    // B
     {
@@ -5747,11 +7445,11 @@ void find_key_vals(firmware *fw)
     }
     if (tadr != 0)
     {
-        int tsiz = 2;
+        uint32_t tsiz = 2;
         if (fw->buf[adr2idx(fw,tadr)+2] == 0) tsiz = 3;
 
         uint32_t madr = fw->base + (fw->size*4-4);
-        for (k=0; k<(tadr-fw->base)/4; k++)
+        for (k=0; k<(int)(tadr-fw->base)/4; k++)
         {
             if (isLDR_PC(fw,k))
             {
@@ -5762,11 +7460,11 @@ void find_key_vals(firmware *fw)
                 }
             }
         }
-        int tlen = (madr - tadr) / 4;
+        uint32_t tlen = (madr - tadr) / 4;
         if (tsiz == 2)
         {
             k1 = adr2idx(fw,tadr);
-            for (k=0; k<tlen/3; k+=3)
+            for (k=0; k<(int)tlen/3; k+=3)
             {
                 if ((fw->buf[k1+k+1] == 0xFFFFFFFF) && (fw->buf[k1+k+4] == 0xFFFFFFFF))
                 {
@@ -5782,13 +7480,23 @@ void find_key_vals(firmware *fw)
         print_physw_raw_vals(fw, tadr, tsiz, tlen);
 #endif
         bprintf("// Bitmap masks and physw_status index values for SD_READONLY and USB power flags (for kbd.c).\n");
-        if (fw->dryos_ver >= 49)
+        if (fw->dryos_ver >= 58)
+        {
+            // Event ID's have changed again in DryOS 58 **********
+            print_kval(fw,tadr,tsiz,tlen,0x30A,"SD_READONLY","_FLAG");
+            print_kval(fw,tadr,tsiz,tlen,0x302,"USB","_MASK");
+            print_kval(fw,tadr,tsiz,tlen,0x305,"BATTCOVER","_FLAG");
+            print_kval(fw,tadr,tsiz,tlen,0x304,"HOTSHOE","_FLAG");
+            print_kval(fw,tadr,tsiz,tlen,0x300,"ANALOG_AV","_FLAG");
+        }
+        else if (fw->dryos_ver >= 49)
         {
             // Event ID's have changed in DryOS R49 **********
             print_kval(fw,tadr,tsiz,tlen,0x20A,"SD_READONLY","_FLAG");
             print_kval(fw,tadr,tsiz,tlen,0x202,"USB","_MASK");
             print_kval(fw,tadr,tsiz,tlen,0x205,"BATTCOVER","_FLAG");
             print_kval(fw,tadr,tsiz,tlen,0x204,"HOTSHOE","_FLAG");
+            print_kval(fw,tadr,tsiz,tlen,0x200,"ANALOG_AV","_FLAG");
         }
         else
         {
@@ -5796,13 +7504,29 @@ void find_key_vals(firmware *fw)
             print_kval(fw,tadr,tsiz,tlen,0x902,"USB","_MASK");
             print_kval(fw,tadr,tsiz,tlen,0x905,"BATTCOVER","_FLAG");
             print_kval(fw,tadr,tsiz,tlen,0x904,"HOTSHOE","_FLAG");
+            print_kval(fw,tadr,tsiz,tlen,0x900,"ANALOG_AV","_FLAG");
         }
 
         uint32_t key_half = add_kmval(fw,tadr,tsiz,tlen,0,"KEY_SHOOT_HALF",0);
         add_kmval(fw,tadr,tsiz,tlen,1,"KEY_SHOOT_FULL",key_half);
         add_kmval(fw,tadr,tsiz,tlen,1,"KEY_SHOOT_FULL_ONLY",0);
-        
-        if (fw->dryos_ver < 54)
+
+        if (fw->dryos_ver == 52)  // unclear if this applies any other ver
+        {
+            add_kmval(fw,tadr,tsiz,tlen,3,"KEY_ZOOM_IN",0);
+            add_kmval(fw,tadr,tsiz,tlen,4,"KEY_ZOOM_OUT",0);
+            add_kmval(fw,tadr,tsiz,tlen,6,"KEY_UP",0);
+            add_kmval(fw,tadr,tsiz,tlen,7,"KEY_DOWN",0);
+            add_kmval(fw,tadr,tsiz,tlen,8,"KEY_LEFT",0);
+            add_kmval(fw,tadr,tsiz,tlen,9,"KEY_RIGHT",0);
+            add_kmval(fw,tadr,tsiz,tlen,0xA,"KEY_SET",0);
+            add_kmval(fw,tadr,tsiz,tlen,0xB,"KEY_MENU",0);
+            add_kmval(fw,tadr,tsiz,tlen,0xC,"KEY_DISPLAY",0);
+            add_kmval(fw,tadr,tsiz,tlen,0x12,"KEY_HELP",0);
+            add_kmval(fw,tadr,tsiz,tlen,0x19,"KEY_ERASE",0);
+            add_kmval(fw,tadr,tsiz,tlen,2,"KEY_VIDEO",0);
+        }
+        else if (fw->dryos_ver < 54)
         {
             add_kmval(fw,tadr,tsiz,tlen,2,"KEY_ZOOM_IN",0);
             add_kmval(fw,tadr,tsiz,tlen,3,"KEY_ZOOM_OUT",0);
@@ -5907,10 +7631,12 @@ void add_func_name(char *n, uint32_t eadr, char *suffix)
             {
                 func_names[k].val = eadr;
                 func_names[k].flags |= EV_MATCH;
+                if (s != n) free(s);
                 return;
             }
             else if (func_names[k].val == eadr)     // same name, same address
             {
+                if (s != n) free(s);
                 return;
             }
         }
@@ -5936,7 +7662,7 @@ void add_func_name2(firmware *fw, uint32_t nadr, uint32_t eadr, char *suffix)
     add_func_name(n, eadr, suffix);
 }
 
-int match_eventproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_eventproc(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     if (isBorBL(fw,k))
     {
@@ -5974,8 +7700,9 @@ int match_eventproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
     return 0;
 }
 
-int match_registerproc2(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_registerproc2(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
+    int j = k;
     if (isBorBL(fw,k))
     {
         uint32_t adr = followBranch(fw,idx2adr(fw,k),0x01000001);
@@ -6007,12 +7734,42 @@ int match_registerproc2(firmware *fw, int k, uint32_t fadr, uint32_t v2)
             {
                 add_func_name2(fw, nadr, eadr, "_FW");
             }
+            else
+            {
+                // find spec case (when used in a loop)
+                k = j;
+                int k1 = find_inst_rev(fw, isLDR_PC, k, 8);
+                if (k1 > 0)
+                {
+                    uint32_t k2 = LDR2val(fw,k1);
+                    if ((k2 > fw->base) && (k2 < (fw->base + fw->size*4 - 1)))
+                    {
+                        int k3 = k;
+                        while (k3 > k-4)
+                        {
+                            if ( ((fwval(fw,k3) & 0xfff00ff0) == 0xe0800180) && // add rx, ry, rz, lsl #3
+                               ((fwval(fw,k3) & 0x000f0000)>>16) == (unsigned)(fwRd(fw,k1)) ) // check register match
+                            {
+                                // table confirmed, process it
+                                k1 = adr2idx(fw,k2);
+                                while (fwval(fw,k1) != 0)
+                                {
+                                    add_func_name2(fw, fwval(fw,k1), fwval(fw,k1+1), "_FW");
+                                    k1 += 2;
+                                }
+                                break;
+                            }
+                            k3--;
+                        }
+                    }
+                }
+            }
         }
     }
     return 0;
 }
 
-int match_registerproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_registerproc(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     if (isB(fw,k+1) && isMOV_immed(fw,k) && (fwRd(fw,k) == 2))
     {
@@ -6025,7 +7782,7 @@ int match_registerproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
     return 0;
 }
 
-int match_registerlists(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_registerlists(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     if (isBorBL(fw,k+1) && isLDR_PC(fw,k) && (fwRd(fw,k) == 0))
     {
@@ -6175,8 +7932,10 @@ uint32_t findTaskAddress(firmware *fw, int k, int reg)
     return 0;
 }
 
-int match_createtask(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_createtask(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
+    // cams with code copied to RAM: use RAM address
+    k = idxcorr(fw, k);
     if (isBorBL(fw,k))
     {
         uint32_t adr = followBranch2(fw,idx2adr(fw,k),0x01000001);
@@ -6212,6 +7971,14 @@ void find_tasks(firmware *fw)
     {
         search_fw(fw, match_createtask, func_names[k].val, 0, 7);
     }
+    if (fw->dryos_ver >= 59)
+    {
+        k = get_saved_sig(fw,"CreateTaskStrictly_alt"); // r59+
+        if (k >= 0)
+        {
+            search_fw(fw, match_createtask, func_names[k].val, 0, 7);
+        }
+    }
 }
 
 void find_builddate(firmware *fw)
@@ -6239,6 +8006,135 @@ void find_builddate(firmware *fw)
         fw->fw_build_time = 0;
 }
 
+int save_ptp_handler_func(uint32_t op,uint32_t handler) {
+    if((op >= 0x9000 && op < 0x10000) || (op >= 0x1000 && op < 0x2000)) {
+        char *buf=malloc(64);
+        const char *nm=get_ptp_op_name(op);
+        if(nm) {
+            sprintf(buf,"handle_%s",nm);
+        } else {
+            sprintf(buf,"handle_PTP_OC_0x%04x",op);
+        }
+        // TODO Canon sometimes uses the same handler for multiple opcodes
+        add_func_name(buf,handler,NULL);
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
+int find_ptp_handler_imm(firmware *fw, int k)
+{
+    int o;
+
+    uint32_t op=0;
+    uint32_t handler=0;
+
+//    fprintf(stderr,"find_ptp_handler_imm 0x%x\n",idx2adr(fw,k));
+    for (o=-1; o>-7; o--)
+    {
+        if (isLDR_PC(fw,k+o))
+        {
+            if(fwRd(fw,k+o) == 0)
+            {
+                op = LDR2val(fw,k+o);
+            }
+            else if(fwRd(fw,k+o) == 1){
+                handler = LDR2val(fw,k+o);
+            }
+        }
+        // only expect handler to come from adr
+        else if (isADR_PC(fw,k+o) && (fwRd(fw,k+o) == 1))
+        {
+            handler=ADR2adr(fw,k+o);
+        }
+        // TODO op can also be genrated by shifts and bit operations
+        if(op && handler) {
+//            fprintf(stderr,"find_ptp_handler_imm found 0x%x 0x%x\n",op,handler);
+            return save_ptp_handler_func(op,handler);
+        }
+    }
+//    fprintf(stderr,"find_ptp_handler_imm not found\n");
+    return 0;
+}
+
+int match_ptp_handlers(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
+{
+    // check for table of opcode, func ptr (word aligned), ...
+    if(fwval(fw,k) == 0x1004
+        && fwval(fw,k+2) == 0x1005
+        && fwval(fw,k+4) == 0x1006
+        && fwval(fw,k+1) > fw->base && !(fwval(fw,k+1) & 0x3)
+        && fwval(fw,k+3) > fw->base && !(fwval(fw,k+1) & 0x3)
+        && fwval(fw,k+5) > fw->base && !(fwval(fw,k+1) & 0x3))
+    {
+        // TODO canon firmware has count in loop that calls add_ptp_handler,
+        // but for simplicity just checking for valid opcode with hardcoded max
+        int i;
+        for(i=0; i<64; i++) {
+            uint32_t op=fwval(fw,k+i*2);
+            uint32_t handler=fwval(fw,k+i*2+1);
+            // fails on op out of range
+            if(!save_ptp_handler_func(op,handler)) {
+                break;
+            }
+        }
+        return 0;
+    }
+    // otherwise, check for calls
+    // cams with code copied to RAM: use RAM address
+    k = idxcorr(fw, k);
+    if (!isBorBL(fw,k))
+    {
+        return 0;
+    }
+    uint32_t adr = followBranch2(fw,idx2adr(fw,k),0x01000001);
+    // call to add_ptp_handler, try to follow
+    if (adr == fadr)
+    {
+        find_ptp_handler_imm(fw,k);
+    }
+
+    return 0;
+}
+
+void find_ptp_handlers(firmware *fw)
+{
+    int k = get_saved_sig(fw,"add_ptp_handler");
+    if (k >= 0)
+    {
+        search_fw(fw, match_ptp_handlers, func_names[k].val, 0, 128);
+    }
+}
+
+void write_levent_table_dump(firmware *fw, uint32_t tadr)
+{
+    char *str;
+    uint32_t lid = 0;
+    uint32_t val;
+    if (!tadr) {
+        return;
+    }
+    FILE *f=fopen("levent_table.txt","w");
+    if(!f) {
+        return;
+    }
+    fprintf(f,"address    ID     (unknown)  name\n");
+
+    for(;;tadr += 12) {
+        val = *(uint32_t*)adr2ptr(fw, tadr);
+        if ((val == 0xffffffff) || (val == 0) || (*(uint32_t*)adr2ptr(fw, tadr+4) < lid)) {
+            break;
+        }
+        lid = *(uint32_t*)adr2ptr(fw, tadr+4);
+        str = (char*)adr2ptr(fw,val);
+        if (str) {
+            fprintf(f,"0x%08x 0x%04x 0x%08x %s\n",tadr,lid,*(uint32_t*)adr2ptr(fw, tadr+8),str);
+        }
+    }
+    fclose(f);
+}
+
 //------------------------------------------------------------------------------------------------------------
 
 // Write out firmware info
@@ -6252,8 +8148,8 @@ void output_firmware_vals(firmware *fw)
     }
     else
     {
-        if (fw->dryos_ver > 58) // ***** UPDATE for new DryOS version *****
-            bprintf("//   DRYOS R%d (%s) *** New DRYOS Version - please update finsig_dryos.c ***\n",fw->dryos_ver,fw->dryos_ver_str);
+        if (fw->dryos_ver < fw->real_dryos_ver) // check for outdated finsig
+            bprintf("//   DRYOS R%d (%s) *** New DRYOS Version - please update finsig_dryos.c ***\n",fw->real_dryos_ver,fw->dryos_ver_str);
         else
             bprintf("//   DRYOS R%d (%s)\n",fw->dryos_ver,fw->dryos_ver_str);
     }
@@ -6299,11 +8195,42 @@ void output_firmware_vals(firmware *fw)
     }
 
     bprintf("\n// Values for makefile.inc\n");
-    bprintf("//   PLATFORMOSVER = %d\n",fw->dryos_ver);
+
+    // work out digic version
+    int digicver = 0;
+    char *digics = "";
+    if (fw->uncached_adr == 0x10000000)
+    {
+        digicver = 20;
+        digics = "DIGIC II";
+        if (find_str(fw,"FaceFrame") != -1) // face recognition related task
+        {
+            digics = "DIGIC III";
+            digicver = 30;
+        }
+    }
+    else
+    {
+        digicver = 40;
+        digics = "DIGIC 4";
+        if (find_str(fw,"\xac\xd0\x22\xc0") != -1) // 0xc022d0ac, D4+ GPIO
+        {
+            digicver = 41;
+            digics = "DIGIC 4+";
+        }
+        else if (find_str(fw,"\xac\xc0\x22\xc0") != -1) // 0xc022c0ac, D5 GPIO
+        {
+            digicver = 50;
+            digics = "DIGIC 5";
+        }
+    }
+    bprintf("//   DIGIC = %i# %s\n",digicver,digics);
+
+    bprintf("//   PLATFORMOSVER = %d\n",fw->real_dryos_ver);
 
     if (fw->pid != 0)
     {
-        bprintf("//   PLATFORMID = %d (0x%04x) // Found @ 0x%08x\n",fw->pid,fw->pid,fw->pid_adr);
+        bprintf("//   PLATFORMID = %d# (0x%04x) Found @ 0x%08x\n",fw->pid,fw->pid,fw->pid_adr);
     }
     else
     {
@@ -6324,13 +8251,13 @@ void output_firmware_vals(firmware *fw)
 
     if (fw->ksys != 0)
     {
-        bprintf("//   KEYSYS = %s              // Found @ 0x%08x\n",fw->ksys,idx2adr(fw,fw->ksys_idx));
+        bprintf("//   KEYSYS = %s# Found @ 0x%08x\n",fw->ksys,idx2adr(fw,fw->ksys_idx));
 
         if (fw->dancing_bits_idx != 0)
         {
             if (fw->dancing_bits)
             {
-                bprintf("//   NEED_ENCODED_DISKBOOT = %d   // Found @ 0x%08x",fw->dancing_bits,idx2adr(fw,fw->dancing_bits_idx));
+                bprintf("//   NEED_ENCODED_DISKBOOT = %d# Found @ 0x%08x",fw->dancing_bits,idx2adr(fw,fw->dancing_bits_idx));
                 osig *o = find_sig(fw->sv->makevals,"NEED_ENCODED_DISKBOOT");
                 if (o == 0)
                     bprintf(" (*** NOT IN MAKEFILE.INC ***)");
@@ -6345,23 +8272,28 @@ void output_firmware_vals(firmware *fw)
         }
     }
 
+    find_AdditionAgent_RAM(fw);
+
+    bprintf("\n");
+
+    uint32_t u = fw->base+fw->fsize*4;
+    // make it fit in 32bits
+    if (u == 0)
+        u = 0xffffffff;
+    bprintf("// Detected address ranges:\n");
+    bprintf("// %-8s 0x%08x - 0x%08x (%7d bytes)\n","ROM",fw->base,u,fw->fsize*4);
     if ((fw->dryos_ver >= 50) && (fw->base2 != 0))
     {
-        bprintf("\n// Note, ROM copied to RAM :- from 0x%08x, to 0x%08x, len %d words.\n",fw->base_copied,fw->base2,fw->size2);
+        bprintf("// %-8s 0x%08x - 0x%08x copied from 0x%08x (%7d bytes)\n","RAM code",fw->base2,fw->base2+fw->size2*4,fw->base_copied,fw->size2*4);
     }
+    bprintf("// %-8s 0x%08x - 0x%08x copied from 0x%08x (%7d bytes)\n","RAM data",fw->data_start,fw->data_start+fw->data_len*4,fw->data_init_start,fw->data_len*4);
 
-    find_AdditionAgent_RAM(fw);
-    
     bprintf("\n");
 }
 
-#if defined(__linux__) || defined(__APPLE__)
-#define stricmp strcasecmp
-#endif
-
 int compare_func_names(const func_entry **p1, const func_entry **p2)
 {
-    int rv = stricmp((*p1)->name, (*p2)->name);     // Case insensitive
+    int rv = strcasecmp((*p1)->name, (*p2)->name);     // Case insensitive
     if (rv != 0)
         return rv;
     rv = strcmp((*p1)->name, (*p2)->name);          // Case sensitive (if equal with insensitive test)
@@ -6446,8 +8378,13 @@ int main(int argc, char **argv)
     bprintf("#include \"stubs_asm.h\"\n\n");
 
     load_firmware(&fw,argv[1],argv[2],(argc==5)?argv[4]:0, OS_DRYOS);
+    fw.uncached_adr = 0;
+    fw.uncached_adr_idx = 0;
     find_eventprocs(&fw);
+    find_ptp_handlers(&fw);
     find_builddate(&fw);
+    if (!fw.uncached_adr)
+        search_saved_sig(&fw, "FreeUncacheableMemory", match_CAM_UNCACHED_BIT, 0, 0, 8);
     output_firmware_vals(&fw);
 
     out_hdr = 1;
@@ -6458,6 +8395,9 @@ int main(int argc, char **argv)
     bprintf("//    Name                                     Address                Comp to stubs_entry_2.S\n");
 
     find_tasks(&fw);
+    if(get_saved_sig(&fw,"task_ComWireless") >= 0) {
+        cam_has_wifi = 1;
+    }
 
     for (k = 0; k < max_find_func; k++)
     {
@@ -6476,15 +8416,12 @@ int main(int argc, char **argv)
         }
     }
 
-    fw.uncached_adr = 0;
-    fw.uncached_adr_idx = 0;
-    search_saved_sig(&fw, "FreeUncacheableMemory", match_CAM_UNCACHED_BIT, 0, 0, 8);
-    
     find_modemap(&fw);
     find_stubs_min(&fw);
     find_lib_vals(&fw);
     find_key_vals(&fw);
     find_platform_vals(&fw);
+    find_propset(&fw);
     find_other_vals(&fw);
 
     write_output();

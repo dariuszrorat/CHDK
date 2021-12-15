@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "sd_card.h"
 #include "gui_draw.h"
@@ -11,7 +10,8 @@ static char osd_buf[32];
 //-------------------------------------------------------------------
 
 unsigned long get_space_perc() {
-    return GetFreeCardSpaceKb()*100/GetTotalCardSpaceKb();
+    // accuracy reduced to support cards up to 2TB
+    return (GetFreeCardSpaceKb()>>6)*100/(GetTotalCardSpaceKb()>>6);
 }
 
 // Local variables used by various space display functions, setup in space_color
@@ -25,7 +25,7 @@ static void space_color()
     perc = get_space_perc();
     cl = user_color(conf.space_color);
     if (((conf.space_warn_type == 0) && (perc <= conf.space_perc_warn)) ||
-        ((conf.space_warn_type == 1) && (GetFreeCardSpaceKb() <= conf.space_mb_warn*1024)))
+        ((conf.space_warn_type == 1) && (GetFreeCardSpaceKb() <= (unsigned)conf.space_mb_warn*1024)))
     {
         cl = user_color(conf.osd_color_warn);
     }
@@ -116,7 +116,7 @@ static void gui_space_draw_icon()
     color cl1 = IDX_COLOR_GREEN_DK;
     color cl2 = IDX_COLOR_GREEN;
     if (((conf.space_warn_type == 0) && (perc <= conf.space_perc_warn)) ||
-        ((conf.space_warn_type == 1) && (GetFreeCardSpaceKb() <= conf.space_mb_warn*1024)))
+        ((conf.space_warn_type == 1) && (GetFreeCardSpaceKb() <= (unsigned)conf.space_mb_warn*1024)))
     {
         cl1 = IDX_COLOR_RED_DK;
         cl2 = IDX_COLOR_RED;
@@ -157,8 +157,8 @@ static void gui_space_draw_value(int force)
         else if (conf.space_mb_show)
         {
             unsigned int freemb = GetFreeCardSpaceKb()/1024;
-            if (freemb < 10000) sprintf(osd_buf+offset, "%4d%M\0",freemb);
-            else sprintf(osd_buf+offset, "%4d%G\0",freemb/1024);   // if 10 GiB or more free, print in GiB instead of MiB
+            if (freemb < 10000) sprintf(osd_buf+offset, "%4dM\0",freemb);
+            else sprintf(osd_buf+offset, "%4dG\0",freemb/1024);   // if 10 GiB or more free, print in GiB instead of MiB
         }
     }
 

@@ -12,6 +12,7 @@
 #include "modules.h"
 #include "module_load.h"
 #include "shooting.h"
+#include "ctype.h"
 
 //------------------------------------------------
 // Notes on the module auto-load system
@@ -87,8 +88,8 @@
 
 static void             dummy_void()    {}
 static int              dummy_int()     { return 0; }
-static char*            dummy_pchar()   { return (char*)0; }
-static unsigned char*   dummy_puchar()  { return (unsigned char*)0; }
+// static char*            dummy_pchar()   { return (char*)0; }
+// static unsigned char*   dummy_puchar()  { return (unsigned char*)0; }
 
 /************* DYNAMIC LIBRARY RAWOPERATION ******/
 
@@ -149,7 +150,7 @@ librawop_sym* librawop = &default_librawop;
 static void* saved_edgebuf = 0;
 static int saved_edgestate = 0;
 
-void module_restore_edge(void **buf, int *state) { *buf = saved_edgebuf; *state = saved_edgestate; }
+int module_restore_edge(void **buf) { *buf = saved_edgebuf; return saved_edgestate; }
 void module_save_edge(void* buf, int state)      { saved_edgebuf = buf; saved_edgestate = state; }
 
 #define MODULE_NAME_EDGEOVR "edgeovr.flt"

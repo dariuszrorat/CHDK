@@ -91,8 +91,6 @@
 
     #define CAM_DISABLE_RAW_IN_LOW_LIGHT_MODE   1   // For cameras with 'low light' mode that does not work with raw define this
 
-    #define CAM_USE_ALT_SET_ZOOM_POINT          1   // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt    1   // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
     #define CAM_NEED_SET_ZOOM_DELAY             300 // Define to add a delay after setting the zoom position
     
     #undef  CAM_HAS_ERASE_BUTTON
@@ -105,8 +103,9 @@
     #undef CAM_AF_LED
     #define CAM_AF_LED                      1
 
-    // #define CAM_VIDEO_QUALITY_ONLY          1       // ineffective even in VGA mode with current source
-    #undef  CAM_CHDK_HAS_EXT_VIDEO_MENU
+    //#define CAM_VIDEO_QUALITY_ONLY          1
+    #undef  CAM_VIDEO_CONTROL
+    #undef  CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO    // it's unlocked by default
     #define CAM_IS_VID_REC_WORKS            1       // TODO
     
     #undef  CAM_USB_EVENTID

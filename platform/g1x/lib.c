@@ -68,7 +68,7 @@ void debug_led(int state)
 // 1/1 - Lower indicator Orange
 // 2/3 - Power LED Green
 // 3/9 - AF Assist Lamp
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[5]={0,1,3,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -98,11 +98,12 @@ void *vid_get_viewport_fb()
 
 void *vid_get_viewport_live_fb()
 {
-    if (camera_info.state.mode_video || is_video_recording())
-        return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
+    int b = (active_viewport_buffer-1)&3;
+    if ((b == 3) && (camera_info.state.mode_video || ((camera_info.state.mode & MODE_SHOOTING_MASK) == MODE_VIDEO_MOVIE_DIGEST) || is_video_recording()))
+        b = 2;  // Video only seems to use the first 3 viewport buffers.
 
     // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
-    return viewport_buffers[(active_viewport_buffer-1)&3];
+    return viewport_buffers[b];
 }
 
 void *vid_get_viewport_fb_d()
@@ -211,7 +212,6 @@ int vid_get_viewport_display_yoffset()
 // Functions for PTP Live View system
 int vid_get_viewport_display_xoffset_proper()   { return vid_get_viewport_display_xoffset() * 2; }
 int vid_get_viewport_display_yoffset_proper()   { return vid_get_viewport_display_yoffset() * 2; }
-int vid_get_viewport_width_proper()             { return vid_get_viewport_width() * 2; }
 int vid_get_viewport_height_proper()            { return vid_get_viewport_height() * 2; }
 int vid_get_viewport_fullscreen_height()        { return 480; }
 int vid_get_palette_type()                      { return 3; }
@@ -226,7 +226,10 @@ void *vid_get_bitmap_active_palette()
 {
     extern int active_palette_buffer;
     extern char* palette_buffer[];
-    return (palette_buffer[active_palette_buffer]+4);
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 4;
+    return p;
 }
 
 // Function to load CHDK custom colors into active Canon palette
@@ -237,7 +240,7 @@ void load_chdk_palette()
     if ((active_palette_buffer == 0) || (active_palette_buffer == 3) || (active_palette_buffer == 6))
     {
         int *pal = (int*)vid_get_bitmap_active_palette();
-        if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+        if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
         {
             pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
             pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red

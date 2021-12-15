@@ -2,8 +2,6 @@
 #include "platform_palette.h"
 #include "lolevel.h"
 
-static char*    frame_buffer[2];
-
 void vid_bitmap_refresh()
 {
 	extern int full_screen_refresh;
@@ -45,7 +43,7 @@ void debug_led(int state)
 // S100 has two 'lights' - Power LED, and AF assist lamp
 // Power Led = first entry in table (led 0)
 // AF Assist Lamp = second entry in table (led 1)
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[2]={7,10};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -180,7 +178,6 @@ int vid_get_viewport_display_yoffset()
 // Functions for PTP Live View system
 int vid_get_viewport_display_xoffset_proper()   { return vid_get_viewport_display_xoffset() * 2; }
 int vid_get_viewport_display_yoffset_proper()   { return vid_get_viewport_display_yoffset() * 2; }
-int vid_get_viewport_width_proper()             { return vid_get_viewport_width() * 2; }
 int vid_get_viewport_height_proper()            { return vid_get_viewport_height() * 2; }
 int vid_get_viewport_fullscreen_height()        { return 480; }
 int vid_get_palette_type()                      { return 5; }
@@ -193,9 +190,12 @@ void *vid_get_bitmap_active_buffer()
 
 void *vid_get_bitmap_active_palette()
 {
-     extern int active_palette_buffer;
-     extern char* palette_buffer[];
-     return (palette_buffer[active_palette_buffer]+4);
+    extern int active_palette_buffer;
+    extern char* palette_buffer[];
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 4;
+    return p;
 }
 
 // Function to load CHDK custom colors into active Canon palette
@@ -206,7 +206,7 @@ void load_chdk_palette()
     if ((active_palette_buffer == 0) || (active_palette_buffer == 3))
     {
         int *pal = (int*)vid_get_bitmap_active_palette();
-        if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+        if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
         {
             pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
             pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red

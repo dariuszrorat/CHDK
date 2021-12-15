@@ -116,11 +116,6 @@
     // TODO largest value obtained focusing at distant things
     #define CAMERA_MAX_DIST              775194       // Define max distance that can be set in _MoveFocusLensToDistance (allow override for superzooms - SX30/SX40)
 
-    // TODO the following is required to make the IN_AF_LOCK_ONLY logic work, even though the camera has no MF
-    // this requires PROPCASE_AFLOCK be set if using set_aflock from script
-    #undef CAM_CAN_SD_OVER_NOT_IN_MF
-    #define  CAM_CAN_SD_OVER_IN_AF_LOCK_ONLY 1      // Camera allows subject distance (focus) override only when in AF Lock mode OR in movie mode
-
     #define CAM_DATE_FOLDER_NAMING          0x80
 
     #define PARAM_CAMERA_NAME               3       // parameter number for GetParameterData
@@ -132,6 +127,10 @@
 
 //    only non-AF led available
     #define REMOTE_SYNC_STATUS_LED          0xC0220094 // specifies an LED that turns on while camera waits for USB remote to sync
+    #define CAM_REMOTE_ANALOG_AV                1 // Camera supports analog AV detect for remote signal
+    #define CAM_REMOTE_AtoD_CHANNEL             5 // Camera supports using 3rd battery terminal as well as USB for remote - value = A/D channel to poll
+// elph130 - open circuit 1023, 10k ohm ~340 (=25c) 3.5k = ~160 (54c)
+//    #define CAM_REMOTE_AtoD_THRESHOLD       200 // 3rd battery terminal A/D reading threshold ( lower = 1, higher = 0 )
 
     #undef CAM_AF_LED
     #define CAM_AF_LED                      1
@@ -143,11 +142,10 @@
     #define CAM_SD_OVER_IN_AFL              1
     #define CAM_SD_OVER_IN_MF               1
 
-    #define CAM_USE_OPTICAL_MAX_ZOOM_STATUS 1       // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom
-    #define CAM_USE_ALT_SET_ZOOM_POINT      1       // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt 1      // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
     #define CAM_NEED_SET_ZOOM_DELAY          150    // Define to add a delay after setting the zoom position
 
     #define CAM_IS_VID_REC_WORKS                1   // is_video_recording() function works
+
+    #define CAM_HAS_WIFI                    1 // Camera has wifi support
 
 //----------------------------------------------------------

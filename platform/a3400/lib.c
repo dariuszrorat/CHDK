@@ -31,7 +31,7 @@ void debug_led(int state)
 // A3400IS has two 'lights' - Power LED, and AF assist lamp
 // Power Led = first entry in table (led 0)
 // AF Assist Lamp = second entry in table (led 1)
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
     static char led_table[2]={0,4};
     if(state<=1) _LEDDrive(led_table[led%sizeof(led_table)], (!state)&1);
 }
@@ -77,9 +77,12 @@ void vid_bitmap_refresh() {
 }
 
 void *vid_get_bitmap_active_palette() {
-        extern int active_palette_buffer;
-        extern char* palette_buffer[];
-        return (palette_buffer[active_palette_buffer]+4);
+    extern int active_palette_buffer;
+    extern char* palette_buffer[];
+    void* p = palette_buffer[active_palette_buffer & 7];
+    // Don't add offset if value is 0
+    if (p) p += 4;
+    return p;
 }
 
 #ifdef CAM_LOAD_CUSTOM_COLORS
@@ -92,7 +95,7 @@ void load_chdk_palette() {
         if ((active_palette_buffer == 0) || (active_palette_buffer == 5))
         {
                 int *pal = (int*)vid_get_bitmap_active_palette();
-                if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+                if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
                 {                
                         pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
                         pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red
@@ -130,13 +133,13 @@ void *vid_get_bitmap_active_buffer()
 
 static int af_locked_in_movierec = 0;
 
-void _MakeAFScan(int *a, int b) {
+void _MakeAFScan(__attribute__ ((unused))int *a, __attribute__ ((unused))int b) {
     _DoAFLock();
     af_locked_in_movierec = 1;
 }
 
 void state_check_for_movie_af() {
-    if ((movie_status != VIDEO_RECORD_IN_PROGRESS) && af_locked_in_movierec) {
+    if ((get_movie_status() != VIDEO_RECORD_IN_PROGRESS) && af_locked_in_movierec) {
         af_locked_in_movierec = 0;
         _UnlockAF();
     }

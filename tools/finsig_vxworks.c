@@ -8,10 +8,12 @@
 
 #include "stubs_load.h"
 #include "firmware_load.h"
+#include "ptp_op_names.h"
 
 //------------------------------------------------------------------------------------------------------------
 // #define DEBUG_PRINT_ALL_FUNC_NAMES 1 // enable debug output on stderr for development
 // #define LIST_IMPORTANT_FUNCTIONS   1 // always list functions with 'LIST_ALWAYS' flag, even when not found
+// #define PRINT_LEVENT_TABLE 1         // print all levents to file
 //------------------------------------------------------------------------------------------------------------
 
 // Buffer output into header and body sections
@@ -231,7 +233,7 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "DebugAssert", OPTIONAL },
     { "DeleteDirectory_Fut", UNUSED|DONT_EXPORT },
     { "DeleteFile_Fut" },
-    { "DeleteSemaphore", UNUSED|DONT_EXPORT },
+    { "DeleteSemaphore", },
     { "DoAELock" },
     { "DoAFLock" },
     { "EnterToCompensationEVF" },
@@ -253,6 +255,9 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "GetBatteryTemperature" },
     { "GetCCDTemperature" },
     { "GetCurrentAvValue" },
+    { "GetCurrentShutterSpeed" },
+    { "GetUsableMaxAv", OPTIONAL },
+    { "GetUsableMinAv", OPTIONAL },
     { "GetDrive_ClusterSize" },
     { "GetDrive_FreeClusters" },
     { "GetDrive_TotalClusters" },
@@ -302,6 +307,7 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "SetAE_ShutterSpeed" },
     { "SetAutoShutdownTime" },
     { "SetCurrentCaptureModeType" },
+    { "SetDate" },
     { "SetFileAttributes" },
     { "SetFileTimeStamp", UNUSED|DONT_EXPORT },
     { "SetLogicalEventActive" },
@@ -332,9 +338,20 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "apex2us" },
     { "close" },
     { "err_init_task", OPTIONAL },
-    { "exmem_alloc" },
-    { "exmem_free", OPTIONAL },
+    { "exmem_alloc", OPTIONAL },
+    { "exmem_free", UNUSED|OPTIONAL },
+    { "exmem_alloc_low", UNUSED|OPTIONAL }, // helper
+    { "exmem_free_low", UNUSED|OPTIONAL }, // helper
+    { "exmem_ualloc" },
+    { "exmem_ufree" },
+    { "exmem_assert", UNUSED|OPTIONAL|LIST_ALWAYS }, // helper
     { "free" },
+    { "get_nd_value", OPTIONAL },
+    { "get_current_exp", UNUSED|OPTIONAL },
+    { "get_current_nd_value", OPTIONAL },
+    { "get_current_deltasv" },
+    { "GetBaseSv", OPTIONAL|UNUSED },
+    { "GetCurrentDriveBaseSvValue" },
 
     { "kbd_p1_f" },
     { "kbd_p1_f_cont" },
@@ -480,6 +497,10 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "EnableInterrupt", OPTIONAL|UNUSED }, // enables IRQ
     { "GetCurrentMachineTime", OPTIONAL|UNUSED }, // reads usec counter, name from ixus30
     { "HwOcReadICAPCounter", OPTIONAL|UNUSED }, // reads usec counter, name from ixus30
+    { "EnableDispatch", OPTIONAL|UNUSED }, // enables task switching (high level wrapper)
+    { "DisableDispatch", OPTIONAL|UNUSED }, // disables task switching (high level wrapper)
+    { "EnableDispatch_low", OPTIONAL|UNUSED }, // enables task switching
+    { "DisableDispatch_low", OPTIONAL|UNUSED }, // disables task switching
 
     // Other stuff needed for finding misc variables - don't export to stubs_entry.S
     { "GetSDProtect", UNUSED|DONT_EXPORT },
@@ -497,17 +518,25 @@ func_entry  func_names[MAX_FUNC_ENTRY] =
     { "WaitForEventFlag", UNUSED|DONT_EXPORT }, // helper to find other eventflag functions
 
     { "filesem_init", OPTIONAL|UNUSED }, // file semaphore init function, needed for verification
+    { "ImagerActivate", OPTIONAL|UNUSED }, // helper
+    { "DoMovieFrameCapture", OPTIONAL|UNUSED },
+    { "MenuIn", OPTIONAL|UNUSED },
+    { "MenuOut", OPTIONAL|UNUSED },
 
     { "MFOn", OPTIONAL },
     { "MFOff", OPTIONAL },
 
     { "GetAdChValue", OPTIONAL },
+    { "get_ptp_buf_size", OPTIONAL },
+    { "get_ptp_file_buf", OPTIONAL },
+
+    { "cameracon_set_state", OPTIONAL|UNUSED }, // made up name, helper for cameracon_state variable
 
     { 0, 0, 0 }
 };
 
 // Return the array index of a named function in the array above
-uint32_t find_saved_sig(const char *name)
+int find_saved_sig(const char *name)
 {
     int i;
     for (i=0; func_names[i].name != 0; i++)
@@ -532,7 +561,7 @@ void save_sig(const char *name, uint32_t val)
 
 // Get the saved address value for a named function
 // If the address value is 0 then assume the function search has not occurred yet, so go search for it.
-uint32_t get_saved_sig(firmware *fw, const char *name)
+int get_saved_sig(firmware *fw, const char *name)
 {
     int i = find_saved_sig(name);
     if (i >= 0)
@@ -610,7 +639,7 @@ typedef struct {
 uint32_t apex2us_test[] = { 0x3D09000, 0x3BBA304, 0x3A728D2, 0x3931EF4, 0x37F8303, 0x36C52A2, 0x3598B85, 0x3472B6A, 0 };
 
 // Special case for apex2us
-int match_apex2us(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_apex2us(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw,k) && (LDR2val(fw,k) == v1) && ((fwRd(fw,k) == 1) || (fwRd(fw,k) == 2)))
     {
@@ -626,7 +655,7 @@ int match_apex2us(firmware *fw, int k, uint32_t v1, uint32_t v2)
     }
     return 0;
 }
-int find_apex2us(firmware *fw, string_sig *sig, int j)
+int find_apex2us(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     int i;
     for (i=0; apex2us_test[i] != 0; i++)
@@ -637,7 +666,7 @@ int find_apex2us(firmware *fw, string_sig *sig, int j)
 }
 
 // Special case for mkdir
-int find_mkdir(firmware *fw, string_sig *sig, int k)
+int find_mkdir(firmware *fw, __attribute__ ((unused))string_sig *sig, int k)
 {
     if (fwval(fw,k) == 0x12CEA600)
     {
@@ -668,7 +697,7 @@ int find_mkdir(firmware *fw, string_sig *sig, int k)
 }
 
 // Special case for _pow
-int find_pow(firmware *fw, string_sig *sig, int j)
+int find_pow(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     if (!idx_valid(fw,j) || !idx_valid(fw,j+3)) return 0;
     // Find values passed to _pow
@@ -725,7 +754,7 @@ int find_pow(firmware *fw, string_sig *sig, int j)
 }
 
 // Special case for _log & _log10
-int find_log(firmware *fw, string_sig *sig, int j)
+int find_log(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     // Find values passed to _log
     if (isBL(fw,j) && isLDR_PC(fw,j+1) && (LDR2val(fw,j+1) == 0x3FDBCB7B) && isLDR_PC(fw,j+2) && (LDR2val(fw,j+2) == 0x1526E50E))
@@ -737,7 +766,7 @@ int find_log(firmware *fw, string_sig *sig, int j)
 
     return 0;
 }
-int find_log10(firmware *fw, string_sig *sig, int j)
+int find_log10(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     // Find values passed to _log
     if (isBL(fw,j) && isLDR_PC(fw,j+1) && (LDR2val(fw,j+1) == 0x3FDBCB7B) && isLDR_PC(fw,j+2) && (LDR2val(fw,j+2) == 0x1526E50E))
@@ -749,6 +778,57 @@ int find_log10(firmware *fw, string_sig *sig, int j)
     }
 
     return 0;
+}
+// Special case for get_ptp_file_buf
+int find_get_ptp_file_buf(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
+{
+    /*
+     * looking for
+     * MOV r0,#4
+     * BNE
+     * BL get_ptp_buf_size
+     * BIC r1, r0, #1
+     * MOV r0,#4
+     * BL sub...
+    */
+    if(!(isMOV_immed(fw,j)
+        && (fwRn(fw,j) == 0)
+        && ((fwval(fw,j+1) & 0xFF000000) == 0x1A000000) // BNE
+        && isBL(fw,j+2)
+        && ((fwval(fw,j+3) & 0xFFF00000) == 0xe3C00000) // BIC
+        && (ALUop2(fw,j+3) == 1)
+        && isMOV_immed(fw,j+4)
+        && (fwRn(fw,j+4) == 0)
+        && isBL(fw,j+5))) {
+        return 0;
+    }
+    if(ALUop2(fw,j) != 4 || ALUop2(fw,j+4) != 4) {
+        return 0;
+    }
+
+    uint32_t f1 = followBranch(fw,idx2adr(fw,j+2),0x01000001);
+    int i = get_saved_sig(fw,"get_ptp_buf_size");
+    // if sig not found, end search completely
+    if(i < 0) {
+        // fprintf(stderr,"find_get_ptp_file_buf func missing @0x%08x\n",idx2adr(fw,j));
+        return 1;
+    }
+    if(f1 != func_names[i].val) {
+        // fprintf(stderr,"find_get_ptp_file_buf func mismatch @0x%08x\n",idx2adr(fw,j));
+        return 0;
+    }
+    // search backwards for push
+    int k = find_inst_rev(fw, isSTMFD_LR, j-1, 8);
+    if(k < 0) {
+        // fprintf(stderr,"find_get_ptp_file_buf failed to find push @0x%08x\n",idx2adr(fw,j));
+        return 0;
+    }
+    // functions could have a MOV, LDR etc before the push, but not seen for this function
+    uint32_t fadr = idx2adr(fw, k);
+    fwAddMatch(fw,fadr,32,0,121);
+    // fprintf(stderr,"find_get_ptp_file_buf match @0x%08x\n",fadr);
+
+    return 1;
 }
 
 // Special case for 'closedir' (DryOS)
@@ -770,7 +850,7 @@ int find_closedir(firmware *fw)
 }
 
 // Special case for 'add_ptp_handler'
-int find_add_ptp_handler(firmware *fw, string_sig *sig, int k)
+int find_add_ptp_handler(firmware *fw, __attribute__ ((unused))string_sig *sig, int k)
 {
     uint32_t vals[] = { 0x9801, 0x9802, 0x9803, 0x9804, 0x9805, 0 };
     uint32_t fadr = 0;
@@ -962,6 +1042,502 @@ int find_getcurrentmachinetime(firmware *fw)
     return 0;
 }
 
+// for cams with ND and Iris (g7)
+int find_get_nd_value(firmware *fw)
+{
+    // match is only for cams with both, task is mostly a good indicator
+    if((get_saved_sig(fw,"task_NdActuator") < 0) || (get_saved_sig(fw,"task_IrisEvent") < 0)) {
+        return 0;
+    }
+    int f1 = find_saved_sig("get_nd_value");
+    if ((f1 >= 0) && (func_names[f1].val != 0)) // return if func already found
+        return 0;
+
+    f1 = get_saved_sig(fw,"PutInNdFilter_FW");
+    int f2 = get_saved_sig(fw,"ClearEventFlag");
+
+    if ((f1 < 0) || (f2 < 0))
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    f2 = adr2idx(fw, func_names[f2].val);
+    int k1 = find_Nth_inst(fw,isBL,f1,10,2);
+    int k2 = find_inst(fw,isBL,f1,6);
+    if ((k1 == -1) || (k2 == -1))
+        return 0;
+    if ( followBranch2(fw,idx2adr(fw,k2),0x01000001) != idx2adr(fw,f2) ) // ClearEventFlag?
+        return 0;
+
+    // note the folliwng isn't super robust, but only one model
+    k1 = idxFollowBranch(fw,k1,0x01000001); // PutInNdFilter_low veneer
+    k1 = find_inst(fw,isB,k1,3); // veneer
+    if (k1 == -1) {
+        return 0;
+    }
+    k1 = idxFollowBranch(fw,k1,0x00000001); // PutInNdFilter_low
+    if (k1 == -1) {
+        return 0;
+    }
+    k1 = find_inst(fw,isBL,k1,4); // get_nd_value wrapper
+    if (k1 == -1) {
+        return 0;
+    }
+    k1 = idxFollowBranch(fw,k1,0x01000001); //
+    k1 = find_inst(fw,isBL,k1,2); // get_nd_value
+    if (k1 == -1) {
+        return 0;
+    }
+    k1 = idxFollowBranch(fw,k1,0x01000001);
+    fwAddMatch(fw,idx2adr(fw,k1),32,0,122);
+    return 1;
+}
+
+// for cams with both ND and iris
+int find_get_current_nd_value_iris(firmware *fw)
+{
+    // match is only for cams with both, task is mostly a good indicator
+    if((get_saved_sig(fw,"task_NdActuator") < 0) || (get_saved_sig(fw,"task_IrisEvent") < 0)) {
+        return 0;
+    }
+    int f1 = get_saved_sig(fw,"get_current_exp");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int blcnt, i;
+    // expect
+    // 2x bl DebugAssert
+    // followed by 5 bl with other instruction between
+    // looking for 5th
+    for(i=0, blcnt=0; i<28 && blcnt < 8; i++) {
+        if(!isBL(fw,f1+i)) {
+            continue;
+        }
+        blcnt++;
+        if(blcnt == 7) {
+            int f2 = idxFollowBranch(fw,f1+i,0x01000001);
+            // non-ND cameras have a call to return 0
+            if(isMOV(fw,f2) && (fwRd(fw,f2) == 0) && (fwOp2(fw,f2) == 0)) // MOV R0, 0
+                return 0;
+            // expect wrapper that pushes LR, makes return a short
+            if(isBL(fw,f2+1)) {
+                f2 = idxFollowBranch(fw,f2+1,0x01000001);
+                fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+                return 1;
+            }
+            return 0;
+        }
+    }
+    return 0;
+}
+
+int find_get_current_nd_value(firmware *fw)
+{
+
+    // string only present on ND-only cameres
+    if(find_str(fw, "IrisSpecification.c") < 0) {
+        return find_get_current_nd_value_iris(fw);
+    }
+
+    int f1 = get_saved_sig(fw,"GetCurrentAvValue");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    // skip wrapper
+    if (!isBL(fw,f1+1))
+        return 0;
+    f1 = idxFollowBranch(fw,f1+1,0x01000001);
+    // expect
+    // ldr r0, ="IrisController.c"
+    // bl DebugAssert
+    // bl get_current_nd_value
+    int sadr = find_str(fw, "IrisController.c");
+    int j = find_nxt_str_ref(fw, sadr, f1);
+    if ((j < 0) || (j-f1 > 8))
+        return 0;
+
+    j = find_Nth_inst(fw,isBL,j,8,2);
+    if (j == -1)
+        return 0;
+    f1 = idxFollowBranch(fw,j,0x01000001);
+    fwAddMatch(fw,idx2adr(fw,f1),32,0,122);
+    return 1;
+}
+
+// get live view "DeltaSV" value
+int find_get_current_deltasv(firmware *fw)
+{
+    int f1 = get_saved_sig(fw,"get_current_exp");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int blcnt, i;
+    // expect
+    // 2x bl DebugAssert
+    // followed by at least 3 bl with other instructions between
+    // looking for 3rd
+    for(i=0, blcnt=0; i<24 && blcnt < 5; i++) {
+        if(!isBL(fw,f1+i)) {
+            continue;
+        }
+        blcnt++;
+        if(blcnt == 5) {
+            int f2 = idxFollowBranch(fw,f1+i,0x01000001);
+            // veneer?
+            if(isB(fw,f2)) {
+                f2 = idxFollowBranch(fw,f2,0x00000001);
+            }
+            fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int find_exmem_ufree(firmware *fw)
+{
+
+    int k = get_saved_sig(fw,"ExMem.FreeCacheable_FW"); // newer cam
+    if (k >= 0)
+        return 0;
+    k = get_saved_sig(fw,"memset_FW");
+    if (k < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    int sadr = find_str(fw, "ComMemMan.c"); // always there
+    int j = find_nxt_str_ref(fw, sadr, sadr);
+    if (j < 0)
+        return 0;
+    j = find_nxt_str_ref(fw, sadr, j+1);
+    if (j < 0)
+        return 0;
+    int n;
+    for (n=j+8; n<j+36; n++)
+    {
+        if (isBL(fw,n))
+        {
+            if (idx2adr(fw,idxFollowBranch(fw,n,0x01000001)) == idx2adr(fw,k))
+            {
+                int m = find_inst_rev(fw,isBL,n-1,4);
+                if (m != -1)
+                {
+                    m = idxFollowBranch(fw,m,0x01000001);
+                    fwAddMatch(fw,idx2adr(fw,m),32,0,122);
+                    return 1;
+                }
+            }
+        }
+    }
+    // no success, search for first routine calling exmem_free_low
+    k = get_saved_sig(fw,"exmem_free_low");
+    if (k < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    for (n=50; n<1000; n++) {
+        if (isBL(fw,k+n)) {
+            int m = idxFollowBranch(fw,k+n,0x01000001);
+            if (idx2adr(fw,m) == idx2adr(fw,k))
+            {
+                j = find_inst_rev(fw,isSTMFD_LR,k+n,23);
+                if (j != -1) {
+                    fwAddMatch(fw,idx2adr(fw,j),32,0,122);
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int find_exmem_ualloc(firmware *fw)
+{
+
+    int k = get_saved_sig(fw,"ExMem.AllocCacheable_FW"); // newer cam
+    if (k >= 0)
+        return 0;
+    k = get_saved_sig(fw,"DebugAssert"); //
+    if (k < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    int sadr = find_str(fw, "ComMemMan.c"); // always there
+    int j = find_nxt_str_ref(fw, sadr, sadr);
+    if (j < 0)
+        return 0;
+    int m = find_inst(fw,isBorBL,j+3,10);
+    if (m != -1)
+    {
+        m = idxFollowBranch(fw,m,0x01000001);
+        if (idx2adr(fw,m) != idx2adr(fw,k))
+        {
+            fwAddMatch(fw,idx2adr(fw,m),32,0,122);
+            return 1;
+        }
+    }
+    // no success, search for first routine calling exmem_alloc_low
+    k = get_saved_sig(fw,"exmem_alloc_low");
+    if (k < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    int n;
+    for (n=70; n<1000; n++) {
+        if (isBL(fw,k+n)) {
+            m = idxFollowBranch(fw,k+n,0x01000001);
+            if (idx2adr(fw,m) == idx2adr(fw,k))
+            {
+                j = find_inst_rev(fw,isSTMFD_LR,k+n,14);
+                if (j != -1) {
+                    fwAddMatch(fw,idx2adr(fw,j),32,0,122);
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int find_exmem_free(firmware *fw)
+{
+
+    int k = get_saved_sig(fw,"ExMem.FreeCacheable_FW"); // newer cam
+    if (k >= 0)
+        return 0;
+    k = get_saved_sig(fw,"exmem_free_low");
+    if (k < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    int n;
+    for (n=50; n<1000; n++) {
+        if (isBL(fw,k+n)) {
+            int m = idxFollowBranch(fw,k+n,0x01000001);
+            if (idx2adr(fw,m) == idx2adr(fw,k))
+            {
+                int bic = 0;
+                int o;
+                for (o=1; o<9; o++) {
+                    if ((fwval(fw,k+n-o)&0xfff00fff) == 0xe3c00201) { // bic rx, rx, 0x10000000
+                        bic++;
+                        break;
+                    }
+                }
+                if (!bic) {
+                    continue;
+                }
+                int j = find_inst_rev(fw,isSTMFD_LR,k+n,30);
+                if (j != -1) {
+                    fwAddMatch(fw,idx2adr(fw,j),32,0,122);
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int find_exmem_alloc(firmware *fw)
+{
+
+    int k = get_saved_sig(fw,"ExMem.AllocCacheable_FW"); // newer cam
+    k = get_saved_sig(fw,"exmem_alloc_low");
+    if (k < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    int n;
+    for (n=70; n<1000; n++) {
+        if (isBL(fw,k+n)) {
+            int m = idxFollowBranch(fw,k+n,0x01000001);
+            if (idx2adr(fw,m) == idx2adr(fw,k))
+            {
+                int bic = 0;
+                int o;
+                for (o=1; o<9; o++) {
+                    if ((fwval(fw,k+n+o)&0xfff00fff) == 0xe3c00201) { // bic rx, rx, 0x10000000
+                        bic++;
+                        break;
+                    }
+                }
+                if (!bic) {
+                    continue;
+                }
+                int j = find_inst_rev(fw,isSTMFD_LR,k+n,16);
+                if (j != -1) {
+                    fwAddMatch(fw,idx2adr(fw,j),32,0,122);
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int find_get_ptp_buf_size(firmware *fw)
+{
+    int j = get_saved_sig(fw,"handle_PTP_OC_SendObject"); // same handler as CANON_SendObjectByPath
+    if(j < 0) {
+        // fprintf(stderr,"find_get_ptp_buf_size missing handle_PTP_OC_SendObject\n");
+        return 0;
+    }
+    int k=adr2idx(fw,func_names[j].val);
+    int k_max=k+120;
+    uint32_t adr=0;
+    // ID of the file buffer appears to always be 4 on vxworks
+    // very early cams have a hard coded size
+    uint32_t file_buf_id=4;
+
+    for(; k < k_max;k++) {
+        // look for
+        // mov r0,#file_buf_id
+        // bl ...
+        if(isMOV_immed(fw,k) && fwRn(fw,k) == 0 && ALUop2(fw,k) == file_buf_id && isBL(fw, k+1)) {
+            adr = followBranch(fw,idx2adr(fw,k+1),0x01000001);
+            // fprintf(stderr,"find_get_ptp_buf_size match 1 0x%08x @0x%08x\n",adr,idx2adr(fw,k+1));
+            break;
+        }
+    }
+    if(!adr) {
+        // fprintf(stderr,"find_get_ptp_buf_size no match\n");
+        return 0;
+    }
+    // look for same seq again, within 6 ins
+    k_max = k+6;
+    for(; k < k_max;k++) {
+        if(isMOV_immed(fw,k) && fwRn(fw,k) == 0 && ALUop2(fw,k) == file_buf_id && isBL(fw, k+1)) {
+            uint32_t adr2 = followBranch(fw,idx2adr(fw,k+1),0x01000001);
+            // is it the same address?
+            if(adr2 == adr) {
+                // fprintf(stderr,"find_get_ptp_buf_size match 2 @0x%08x\n",idx2adr(fw,k+1));
+                fwAddMatch(fw,adr,32,0,122);
+                return 0;
+            }
+            // fprintf(stderr,"find_get_ptp_buf_size match 2 mismatch 0x%08x != 0x%08x @0x%08x\n",adr,adr2,idx2adr(fw,k+1));
+        }
+    }
+    return 0;
+}
+
+int find_GetBaseSv(firmware *fw)
+{
+    int j = get_saved_sig(fw,"SetPropertyCase");
+    if (j < 0)
+        return 0;
+    j = adr2idx(fw, func_names[j].val);
+    int j2 = get_saved_sig(fw,"DebugAssert");
+    if (j2 < 0)
+        return 0;
+    j2 = adr2idx(fw, func_names[j2].val);
+
+    int sadr = find_str(fw, "Sensitive.c");
+    if (sadr < fw->lowest_idx)
+        return 0;
+    int s1 = find_nxt_str_ref(fw, sadr, -1/*fw->lowest_idx*/);
+    int hist[3] = {0, 0, 0};
+    while (s1 >= 0)
+    {
+        hist[2] = hist[1];
+        hist[1] = hist[0];
+        hist[0] = s1;
+        if (hist[0] && hist[1] && hist[2])
+        {
+            if ((hist[0]-hist[1]<7) && (hist[1]-hist[2]<9))
+            {
+                int n;
+                for (n=s1+1; n<s1+26; n++)
+                {
+                    if ( isBL(fw, n) )
+                    {
+                        int k;
+                        k = idxFollowBranch(fw,n,0x01000001);
+                        if ( idx2adr(fw, k) == idx2adr(fw, j) )
+                        {
+                            // SetPropertyCase call found
+                            k = find_inst(fw, isBL, s1+2, 6);
+                            if (k != -1)
+                            {
+                                int l = idxFollowBranch(fw,k,0x01000001);
+                                if (idx2adr(fw,l) == idx2adr(fw,j2)) // DebugAssert?
+                                {
+                                    k = find_inst(fw, isBL, k+1, 6);
+                                    if (k == -1)
+                                        break;
+                                    l = idxFollowBranch(fw,k,0x01000001);
+                                }
+                                if ( (fwval(fw,l)==0xe52de004) &&
+                                     (fwval(fw,l+4)==0xe49df004) &&
+                                     isBL(fw,l+1) )
+                                {
+                                    void add_func_name(char*, uint32_t, char*);
+                                    add_func_name("j_GetBaseSv", idx2adr(fw,l), "");
+                                    k = idxFollowBranch(fw,l+1,0x01000001);
+                                    fwAddMatch(fw,idx2adr(fw,k),32,0,122);
+                                    return 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        s1 = find_nxt_str_ref(fw, sadr, s1+1);
+    }
+
+    return 0;
+}
+
+// get GetCurrentDriveBaseSvValue for old vx
+int find_GetCurrentDriveBaseSvValue(firmware *fw)
+{
+    int f1 = get_saved_sig(fw,"ExpCtrlTool.OneShotAE_FW");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int blcnt, i;
+    // expect 3rd bl
+    for(i=0, blcnt=0; i<12 && blcnt < 3; i++) {
+        if(!isBL(fw,f1+i)) {
+            continue;
+        }
+        blcnt++;
+        if(blcnt == 3) {
+            int f2 = idxFollowBranch(fw,f1+i,0x01000001);
+            fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int find_Remove(firmware *fw)
+{
+    int f1 = get_saved_sig(fw,"Close");
+    if(f1 < 0)
+        return 0;
+
+    f1 = adr2idx(fw, func_names[f1].val);
+    int f2, blcnt, i;
+    f2 = find_str_ref(fw,"File Write Fail.");
+    if(f2 == -1)
+        return 0;
+    // looking for 1st bl after Close
+    for(i=1, blcnt=0; i<8 && blcnt < 2; i++) {
+        if(!isBL(fw,f2+i)) {
+            continue;
+        }
+        // is it Close?
+        if(idxFollowBranch(fw,f2+i,0x01000001) == f1) {
+            blcnt++;
+            continue;
+        }
+        if (blcnt == 1) {
+            f2 = idxFollowBranch(fw,f2+i,0x01000001);
+            fwAddMatch(fw,idx2adr(fw,f2),32,0,122);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 //------------------------------------------------------------------------------------------------------------
 
 // Data for matching the '_log' function
@@ -996,6 +1572,9 @@ string_sig string_sigs[] =
     {20, "GetSDProtect", "GetSDProtect_FW", 1 },
     //{20, "GetSystemTime", "GetSystemTime_FW", 1 },
     {20, "GetCurrentAvValue", "GetCurrentAvValue_FW", 1 },
+    {20, "GetCurrentShutterSpeed", "GetCurrentShutterSpeed_FW", 1 },
+    {20, "GetUsableMaxAv", "GetUsableMaxAv_FW", 1 },
+    {20, "GetUsableMinAv", "GetUsableMinAv_FW", 1 },
     {20, "GetOpticalTemperature", "GetOpticalTemperature_FW", 1 },
     {20, "GetVRAMHPixelsSize", "GetVRAMHPixelsSize_FW", 1 },
     {20, "GetVRAMVPixelsSize", "GetVRAMVPixelsSize_FW", 1 },
@@ -1026,6 +1605,7 @@ string_sig string_sigs[] =
     {20, "SavePaletteData", "SavePaletteData_FW", 1 },
     {20, "SetAutoShutdownTime", "SetAutoShutdownTime_FW", 1 },
     {20, "SetCurrentCaptureModeType", "SetCurrentCaptureModeType_FW", 1 },
+    {20, "SetDate", "SetDate_FW", 1 },
     {20, "SetScriptMode", "SetScriptMode_FW", 1 },
     {20, "SleepTask", "SleepTask_FW", 1 },
     {20, "strcmp", "j_strcmp_FW", 0 },
@@ -1061,6 +1641,10 @@ string_sig string_sigs[] =
     {20, "MFOff", "MFOff_FW", 1 },
     {20, "GetAdChValue", "GetAdChValue_FW", 0 },
     {20, "HwOcReadICAPCounter", "GetCurrentMachineTime", 3 },
+    {20, "get_nd_value", "NdActuator.GetNdFilterDeltaEvAdjustValue_FW", 0 }, // old vx
+    {20, "get_current_nd_value", "NdActuator.GetNdFilterDeltaEv_FW", 0 }, // old vx
+    {20, "MenuIn", "MenuIn_FW", 1 },
+    {20, "MenuOut", "MenuOut_FW", 1 },
 
     { 1, "ExportToEventProcedure_FW", "ExportToEventProcedure", 1 },
     { 1, "AllocateMemory", "AllocateMemory", 1 },
@@ -1068,8 +1652,10 @@ string_sig string_sigs[] =
     { 1, "CreateTask", "CreateTask", 1 },
     { 1, "DoAFLock", "PT_DoAFLock", 0x01000002 },
     { 1, "ExitTask", "ExitTask", 1 },
-    { 1, "exmem_alloc", "ExMem.AllocCacheable", 4 },
+    { 1, "exmem_alloc", "ExMem.AllocCacheable", 5 },
     { 1, "exmem_free", "ExMem.FreeCacheable", 0x01000003 },
+    { 1, "exmem_ualloc", "ExMem.AllocUncacheable", 5 },
+    { 1, "exmem_ufree", "ExMem.FreeUncacheable", 0x01000003 },
     { 1, "Fclose_Fut", "Fclose_Fut", 1 },
     { 1, "Feof_Fut", "Feof_Fut", 1 },
     { 1, "Fflush_Fut", "Fflush_Fut", 1 },
@@ -1165,8 +1751,10 @@ string_sig string_sigs[] =
     { 2, "EngDrvOut", "EngDrvOut", 0x01000005 },
     { 2, "EngDrvRead", "EngDrvRead", 4 },
     { 2, "EngDrvBits", "EngDrvBits", 0x01000006 },
-    { 2, "exmem_alloc", "ExMem.AllocCacheable", 4 },
+    { 2, "exmem_alloc", "ExMem.AllocCacheable", 6 },
     { 2, "exmem_free", "ExMem.FreeCacheable", 0x01000003 },
+    { 2, "exmem_ualloc", "ExMem.AllocUncacheable", 6 },
+    { 2, "exmem_ufree", "ExMem.FreeUncacheable", 0x01000003 },
 
     { 2, "PTM_GetCurrentItem", "PTM_GetCurrentItem", 0x01000003 },
     { 2, "PTM_SetCurrentItem", "PTM_SetCurrentItem", 8 },
@@ -1238,6 +1826,8 @@ string_sig string_sigs[] =
     { 7, "RegisterInterruptHandler", "SdDmaInt", 0x01000001 },
     { 7, "LogCameraEvent", "BufAccBeep", 0x01000001 },
     { 7, "LogCameraEvent", "MyCamFunc_PlaySound_MYCAM_COVER_OPEN", 0x01000001 },
+    { 7, "exmem_assert", "Type < MAX_NUM_OF_EXMEMORY_TYPE", 0x01000001 },
+    { 7, "GetCurrentDriveBaseSvValue", "KeepPreviousExposureWithProgress", 0x01000003 },
 
     { 8, "WriteSDCard", "Mounter.c", 0 },
 
@@ -1267,6 +1857,7 @@ string_sig string_sigs[] =
     { 9, "open", "Open", 0,                                                3 },
     { 9, "open", "Open", 0,                                                3 },
     { 9, "malloc_alt", "wrapped_malloc", 0,                                2 },
+    { 9, "DisableDispatch_low", "DisableDispatch", 0,                      6 },
 
     //                                                                   ???
     { 11, "err_init_task", "\n-- %s() error in init_task() --", 0,         2 },
@@ -1307,6 +1898,10 @@ string_sig string_sigs[] =
     { 15, "wrapped_malloc", "\n malloc error \n", 0x01000001,                    0x0010 },
     { 15, "IsStrobeChargeCompleted", "\r\nCaptSeq::ChargeNotCompleted!!", 0x01000001 }, // ixus30, 40
     { 15, "get_resource_pointer", "Not found icon resource.\r\n", 0x01000001,    0x0008 },
+    { 15, "get_nd_value", "IrisSpecification.c", 0x01000001,                     0x0014 },
+    { 15, "ImagerActivate", "Fail ImagerActivate(ErrorCode:%x)\r", 0x01000001,   0x0007 },
+    { 15, "DoMovieFrameCapture", "DoMovieFrameCapture executed.",  0x01000001,   0x0007 },
+    { 15, "EnableDispatch_low", "EnableDispatch : dispatch counter unserflow", 0x01000001,   0x0003 },
 
     { 16, "DeleteDirectory_Fut", (char*)DeleteDirectory_Fut_test, 0x01000001 },
     { 16, "MakeDirectory_Fut", (char*)MakeDirectory_Fut_test, 0x01000001 },
@@ -1380,6 +1975,7 @@ string_sig string_sigs[] =
     { 21, "_pow", (char*)find_pow, 0 },
     { 21, "_log", (char*)find_log, 0 },
     { 21, "_log10", (char*)find_log10, 0 },
+    { 21, "get_ptp_file_buf", (char*)find_get_ptp_file_buf, 0 },
 
     { 22, "closedir", (char*)find_closedir, 0 },
     { 22, "PT_PlaySound", (char*)find_PT_PlaySound, 0 },
@@ -1389,6 +1985,19 @@ string_sig string_sigs[] =
     { 22, "set_control_event", (char*)find_set_control_event, 0 }, // vx
     { 22, "filesem_init", (char*)find_filesem_init, 0 }, // vx
     { 22, "GetCurrentMachineTime", (char*)find_getcurrentmachinetime, 0},
+    { 22, "get_nd_value", (char*)find_get_nd_value, 0},
+    { 22, "get_current_nd_value", (char*)find_get_current_nd_value, 0},
+    { 22, "get_current_deltasv", (char*)find_get_current_deltasv, 0},
+    { 22, "GetBaseSv", (char*)find_GetBaseSv, 0},
+    { 22, "GetCurrentDriveBaseSvValue", (char*)find_GetCurrentDriveBaseSvValue, 0 }, // old vx
+    { 22, "exmem_free", (char*)find_exmem_free, 0},
+    { 22, "exmem_alloc", (char*)find_exmem_alloc, 0},
+    { 22, "exmem_ufree", (char*)find_exmem_ufree, 0},
+    { 22, "exmem_ualloc", (char*)find_exmem_ualloc, 0},
+    { 22, "get_ptp_buf_size", (char*)find_get_ptp_buf_size, 0},
+    { 22, "Remove", (char*)find_Remove, 0},
+
+    { 23, "cameracon_set_state", "AC:PB2Rec", 8,                                 1,},
 
     //                                                                                          Vx
     { 100, "DebugAssert", "\nAssert: File %s Line %d\n", 0,                                     10 },
@@ -1402,7 +2011,10 @@ string_sig string_sigs[] =
     { 100, "DeleteEventFlag", "DeleteEventFlag : call from interrupt handler", 0,               8 },
     { 100, "WaitForEventFlag", "WaitForEventFlag : call from interrupt handler", 0,             12 },
     { 100, "CancelHPTimer", "EventProcedure", 0,                                                101 }, // newest vx
-    
+    { 100, "get_current_exp", "Exp  Av %d, Tv %d, Gain %d\r",0x01000001,                        0x07 },
+    { 100, "EnableDispatch", "EnableDispatch : call from interrupt handler", 0,                 3 },
+    { 100, "DisableDispatch", "DisableDispatch : call from interrupt handler", 0,               3 },
+
     { 101, "DeleteSemaphore", "DeleteSemaphore", 0 },
     { 101, "CreateCountingSemaphore", "CreateCountingSemaphore", 0 },
     { 101, "TakeSemaphore", "TakeSemaphore", 0 },
@@ -1413,10 +2025,14 @@ string_sig string_sigs[] =
 
     { 102, "PB2Rec", "AC:PB2Rec", 0,                                                            0x20 },
     { 102, "Rec2PB", "AC:Rec2PB", 0,                                                            0x20 },
+    { 102, "MenuIn", "SSAPI::MenuIn", 0,                                                        0x20 },
+    { 102, "MenuOut", "SSAPI::MenuOut", 0,                                                      0x20 },
 
     { 103, "GetDrive_FreeClusters", "AvailClusters.c", 0,                                       0x04 },
 
     { 104, "SetLogicalEventActive", "EventReciever.c", 16,                                      0x0000 },
+    { 104, "exmem_alloc_low", "m_MemBlockArray[Type].Size == 0L", 33,                           0x0000 },
+    { 104, "exmem_free_low", "m_MemBlockArray[Type].Size != 0L", 25,                            0x0000 },
 
     { 0, 0, 0, 0 }
 };
@@ -1436,7 +2052,7 @@ int find_func(const char* name)
 }
 
 // Get VxWorks version specific offset?
-int vxworks_offset(firmware *fw, string_sig *sig)
+int vxworks_offset(__attribute__ ((unused))firmware *fw, string_sig *sig)
 {
     return sig->vxworks_offset;
 }
@@ -1732,7 +2348,7 @@ int match_strsig5(firmware *fw, string_sig *sig, int j)
 
 // Sig pattern:
 //    Function immediately preceeding string
-int match_strsig6(firmware *fw, string_sig *sig, int j)
+int match_strsig6(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     int j1 = find_inst_rev(fw, isSTMFD_LR, j-1, j-1);
     if (j1 > 0)
@@ -1782,7 +2398,7 @@ int match_strsig7(firmware *fw, string_sig *sig, int j)
 // Sig pattern:
 //      Special case for WriteSDCard
 int ofst;
-int match_strsig8(firmware *fw, string_sig *sig, int j)
+int match_strsig8(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     int j1;
     for (j1=j-2; j1<j+8; j1++)
@@ -2165,6 +2781,55 @@ int find_strsig19(firmware *fw, string_sig *sig)
 
     return 0;
 }
+// Sig pattern:
+//      Str ref -   xDRnn Rx, =str_ptr
+//            ...
+//                  BL  func
+//            ...
+//      String      DCB "str"
+// offset: interpreted as max search distance
+// dryos_ofst: 0 for 1st B/BL after str ref, 1 for 2nd, etc.; -1 for 1st preceding, etc...; disable with 99
+// based on method 7
+int match_strsig23a(firmware *fw, int k, uint32_t sadr, uint32_t maxdist)
+{
+    if (isADR_PC_cond(fw,k) || isLDR_PC_cond(fw,k)) // LDR or ADR ?
+    {
+        uint32_t padr;
+        if (isLDR_PC_cond(fw,k)) // LDR ?
+            padr = LDR2val(fw,k);
+        else
+            padr = ADR2adr(fw,k);
+        if (padr == sadr)
+        {
+            int j2;
+            if (dryos_ofst < 0)
+            {
+                j2 = find_Nth_inst_rev(fw, isBorBL, k, maxdist, -dryos_ofst);
+            }
+            else
+            {
+                j2 = find_Nth_inst(fw, isBorBL, k+1, maxdist, dryos_ofst+1);
+            }
+            if (j2 > 0)
+            {
+                uint32_t fa = idx2adr(fw,j2);
+                fa = followBranch2(fw,fa,0x01000001);
+                fwAddMatch(fw,fa,32,0,123);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+int match_strsig23(firmware *fw, string_sig *sig, int j)
+{
+    dryos_ofst = vxworks_offset(fw,sig);
+
+    if (dryos_ofst == 99)
+        return 0;
+
+    return search_fw(fw, match_strsig23a, idx2adr(fw,j), sig->offset, 2);
+}
 
 // Sig pattern (Vx specific?):
 //      Func            -   func
@@ -2207,7 +2872,7 @@ int match_strsig100(firmware *fw, string_sig *sig, int j)
 //      Load String Address  -   LDR R0, ="func"
 //      Load func Address    -   LDR R1, =func
 // these are parameters for ExportToEventProcedure, RegisterEventProcedure
-int match_strsig101(firmware *fw, string_sig *sig, int j)
+int match_strsig101(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     uint32_t sadr = idx2adr(fw,j);        // string address
     int j1;
@@ -2237,7 +2902,7 @@ int match_strsig101(firmware *fw, string_sig *sig, int j)
 
 // Sig pattern to identify AC: functions (Vx)
 // Function starts directly after its debug string
-int match_strsig102(firmware *fw, string_sig *sig, int j)
+int match_strsig102(firmware *fw, __attribute__ ((unused))string_sig *sig, int j)
 {
     uint32_t sadr = idx2adr(fw,j);        // string address
     char *n = (char*)adr2ptr(fw,sadr);
@@ -2363,6 +3028,7 @@ int find_strsig(firmware *fw, string_sig *sig)
         }
     case 21:    return fw_process(fw, sig, (int (*)(firmware*, string_sig*, int))(sig->ev_name));
     case 22:    return ((int (*)(firmware*))(sig->ev_name))(fw);
+    case 23:    return fw_string_process(fw, sig, match_strsig23, 1);
     case 100:   return fw_string_process(fw, sig, match_strsig100, 0);
     case 101:   return fw_string_process(fw, sig, match_strsig101, 0);
     case 102:   return fw_string_process(fw, sig, match_strsig102, 0);
@@ -2474,7 +3140,7 @@ void find_matches(firmware *fw, const char *curr_name)
             {
                 fail = 0;
                 success = 0;
-                for (s = sig; s->offs != -1; s++)
+                for (s = sig; s->offs != 0xFFFFFFFF; s++)
                 {
                     if ((p[s->offs] & s->mask) != s->value)
                         fail++;
@@ -2485,7 +3151,7 @@ void find_matches(firmware *fw, const char *curr_name)
                 if (((p[sig->offs] & sig->mask) != sig->value) && (sig->offs == 0) && (sig->value == 0xe92d0000)) success = 0;
                 if (success > fail)
                 {
-                    if (s->mask == -2)
+                    if (s->mask == 0xFFFFFFFE)
                     {
                         int end_branch = 0;
                         int idx = 0;
@@ -2503,7 +3169,7 @@ void find_matches(firmware *fw, const char *curr_name)
                         int success2 = 0;
                         //fprintf(stderr,"\t%s %d %08x %08x %d %d\n",curr_name,idx,idx2adr(fw,idx),idx2adr(fw,i+n->off),success,fail);
                         s++;
-                        for (; s->offs != -1; s++)
+                        for (; s->offs != 0xFFFFFFFF; s++)
                         {
                             if (!end_branch || (p1[s->offs] & s->mask) != s->value){
                                 fail2++;
@@ -2533,7 +3199,7 @@ void find_matches(firmware *fw, const char *curr_name)
                         (strcmp(curr_name, "GetDrive_TotalClusters") == 0))
                     {
                         int fnd = 0;
-                        for (s = sig; s->offs != -1; s++)
+                        for (s = sig; s->offs != 0xFFFFFFFF; s++)
                         {
                             if (isLDR_PC_cond(fw,n->off+i+s->offs))
                             {
@@ -2623,7 +3289,7 @@ void print_results(firmware *fw, const char *curr_name, int k)
     if (count == 0)
     {
         if (func_names[k].flags & OPTIONAL) return;
-        char fmt[50] = "";
+        char fmt[51] = "";
         sprintf(fmt, "// ERROR: %%s is not found. %%%ds//--- --- ", (int)(34-strlen(curr_name)));
         sprintf(line+strlen(line), fmt, curr_name, "");
     }
@@ -2826,7 +3492,7 @@ int find_modelist(firmware *fw, uint32_t fadr)
     k1 = adr2idx(fw,j1);
     if (k1<0)
         return 0;
-    
+
     bprintf("// Firmware modemap table found @%08x -> ",idx2adr(fw,k1));
     output_modemap(fw,k1,k2-k1);
     return 1;
@@ -2835,7 +3501,7 @@ int find_modelist(firmware *fw, uint32_t fadr)
 
 static uint32_t FlashParamsTable_address = 0;
 
-int match_FlashParamsTable2(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_FlashParamsTable2(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (fw->buf[k] == v1)
     {
@@ -2845,7 +3511,7 @@ int match_FlashParamsTable2(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_FlashParamsTable(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_FlashParamsTable(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if ((fw->buf[k] > fw->base) && (fw->buf[k+1] == 0x00010000) && ((fw->buf[k+2] == 0xFFFF0000)||(fw->buf[k+2] == 0xFFFF0002)))
     {
@@ -3136,7 +3802,7 @@ uint32_t find_viewport_address(firmware *fw, int *kout)
     return 0;
 }
 
-int match_vid_get_bitmap_fb(firmware *fw, int k, int v)
+int match_vid_get_bitmap_fb(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isBL(fw,k-1) && // BL
         isLDR_PC(fw,k))
@@ -3157,7 +3823,7 @@ int match_vid_get_bitmap_fb(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_get_flash_params_count(firmware *fw, int k, int v)
+int match_get_flash_params_count(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if ((fw->buf[k] & 0xFFF00FFF) == 0xE3C00901)    // BIC Rn, Rn, #0x4000
     {
@@ -3178,7 +3844,7 @@ int match_get_flash_params_count(firmware *fw, int k, int v)
 }
 
 // based on match_get_flash_params_count
-int match_uiprop_count(firmware *fw, int k, int v)
+int match_uiprop_count(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     uint32_t uic = 0;
     int j = -1;
@@ -3227,6 +3893,79 @@ int match_uiprop_count(firmware *fw, int k, int v)
     }
     bprintf("\n");
     return 1;
+}
+
+int isMOVLRPC(firmware *fw, int offset)
+{
+    return (fwval(fw,offset) == 0xE1A0E00F); // MOV LR, PC
+}
+
+int match_imager_active(firmware *fw, int k, __attribute__ ((unused))int v)
+{
+    int gotit = 0;
+    int reg = -1;
+    int o = 0;
+    uint32_t adr,where;
+    if (fwval(fw,k) == 0xe49df004) // POP {PC}
+    {
+        int k1 = find_inst_rev(fw, isBL, k-1, 10);
+        if (k1 == -1)
+            return 0;
+        uint32_t a;
+        int k2 = k1 - 8;
+        for (k1=k1-1;k1>=k2;k1--)
+        {
+            if (isLDR(fw,k1) || isADR(fw,k1))
+            {
+                if (isADR(fw,k1))
+                {
+                    a = ADR2adr(fw, k1);
+                }
+                else
+                {
+                    a = LDR2val(fw, k1);
+                }
+                if ((a>fw->base) && ((a&3) == 0))
+                {
+                    int k3 = adr2idx(fw, a);
+                    if (isSTMFD_LR(fw,k3))
+                    {
+                        k3 = find_inst(fw, isMOVLRPC, k3+1, 6);
+                        if (k3 != -1)
+                        {
+                            int k4;
+                            for(k4=5; k4>0; k4--)
+                            {
+                                if (isSTR_cond(fw,k3+k4))
+                                {
+                                    reg = fwRn(fw,k3+k4);
+                                    o = fwval(fw,k3+k4) & 0xff; // offset, should be around 4
+                                    where = idx2adr(fw,k3+k4);
+                                }
+                                if (reg>=0 && isLDR_cond(fw,k3+k4) && fwRd(fw,k3+k4)==reg)
+                                {
+                                    adr = LDR2val(fw,k3+k4);
+                                    if (adr < fw->memisostart)
+                                    {
+                                        gotit = 1;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (gotit)
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (gotit)
+    {
+        bprintf("DEF(%-40s,0x%08x) // Found @0x%08x (0x%x + %i)\n","imager_active",adr+o,where,adr,o);
+        return 1;
+    }
+    return 0;
 }
 
 // Search for things that go in 'lib.c'
@@ -3341,16 +4080,108 @@ void print_stubs_min(firmware *fw, const char *name, uint32_t fadr, uint32_t ata
     bprintf("\n");
 }
 
-int match_levent_table(firmware *fw, int k, uint32_t v1, uint32_t v2)
+uint32_t exm_typ_tbl=0, exm_typ_cnt=0;
+int print_exmem_types(firmware *fw)
 {
-    if ((fw->buf[k] > fw->base) && (fw->buf[k+1] == 0x00000800) && (fw->buf[k+2] == 0x00000002))
+    if (exm_typ_tbl==0 || exm_typ_cnt==0)
+        return 1;
+    bprintf("// EXMEM types:\n");
+    int ii = adr2idx(fw, exm_typ_tbl);
+    uint32_t n;
+    for (n=0; n<exm_typ_cnt; n++)
     {
-        print_stubs_min(fw,"levent_table",idx2adr(fw,k),idx2adr(fw,k));
+        bprintf("// %s %i\n",adr2ptr(fw, fwval(fw,ii+n)),n);
+    }
+    bprintf("\n");
+    return 0;
+}
+
+int find_exmem_alloc_table(firmware *fw)
+{
+    int i = get_saved_sig(fw,"exmem_assert");
+    if (i < 0)
+    {
+        return 0;
+    }
+    i = adr2idx(fw, func_names[i].val);
+    uint32_t u;
+    int n;
+    for (n=1; n<16; n++)
+    {
+        if ( ((fwval(fw,i+n)&0xffff0000)==0xe59f0000) ) // ldr rx, [pc, #imm]
+        {
+            u = LDR2val(fw, i+n);
+            if (u>fw->base && u<fw->base+fw->size*4-4 && (u&3)==0)
+            {
+                break;
+            }
+        }
+        u = 0;
+    }
+    if (u)
+    {
+        exm_typ_tbl = u;
+        int ii = adr2idx(fw, exm_typ_tbl);
+        char* extyp;
+        for (n=0; n<32; n++)
+        {
+            if ( (fwval(fw,ii+n)!=0) && isASCIIstring(fw, fwval(fw,ii+n)) )
+            {
+                extyp = adr2ptr(fw, fwval(fw,ii+n));
+                if ( strncmp(extyp,"EXMEM",5)==0 )
+                {
+                    exm_typ_cnt++;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    for (n=1; n<54; n++)
+    {
+        if ( ((fwval(fw,i+n)&0xffff0000)==0xe59f0000) ) // ldr rx, [pc, #imm]
+        {
+            u = LDR2val(fw, i+n);
+            if (u>fw->data_start && u<fw->data_start+fw->data_len*4 && (fwRd(fw,i+n)>3))
+            {
+                break;
+            }
+        }
+        u = 0;
+    }
+    if (u)
+    {
+        print_stubs_min(fw,"exmem_alloc_table",u,idx2adr(fw,i+n));
+    }
+    if (exm_typ_tbl)
+    {
+        print_stubs_min(fw,"exmem_types_table",exm_typ_tbl,exm_typ_tbl);
+    }
+    if (exm_typ_cnt)
+    {
+        bprintf("DEF_CONST(%-34s,0x%08x)\n","exmem_type_count",exm_typ_cnt);
     }
     return 0;
 }
 
-int match_movie_status(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_levent_table(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
+{
+    if ((fw->buf[k] > fw->base) && (fw->buf[k+1] == 0x00000800) && (fw->buf[k+2] == 0x00000002))
+    {
+        print_stubs_min(fw,"levent_table",idx2adr(fw,k),idx2adr(fw,k));
+#ifdef PRINT_LEVENT_TABLE
+        uint32_t levent_tbl = idx2adr(fw,k);
+        void write_levent_table_dump(firmware*, uint32_t);
+        write_levent_table_dump(fw, levent_tbl);
+#endif
+    }
+    return 0;
+}
+
+int match_movie_status(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw, k) &&                              // LDR R0, =base
         ((fw->buf[k+1] & 0xFE0F0000) == 0xE20F0000) &&  // ADR R1, =sub
@@ -3393,7 +4224,7 @@ int match_movie_status(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_full_screen_refresh(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_full_screen_refresh(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fw->buf[k] & 0xFF1FF000) == 0xE51F0000) &&    // LDR R0, =base
         (fw->buf[k+1] == 0xE5D01000) &&                 // LDRB R1, [R0]
@@ -3407,7 +4238,7 @@ int match_full_screen_refresh(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_canon_shoot_menu_active(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_canon_shoot_menu_active(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fw->buf[k]   & 0xFF1FF000) == 0xE51F1000) &&  // LDR R1, =base
         ((fw->buf[k+1] & 0xFFFFF000) == 0xE5D10000) &&  // LDRB R0, [R1, #n]
@@ -3433,7 +4264,7 @@ int match_canon_shoot_menu_active(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_playrec_mode(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_playrec_mode(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fw->buf[k]    & 0xFF1FF000) == 0xE51F1000) && // LDR R1, =base
         ((fw->buf[k+1]  & 0xFFFFF000) == 0xE5810000) && // STR R0, [R1, #n]
@@ -3458,7 +4289,7 @@ int match_playrec_mode(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_some_flag_for_af_scan(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_some_flag_for_af_scan(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isB(fw,k)   &&  // B loc
         isB(fw,k+1) &&  // B loc
@@ -3484,7 +4315,7 @@ int match_some_flag_for_af_scan(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_palette_data(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_palette_data(firmware *fw, int k, __attribute__ ((unused))uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if ((fw->buf[k] == 0) && (fw->buf[k+1] == 0x00FF0000) &&
         (fw->buf[k+577] == 1) && (fw->buf[k+578] == 0x00FF0000) &&
@@ -3525,11 +4356,11 @@ int match_palette_buffer_offset(firmware *fw, int k)
     return 0;
 }
 
-int match_palette_data3(firmware *fw, int k, uint32_t palette_data, uint32_t v2)
+int match_palette_data3(firmware *fw, int k, uint32_t palette_data, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw, k) && (LDR2val(fw,k) == palette_data) && isLDR_PC(fw,k-1) && isLDR_PC(fw,k-6) && isLDR(fw,k-5))
     {
-        int palette_control = LDR2val(fw,k-6);
+        uint32_t palette_control = LDR2val(fw,k-6);
         int ptr_offset = fwOp2(fw,k-5);
         uint32_t fadr = find_inst_rev(fw, isSTMFD_LR, k-7, 30);
         if (fadr > 0)
@@ -3680,7 +4511,7 @@ int match_SavePaletteData(firmware *fw, int idx, int palette_data)
     return 0;
 }
 
-int match_viewport_address3(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_viewport_address3(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (isLDR_PC(fw,k) && (LDR2val(fw,k) == v1))
     {
@@ -3720,7 +4551,7 @@ int match_viewport_address3(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_viewport_address2(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_viewport_address2(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (fw->buf[k] == v1)
     {
@@ -3730,7 +4561,7 @@ int match_viewport_address2(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_viewport_address(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_viewport_address(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
     if (fw->buf[k] == v1)
     {
@@ -3741,7 +4572,7 @@ int match_viewport_address(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_physw_status(firmware *fw, int k, int v)
+int match_physw_status(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isLDR_PC(fw,k))
     {
@@ -3751,7 +4582,7 @@ int match_physw_status(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_physw_run(firmware *fw, int k, int v)
+int match_physw_run(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isLDR_PC(fw,k))
     {
@@ -3767,7 +4598,7 @@ int match_physw_run(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_canon_menu_active(firmware *fw, int k, int v)
+int match_canon_menu_active(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isLDR_PC(fw,k))
     {
@@ -3786,7 +4617,7 @@ int match_canon_menu_active(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_zoom_busy(firmware *fw, int k, int v)
+int match_zoom_busy(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isBL(fw,k))
     {
@@ -3835,7 +4666,7 @@ int match_zoom_busy(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_focus_busy(firmware *fw, int k, int v)
+int match_focus_busy(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if ((fw->buf[k] & 0xFFFF0000) == 0xE8BD0000)   // LDMFD
     {
@@ -3872,7 +4703,7 @@ int match_bitmap_buffer2(firmware *fw, int k, int v)
         int k1 = adr2idx(fw,fadr);
         if (isLDR_PC(fw,k1+1))
         {
-            int reg = (fwval(fw,k1+1) & 0x0000F000) >> 12;
+            uint32_t reg = (fwval(fw,k1+1) & 0x0000F000) >> 12;
             uint32_t adr = LDR2val(fw,k1+1);
             int k2;
             for (k2=k1; k2<k1+32; k2++)
@@ -3894,13 +4725,13 @@ int match_bitmap_buffer2(firmware *fw, int k, int v)
     return 0;
 }
 
-int match_bitmap_buffer(firmware *fw, int k, int v)
+int match_bitmap_buffer(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     search_saved_sig(fw, "ScreenLock", match_bitmap_buffer2, k, 0, 1);
     return 0;
 }
 
-int match_raw_buffer(firmware *fw, int k, uint32_t rb1, uint32_t v2)
+int match_raw_buffer(firmware *fw, int k, uint32_t rb1, __attribute__ ((unused))uint32_t v2)
 {
     if (((fwval(fw,k) == rb1) && (fwval(fw,k+4) == rb1) && (fwval(fw,k-2) != 1)) ||
         ((fwval(fw,k) == rb1) && (fwval(fw,k+4) == rb1) && (fwval(fw,k+20) == rb1)))
@@ -3926,6 +4757,104 @@ int match_raw_buffer(firmware *fw, int k, uint32_t rb1, uint32_t v2)
             print_stubs_min(fw,"raw_buffers",idx2adr(fw,k),idx2adr(fw,k));
         }
         return rb2;
+    }
+    return 0;
+}
+
+int match_cameracon_state(firmware *fw, int k, __attribute__ ((unused))int v)
+{
+    /*
+     * expect
+     * ldr     r3, =const
+     * mov     r5, r0
+     * cmp     ip, #0xa
+     * mov     r2, #0
+     * ldr     r0, ="CameraConState.c"
+     * mov     r1, #const
+     * str     r5, [r3]
+     *
+     * regs seem to be the same on all cams with this code
+     */
+    if (isLDR_PC(fw,k))
+    {
+        int rd = fwRd(fw,k);
+        if(rd != 3) {
+            return 0;
+        }
+        uint32_t base = LDR2val(fw,k);
+        k += 6;
+        uint32_t ofst = fw->buf[k] & 0x00000FFF;
+        if (isSTR(fw,k) && fwRd(fw,k) == 5 && fwRn(fw,k) == rd && ofst == 0)
+        {
+            print_stubs_min(fw,"cameracon_state",base,idx2adr(fw,k));
+        }
+    }
+
+    return 0;
+}
+
+
+uint32_t frsp_buf = 0;
+uint32_t frsp_buf_at = 0;
+int find_DoMovieFrameCapture_buf(firmware *fw)
+{
+    uint32_t uncached_adr = 0x10000000; // true for all vx cams
+    int k = get_saved_sig(fw,"DoMovieFrameCapture");
+    int ka = get_saved_sig(fw,"ClearEventFlag");
+    if (k < 0 || ka < 0)
+        return 0;
+    k = adr2idx(fw, func_names[k].val);
+    ka = adr2idx(fw, func_names[ka].val);
+    if (k && ka)
+    {
+        int k2 = find_inst(fw,isBL,k,14);
+        if (k2 == -1 || idxFollowBranch(fw,k2,0x01000001) != ka)
+            return 0;
+        int k1 = k;
+        int reg = -1;
+        while (k1<k2)
+        {
+            k1++;
+            if (reg < 0 && isLDR_PC(fw,k1))
+            {
+                uint32_t v = LDR2val(fw,k1);
+                if (v>uncached_adr && v<uncached_adr+fw->maxram && (v&3)==0)
+                {
+                    frsp_buf = v;
+                    frsp_buf_at = idx2adr(fw,k1);
+                    break;
+                }
+            }
+            if (isMOV_immed(fw,k1) && ALUop2a(fw,k1)>uncached_adr)
+            {
+                reg = fwRd(fw,k1);
+                frsp_buf = ALUop2a(fw,k1);
+                frsp_buf_at = idx2adr(fw, k1);
+            }
+            if (reg<0)
+                continue;
+            if ((fwval(fw,k1)&0xfffff000) == (0xe2800000+(reg<<12)+(reg<<16))) // ADD Rx, Rx, #imm
+            {
+                frsp_buf += ALUop2a(fw,k1);
+                frsp_buf_at = idx2adr(fw, k1);
+            }
+        }
+    }
+    if (!frsp_buf) // ixus30/40
+    {
+        k = get_saved_sig(fw,"WBInteg.DoCaptMovieFrame_FW");
+        if (k < 0)
+            return 0;
+        k = adr2idx(fw, func_names[k].val);
+        ka = find_inst(fw,isLDR_PC,k,6);
+        if (ka < 0)
+            return 0;
+        uint32_t v = LDR2val(fw,ka);
+        if (v>uncached_adr && v<uncached_adr+fw->maxram && (v&3)==0)
+        {
+            frsp_buf = v;
+            frsp_buf_at = idx2adr(fw,ka);
+        }
     }
     return 0;
 }
@@ -4265,9 +5194,24 @@ void find_stubs_min(firmware *fw)
         }
     }
 */
+
+    // Find exmem allocation table
+    find_exmem_alloc_table(fw);
+
+    // Find imager_active
+    search_saved_sig(fw, "ImagerActivate", match_imager_active, 0/*v*/, 0, 30);
+
+
+//    find_DoMovieFrameCapture_buf(fw);
+//    if (frsp_buf)
+//    {
+//        print_stubs_min(fw,"frsp_buf",frsp_buf,frsp_buf_at);
+//    }
+
     // Find UI property count
     search_saved_sig(fw, "PTM_SetCurrentItem", match_uiprop_count, 0, 0, 30);
 
+    search_saved_sig(fw, "cameracon_set_state", match_cameracon_state, 0, 3, 1);
 }
 
 //------------------------------------------------------------------------------------------------------------
@@ -4286,7 +5230,7 @@ int find_ctypes(firmware *fw, int k)
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0x10, 0x10, 0x10, 0x10, 0x20
     };
 
-    if (k < (fw->size*4 - sizeof(ctypes)))
+    if ((uint32_t)k < (fw->size*4 - sizeof(ctypes)))
     {
         if (memcmp(((char*)fw->buf)+k,ctypes,sizeof(ctypes)) == 0)
         {
@@ -4297,9 +5241,9 @@ int find_ctypes(firmware *fw, int k)
     return 0;
 }
 
-int match_nrflag3(firmware *fw, int k, uint32_t v1, uint32_t v2)
+int match_nrflag3(firmware *fw, int k, uint32_t v1, __attribute__ ((unused))uint32_t v2)
 {
-    if (isBL(fw,k) && (idxFollowBranch(fw,k,0x01000001) == v1))
+    if (isBL(fw,k) && (idxFollowBranch(fw,k,0x01000001) == (int)v1))
     {
         // Found call to function, work out R3 value passed in
         int ofst1 = 0;
@@ -4318,7 +5262,7 @@ int match_nrflag3(firmware *fw, int k, uint32_t v1, uint32_t v2)
             }
             if (isLDR_PC(fw,k3) && (fwRd(fw,k3) == 3))
             {
-                int ofst2 = LDR2val(fw,k3);
+                uint32_t ofst2 = LDR2val(fw,k3);
                 if (ofst2 > (fw->data_len*4 + fw->data_start)) // has to be in the preinited data section
                     return 0;
                 bprintf("\n// For capt_seq.c\n");
@@ -4344,7 +5288,7 @@ int match_nrflag3(firmware *fw, int k, uint32_t v1, uint32_t v2)
     return 0;
 }
 
-int match_nrflag(firmware *fw, int idx, int v)
+int match_nrflag(firmware *fw, int idx, __attribute__ ((unused))int v)
 {
     int k1, k2, k3;
     int found = 0;
@@ -4386,7 +5330,7 @@ int match_nrflag(firmware *fw, int idx, int v)
     return found;
 }
 
-int match_nrflag2(firmware *fw, int k, int v)
+int match_nrflag2(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     // Found NR_GetDarkSubType function, now follow first BL call.
     if (isBL(fw,k))
@@ -4495,15 +5439,9 @@ void find_other_vals(firmware *fw)
     add_blankline();
 
     bprintf("// Misc stuff\n");
+    add_blankline();
+    print_exmem_types(fw);
     find_leds(fw);
-/*
-    if (!search_fw_bytes(fw, find_ctypes))
-    {
-        bprintf("//DEF(ctypes, *** Not Found ***)\n");
-    }
-*/   
-    bprintf("// canon_data_src: 0x%x, canon_data_len: 0x%x\n",fw->data_init_start,fw->data_len*4);
-
 
     // Look for nrflag (for capt_seq.c)
     search_saved_sig(fw, "NR_GetDarkSubType", match_nrflag2, 0, 0, 20);
@@ -4663,7 +5601,7 @@ void print_kmvals()
     bprintf("//    { 0, 0, 0 }\n//};\n");
 }
 
-int match_GetSDProtect(firmware *fw, int k, int v)
+int match_GetSDProtect(firmware *fw, int k, __attribute__ ((unused))int v)
 {
     if (isB(fw,k))    // B
     {
@@ -4707,11 +5645,11 @@ void find_key_vals(firmware *fw)
     }
     if (tadr != 0)
     {
-        int tsiz = 2;
+        uint32_t tsiz = 2;
         if (fw->buf[adr2idx(fw,tadr)+2] == 0) tsiz = 3;
 
         uint32_t madr = fw->base + (fw->size*4-4);
-        for (k=0; k<(tadr-fw->base)/4; k++)
+        for (k=0; k<(int)(tadr-fw->base)/4; k++)
         {
             if (isLDR_PC(fw,k))
             {
@@ -4722,11 +5660,11 @@ void find_key_vals(firmware *fw)
                 }
             }
         }
-        int tlen = (madr - tadr) / 4;
+        uint32_t tlen = (madr - tadr) / 4;
         if (tsiz == 2)
         {
             k1 = adr2idx(fw,tadr);
-            for (k=0; k<tlen/3; k+=3)
+            for (k=0; k<(int)tlen/3; k+=3)
             {
                 if ((fw->buf[k1+k+1] == 0xFFFFFFFF) && (fw->buf[k1+k+4] == 0xFFFFFFFF))
                 {
@@ -4827,6 +5765,7 @@ void add_func_name(char *n, uint32_t eadr, char *suffix)
                 func_names[k].val = eadr;
                 func_names[k].flags |= EV_MATCH;
             }
+            if (s != n) free(s);
             return;
         }
 
@@ -4853,8 +5792,9 @@ void add_func_name2(firmware *fw, uint32_t nadr, uint32_t eadr, char *suffix)
     }
 }
 
-int match_eventproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_eventproc(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
+    int j = k;
     if (isBorBL(fw,k))
     {
         uint32_t adr = followBranch(fw,idx2adr(fw,k),0x01000001);
@@ -4880,6 +5820,60 @@ int match_eventproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
             {
                 add_func_name2(fw, nadr, eadr, "_FW");
             }
+            else
+            {
+                // find spec case (when used in a loop)
+                k = j;
+                int c = 1;
+                int fnd = 0;
+                while (c<4)
+                {
+                    int k1 = find_Nth_inst_rev(fw, isLDR_PC, k, 15, c);
+                    if (k1 > 0)
+                    {
+                        uint32_t k2 = LDR2val(fw,k1);
+                        if ((k2 > fw->base) && (k2 < (fw->base + fw->size*4 - 1)))
+                        {
+                            int k3 = k;
+                            int hit = 0;
+                            while (k3 > k-4)
+                            {
+                                if ((fwval(fw,k3) & 0xfff0fff0) == 0xe7901000) // ldr r1, [ry, rz]
+                                {
+                                    hit += 1;
+                                }
+                                if ((fwval(fw,k3) & 0xfff0fff0) == 0xe7900000) // ldr r0, [ry, rz]
+                                {
+                                    hit += 0x1000;
+                                }
+                                k3--;
+                            }
+                            if ((fwval(fw,k-1) & 0xfff00000) == 0xe2800000) // add
+                            {
+                                hit += 0x100000;
+                            }
+                            if (hit == 0x101001)
+                            {
+                                // code pattern confirmed, process what is supposed to be the table
+                                k1 = adr2idx(fw,k2);
+                                //printf(" tbl %x\n",k2);
+                                while (fwval(fw,k1) != 0)
+                                {
+                                    // check both pointers' validity as these tables do not usually have NULL as last entry
+                                    if (!idx_valid(fw,adr2idx(fw,fwval(fw,k1)))) break;
+                                    if (!idx_valid(fw,adr2idx(fw,fwval(fw,k1+1)))) break;
+                                    add_func_name2(fw, fwval(fw,k1), fwval(fw,k1+1), "_FW");
+                                    k1 += 2;
+                                }
+                                fnd = 1;
+                                break;
+                            }
+                        }
+                    }
+                    c++;
+                    if (fnd) break;
+                }
+            }
         }
     }
     else if (isLDR_PC(fw,k) && (fwRd(fw,k) == 0) && isLDR_PC(fw,k+1) && (fwRd(fw,k+1) == 1) &&
@@ -4892,7 +5886,7 @@ int match_eventproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
     return 0;
 }
 
-int match_registerlists(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_registerlists(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     if (isBorBL(fw,k))
     {
@@ -4925,7 +5919,7 @@ int match_registerlists(firmware *fw, int k, uint32_t fadr, uint32_t v2)
     return 0;
 }
 
-int match_registerlistproc(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_registerlistproc(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     if (isSTMFD_LR(fw,k) && isBL(fw,k+6) && isLDMFD_PC(fw,k+11))
     {
@@ -4969,7 +5963,7 @@ int isLDR_PC_r3(firmware *fw, int offset)
     return ((fwval(fw,offset) & 0xFE1FF000) == (0xE41F3000));
 }
 
-int match_createtask(firmware *fw, int k, uint32_t fadr, uint32_t v2)
+int match_createtask(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
 {
     uint32_t adr = followBranch(fw,idx2adr(fw,k),0x01000001);
     int j1, j2;
@@ -5044,6 +6038,181 @@ void find_builddate(firmware *fw)
         fw->fw_build_time = 0;
 }
 
+int save_ptp_handler_func(uint32_t op,uint32_t handler) {
+    if((op >= 0x9000 && op < 0x10000) || (op >= 0x1000 && op < 0x2000)) {
+        char *buf=malloc(64);
+        const char *nm=get_ptp_op_name(op);
+        if(nm) {
+            sprintf(buf,"handle_%s",nm);
+        } else {
+            sprintf(buf,"handle_PTP_OC_0x%04x",op);
+        }
+        // TODO Canon sometimes uses the same handler for multiple opcodes
+        add_func_name(buf,handler,NULL);
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
+int find_ptp_handler_imm(firmware *fw, int k)
+{
+    int o;
+
+    uint32_t op=0;
+    uint32_t handler=0;
+
+    //fprintf(stderr,"find_ptp_handler_imm 0x%x\n",idx2adr(fw,k));
+    for (o=-1; o>-7; o--)
+    {
+        if (isLDR_PC(fw,k+o))
+        {
+            if(fwRd(fw,k+o) == 0)
+            {
+                op = LDR2val(fw,k+o);
+            }
+            else if(fwRd(fw,k+o) == 1){
+                handler = LDR2val(fw,k+o);
+            }
+        }
+        // only expect handler to come from adr
+        else if (isADR_PC(fw,k+o) && (fwRd(fw,k+o) == 1))
+        {
+            handler=ADR2adr(fw,k+o);
+        }
+        // vxworks cameras freqently load 0x1000 or 0x9000 once and then use ORR and ADD
+        if (!op)
+        {
+            if (isORR(fw,k+o) && (fwRd(fw,k+o) == 0) && (fwRn(fw,k+o) > 3))
+            {
+                int reg = fwRn(fw,k+o);
+                int k1;
+                uint32_t u1 = 0;
+                for (k1=k+o-1; k1>=k+o-50; k1--)
+                {
+                    if (isMOV_immed(fw,k1) && (fwRd(fw,k1) == reg))
+                    {
+                        u1 = ALUop2a(fw,k1);
+                        //fprintf(stderr,"find_ptp_handler_imm u1 0x%x\n",u1);
+                        if ((u1 == 0x1000 || u1 == 0x9000)) // expect opcode range start
+                        {
+                            break;
+                        }
+                        u1 = 0;
+                    }
+                }
+                if (u1)
+                {
+                    op = ALUop2a(fw,k+o) | u1;
+                }
+            }
+            else if (isADD(fw,k+o) && (fwRd(fw,k+o) == 0) && (fwRn(fw,k+o) <= 3))
+            {
+                int reg = fwRn(fw,k+o);
+                int k1;
+                uint32_t u1 = 0;
+                for (k1=k+o-1; k1>=k+o-7; k1--)
+                {
+                    if (isMOV_immed(fw,k1) && (fwRd(fw,k1) == reg))
+                    {
+                        u1 = ALUop2a(fw,k1);
+                        if ((u1 == 0x1000 || u1 == 0x9000)) // expect opcode range start
+                        {
+                            break;
+                        }
+                        u1 = 0;
+                    }
+                }
+                if (u1)
+                {
+                    op = ALUop2a(fw,k+o) + u1;
+                }
+            }
+        }
+        if(op && handler) {
+            //fprintf(stderr,"find_ptp_handler_imm found 0x%x 0x%x\n",op,handler);
+            return save_ptp_handler_func(op,handler);
+        }
+    }
+    //fprintf(stderr,"find_ptp_handler_imm not found\n");
+    return 0;
+}
+
+int match_ptp_handlers(firmware *fw, int k, uint32_t fadr, __attribute__ ((unused))uint32_t v2)
+{
+    // check for table of opcode, func ptr, ...
+    if(fwval(fw,k) == 0x1004
+        && fwval(fw,k+2) == 0x1005
+        && fwval(fw,k+4) == 0x1006
+        && fwval(fw,k+1) > fw->base
+        && fwval(fw,k+3) > fw->base
+        && fwval(fw,k+5) > fw->base)
+    {
+        // TODO canon firmware has count in loop that calls add_ptp_handler,
+        // but for simplicity just checking for valid opcode with hardcoded max
+        int i;
+        for(i=0; i<64; i++) {
+            uint32_t op=fwval(fw,k+i*2);
+            uint32_t handler=fwval(fw,k+i*2+1);
+            // fails on op out of range
+            if(!save_ptp_handler_func(op,handler)) {
+                break;
+            }
+        }
+        return 0;
+    }
+    // otherwise, check for calls
+    if (!isBorBL(fw,k))
+    {
+        return 0;
+    }
+    uint32_t adr = followBranch2(fw,idx2adr(fw,k),0x01000001);
+    // call to add_ptp_handler
+    if (adr == fadr)
+    {
+        find_ptp_handler_imm(fw,k);
+    }
+
+    return 0;
+}
+
+void find_ptp_handlers(firmware *fw)
+{
+    int k = get_saved_sig(fw,"add_ptp_handler");
+    if (k >= 0)
+    {
+        search_fw(fw, match_ptp_handlers, func_names[k].val, 0, 128);
+    }
+}
+
+void write_levent_table_dump(firmware *fw, uint32_t tadr)
+{
+    char *str;
+    uint32_t lid = 0;
+    uint32_t val;
+    if (!tadr) {
+        return;
+    }
+    FILE *f=fopen("levent_table.txt","w");
+    if(!f) {
+        return;
+    }
+    fprintf(f,"address    ID     (unknown)  name\n");
+
+    for(;;tadr += 12) {
+        val = *(uint32_t*)adr2ptr(fw, tadr);
+        if ((val == 0xffffffff) || (val == 0) || (*(uint32_t*)adr2ptr(fw, tadr+4) < lid)) {
+            break;
+        }
+        lid = *(uint32_t*)adr2ptr(fw, tadr+4);
+        str = (char*)adr2ptr(fw,val);
+        if (str) {
+            fprintf(f,"0x%08x 0x%04x 0x%08x %s\n",tadr,lid,*(uint32_t*)adr2ptr(fw, tadr+8),str);
+        }
+    }
+    fclose(f);
+}
+
 //------------------------------------------------------------------------------------------------------------
 
 // Write out firmware info
@@ -5093,9 +6262,20 @@ void output_firmware_vals(firmware *fw)
 
     bprintf("\n// Values for makefile.inc\n");
 
+    // work out digic version
+    int digicver = 20;
+    char *digics = "DIGIC II";
+    if (find_str(fw,"Fencing") != -1) // face recognition related task
+    {
+        digics = "DIGIC III";
+        digicver = 30;
+    }
+
+    bprintf("//   DIGIC = %i# %s\n",digicver,digics);
+
     if (fw->pid != 0)
     {
-        bprintf("//   PLATFORMID = %d (0x%04x) // Found @ 0x%08x\n",fw->pid,fw->pid,fw->pid_adr);
+        bprintf("//   PLATFORMID = %d# (0x%04x) Found @ 0x%08x\n",fw->pid,fw->pid,fw->pid_adr);
     }
 
     if (fw->maxram != 0)
@@ -5111,15 +6291,21 @@ void output_firmware_vals(firmware *fw)
     }
 
     bprintf("\n");
-}
 
-#if defined(__linux__) || defined(__APPLE__)
-#define stricmp strcasecmp
-#endif
+    uint32_t u = fw->base+fw->fsize*4;
+    // make it fit in 32bits
+    if (u == 0)
+        u = 0xffffffff;
+    bprintf("// Detected address ranges:\n");
+    bprintf("// %-8s 0x%08x - 0x%08x (%7d bytes)\n","ROM",fw->base,u,fw->fsize*4);
+    bprintf("// %-8s 0x%08x - 0x%08x copied from 0x%08x (%7d bytes)\n","RAM data",fw->data_start,fw->data_start+fw->data_len*4,fw->data_init_start,fw->data_len*4);
+
+    bprintf("\n");
+}
 
 int compare_func_names(const func_entry **p1, const func_entry **p2)
 {
-    int rv = stricmp((*p1)->name, (*p2)->name);     // Case insensitive
+    int rv = strcasecmp((*p1)->name, (*p2)->name);     // Case insensitive
     if (rv != 0)
         return rv;
     return strcmp((*p1)->name, (*p2)->name);        // Case sensitive (if equal with insensitive test)
@@ -5198,6 +6384,7 @@ int main(int argc, char **argv)
 
     load_firmware(&fw,argv[1],argv[2],(argc==5)?argv[4]:0, OS_VXWORKS);
     find_eventprocs(&fw);
+    find_ptp_handlers(&fw);
     find_builddate(&fw);
     output_firmware_vals(&fw);
 

@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "modes.h"
 #include "sd_card.h"
@@ -11,6 +10,9 @@
 #include "gui_mbox.h"
 #include "raw.h"
 #include "conf.h"
+#include "time.h"
+#include "dirent.h"
+#include "ctype.h"
 
 #include "gui_fselect.h"
 #include "raw_merge.h"
@@ -455,6 +457,7 @@ typedef struct
     unsigned char   isparent;       // parent directory (..)?
     unsigned char   iscurrent;      // current directory (.)?
     unsigned char   isvalid;        // stat() call succeeded
+    unsigned char   ishidden;       // hidden attribute?
 } fs_dirent;
 
 // Custom readdir - populates extra info about the file or directory
@@ -474,6 +477,7 @@ static int fs_readdir(DIR *d, fs_dirent *de, const char* path)
     de->iscurrent = 0;
     de->isdir = 0;
     de->isvalid = 0;
+    de->ishidden = 0;
 
     if (de->de)
     {
@@ -499,6 +503,7 @@ static int fs_readdir(DIR *d, fs_dirent *de, const char* path)
                 de->mtime = st.st_mtime;
                 de->isvalid = 1;
                 de->isdir = ((st.st_attrib & DOS_ATTR_DIRECTORY) != 0);
+                de->ishidden = ((st.st_attrib & DOS_ATTR_HIDDEN) != 0);
             }
         }
 
@@ -564,7 +569,7 @@ static void process_dir(const char *parent, const char *name, int nested, void (
 //-------------------------------------------------------------------
 static void fselect_goto_prev(int step)
 {
-    int j, i;
+    int j;
 
     for (j=0; j<step; ++j)
     {
@@ -628,7 +633,7 @@ static void gui_fselect_read_dir()
     {
         while (fs_readdir(d, &de, items.dir))
         {
-            if (!de.deleted && !de.iscurrent)
+            if (!de.deleted && !de.iscurrent && (conf.show_hiddenfiles || !de.ishidden))
             {
                 add_item(&items, de.de->d_name, de.size, de.mtime, 0, de.isdir, de.isparent, de.isvalid);
                 if (de.isparent)
@@ -738,7 +743,7 @@ void gui_fselect_init(int title, const char* prev_dir, const char* default_dir, 
 void gui_fselect_draw(int enforce_redraw)
 {
     int i, j;
-    twoColors cl_marked, cl_selected;
+    twoColors cl_marked;
 
     if (gui_fselect_readdir)
     {
@@ -821,20 +826,27 @@ void gui_fselect_draw(int enforce_redraw)
                     sprintf(dbuf+j, "%5db", n); // " 1023 b"
                 else
                 {
-                    char c = 'k';
-                    if (n >= 1024*1024*1024)        // GB
+                    static char* suffixes = "kMG";
+                    int sfx = 0;
+                    if (n >= 4294967245ul)    // 4GB - 51 - avoid overflow
                     {
-                        n = n >> 20;    // Note: can't round this up in case of overflow
-                        c = 'G';
+                        sfx = 2;    // 'G' suffix
+                        n = 4096;   // 4G
                     }
-                    else if (n >= 1024*1024)        // MB
+                    else
                     {
-                        n = (n + 512) >> 10;
-                        c = 'M';
+                        // Round to 1 decimal place (51 = 1024 * 0.05)
+                        n += 51;
+                        // Reduce and round until < 1M, incrementing size suffix index
+                        while (n >= 1024*1024)
+                        {
+                            n >>= 10;
+                            n += 51;
+                            sfx += 1;
+                        }
                     }
-                    n += 512;
                     unsigned long f = ((n & 0x3FF) * 10) >> 10;    // 1 digit of remainder % 1024
-                    sprintf(dbuf+j, "%3d.%1d%c", n >> 10, f, c);
+                    sprintf(dbuf+j, "%3d.%1d%c", n >> 10, f, suffixes[sfx]);
                 }
             }
             j += SIZE_SIZE;
@@ -1686,6 +1698,8 @@ ModuleInfo _module_info = {
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     CAM_SENSOR_VERSION,         // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

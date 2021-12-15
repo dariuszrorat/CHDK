@@ -62,11 +62,11 @@ int kbd_is_blocked()
     return kbd_blocked;
 }
 
-void enter_alt()
+void enter_alt(int script_mode)
 {
     clear_usb_power();         // Prevent previous USB remote pulse from starting script.
     kbd_blocked = 1;
-    gui_set_alt_mode_state(ALT_MODE_ENTER);
+    gui_set_alt_mode_state(script_mode ? ALT_MODE_ENTER_SCRIPT : ALT_MODE_ENTER);
 }
 
 void exit_alt()
@@ -89,14 +89,14 @@ long kbd_process()
         switch (camera_info.perf.md_af_on_flag)
         {
         case 1:
-            if (get_tick_count() >= (camera_info.perf.md_detect_tick + camera_info.perf.md_af_on_delay))
+            if (get_tick_count() >= (int)(camera_info.perf.md_detect_tick + camera_info.perf.md_af_on_delay))
             {
                 camera_info.perf.md_af_on_flag = 2;
                 camera_set_led(camera_info.cam_af_led,1,200);
             }
             break;
         case 2:
-            if (get_tick_count() >= (camera_info.perf.md_detect_tick + camera_info.perf.md_af_on_delay + camera_info.perf.md_af_on_time))
+            if (get_tick_count() >= (int)(camera_info.perf.md_detect_tick + camera_info.perf.md_af_on_delay + camera_info.perf.md_af_on_time))
             {
                 camera_info.perf.md_af_on_flag = 0;
                 camera_set_led(camera_info.cam_af_led,0,0);
@@ -121,6 +121,10 @@ long kbd_process()
 
     // Set Shutter Half Press state for GUI task.
     camera_info.state.is_shutter_half_press = kbd_is_key_pressed(KEY_SHOOT_HALF);
+
+    // update any state that needs to be updated regularly in shooting
+    extern void shooting_update_state(void);
+    shooting_update_state();
 
 	// Alternative keyboard mode stated/exited by pressing print key.
 	// While running Alt. mode shoot key will start a script execution.
@@ -149,7 +153,7 @@ long kbd_process()
                 {
                     // if start script on alt set, flag to run it
                     if(conf.script_startup==SCRIPT_AUTOSTART_ALT) script_run_on_alt_flag = 1;
-                    enter_alt();
+                    enter_alt(camera_info.state.state_kbd_script_run);
                 }
                 else
                     exit_alt();

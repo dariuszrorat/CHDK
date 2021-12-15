@@ -22,7 +22,7 @@ const int SYMB_SIZE = 60;
 
 struct relevant_section bss, data, rodata, text;
 
-const static unsigned char elf_magic_header[] =
+static const unsigned char elf_magic_header[] =
   {0x7f, 0x45, 0x4c, 0x46,  /* 0x7f, 'E', 'L', 'F' */
    0x01,                    /* Only 32-bit objects. */
    0x01,                    /* Only LSB data. */
@@ -167,11 +167,11 @@ relocate_section( struct relevant_section* base_sect)
     if (ELF32_R_TYPE(rela.r_info) == R_ARM_V4BX)
         continue;
 
-	int symidx = ELF32_R_SYM(rela.r_info);            
-	if ( symidx*sizeof(struct elf32_sym) >= symtabsize ) {
+    int symidx = ELF32_R_SYM(rela.r_info);            
+    if ( symidx*sizeof(struct elf32_sym) >= symtabsize ) {
         PRINTERR(stderr, "elf2flt unknown symbolidx #%d for relocation %s:%d\n", symidx, base_sect->name,relidx);
     	return ELFFLT_INPUT_ERROR;
-	}
+    }
     ret = b_seek_read((symtaboff +
                      sizeof(struct elf32_sym) * symidx),
                     (char *)&s, sizeof(s));
@@ -202,7 +202,7 @@ relocate_section( struct relevant_section* base_sect)
       if ( stoplist_check(name) )
 	      { flag_unsafe_sym=1; }
 
-      ret = apply_import( base_sect, &rela, importidx, &s, relidx);
+      ret = apply_import( base_sect, &rela, importidx, &s);
       if (ret != ELFFLT_OK) return ret;
 	}
 	else
@@ -258,7 +258,7 @@ void dump_section(char* name, unsigned char *ptr, int size )
 }
 
 static 
-void print_offs(char *prefix, int offs, char* postfix)
+void print_offs(char *prefix, uint32_t offs, char* postfix)
 {
     int secoffs = 0;
     char* sect="unkn";
@@ -288,7 +288,7 @@ char* get_flat_string( int32_t offs )
 		return buf;
 	}
 
-    if  ( offs >=flat->reloc_start || offs<flat->data_start )
+    if  ( (uint32_t)offs >=flat->reloc_start || (uint32_t)offs<flat->data_start )
 	  return "";
 
 	strncpy( buf, flat_buf+offs, sizeof(buf)-1);
@@ -375,7 +375,7 @@ int add_div0_arm()
 
 /*---------------------------------------------------------------------------*/
 int
-elfloader_load(char* filename, char* fltfile)
+elfloader_load(char* fltfile)
 {
   struct elf32_ehdr ehdr;
   struct elf32_shdr shdr;
@@ -385,7 +385,7 @@ elfloader_load(char* filename, char* fltfile)
   unsigned int nameptr;
   char name[12];
   
-  int i;
+  uint32_t i;
   unsigned short shdrnum, shdrsize;
 
   int ret;
@@ -684,7 +684,7 @@ elfloader_load(char* filename, char* fltfile)
               uint32_t idx = flat_import_buf[i].importidx;
               new_import_buf[new_import_cnt++] = idx;
               int pcnt = new_import_cnt;
-              int j;
+              uint32_t j;
               for (j=0; j<flat_import_count; j++)
               {
                   if (flat_import_buf[j].importidx == idx)
@@ -723,11 +723,11 @@ elfloader_load(char* filename, char* fltfile)
 	else
 	  	printf(" Platform #%d only.\n", _module_info->chdk_required_platfid );
 	//printf("->Description: %s\n", get_flat_string(_module_info->description) );
-	print_offs("->lib                 = ", (int)_module_info->lib,"\n");
-	//print_offs("->_module_loader()    = ", (int)_module_info->loader,"\n");
-	//print_offs("->_module_unloader()  = ", (int)_module_info->unloader,"\n");
-	//print_offs("->_module_can_unload()= ", (int)_module_info->can_unload,"\n");
-	//print_offs("->_module_exit_alt()  = ", (int)_module_info->exit_alt,"\n");
+	print_offs("->lib                 = ", _module_info->lib,"\n");
+	//print_offs("->_module_loader()    = ", _module_info->loader,"\n");
+	//print_offs("->_module_unloader()  = ", _module_info->unloader,"\n");
+	//print_offs("->_module_can_unload()= ", _module_info->can_unload,"\n");
+	//print_offs("->_module_exit_alt()  = ", _module_info->exit_alt,"\n");
   }
 
   if ( FLAG_DUMP_FLAT ) {
@@ -739,7 +739,7 @@ elfloader_load(char* filename, char* fltfile)
     printf("\nDump relocations 0x%x (size=%d):\n",flat->reloc_start,flat_reloc_count*sizeof(reloc_record_t));
     for( i = 0; i< flat_reloc_count; i++)
     {
-        print_offs("Offs: ",*(int*)(flat_buf+flat->reloc_start+i*sizeof(reloc_record_t)), "\n");
+        print_offs("Offs: ",*(uint32_t*)(flat_buf+flat->reloc_start+i*sizeof(reloc_record_t)), "\n");
     }
 
     printf("\nDump imports 0x%x (size=%d):\n",flat->import_start,new_import_cnt*sizeof(uint32_t));
@@ -766,6 +766,7 @@ elfloader_load(char* filename, char* fltfile)
   i = write(output_fd, flat_buf, flat->import_start);
   i = write(output_fd, new_import_buf, new_import_cnt*sizeof(uint32_t));
   close(output_fd);
+  free(new_import_buf);
 
   return ELFFLT_OK;
 }

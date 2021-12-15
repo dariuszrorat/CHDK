@@ -4,14 +4,11 @@
 ** See Copyright Notice in lua.h
 */
 
-
-// in stdlib
-#if 0
 #include <errno.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define liolib_c
 #define LUA_LIB
@@ -20,11 +17,6 @@
 
 #include "lauxlib.h"
 #include "lualib.h"
-
-#ifdef HOST_LUA
-#include <errno.h>
-#include <ctype.h>
-#endif
 
 #define IO_INPUT	1
 #define IO_OUTPUT	2
@@ -500,7 +492,7 @@ static int g_write (lua_State *L, FILE *f, int arg) {
     else {
       size_t l;
       const char *s = luaL_checklstring(L, arg, &l);
-      status = status && (fwrite(s, sizeof(char), l, f) == l);
+      status = status && ((size_t)fwrite(s, sizeof(char), l, f) == l);
     }
   }
   return pushresult(L, status, NULL);

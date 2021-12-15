@@ -207,7 +207,7 @@ asm volatile (
 "    SUB     SP, SP, #0x74 \n"
 "    MOV     R1, #0x74 \n"
 "    MOV     R0, SP \n"
-"    BL      sub_FF3AB8C0 \n"
+"    BL      sub_FF3AB8C0 /*_bzero*/ \n"
 "    MOV     R0, #0x53000 \n"
 "    STR     R0, [SP, #4] \n"
 
@@ -351,7 +351,7 @@ asm volatile (
 "    LDR     R1, =0x3CE000 \n"
 "    MOV     R0, #0 \n"
 "    BL      sub_FF02B788 \n"
-"    BL      sub_FF02B530 \n"
+"    BL      sub_FF02B530 /*_EnableDispatch*/ \n"
 "    MOV     R3, #0 \n"
 "    STR     R3, [SP] \n"
 "    LDR     R3, =task_Startup_my \n"  // --> Patched. Old value = 0xFF00FBF4.

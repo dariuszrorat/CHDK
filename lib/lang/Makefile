@@ -2,17 +2,18 @@ topdir=../../
 
 include $(topdir)makefile_core.inc
 
-OBJS = $Olang.o $Olang_str.o $Ofileutil.o
+OBJS = $Olang.o $Ofileutil.o 
 
 all: $Oliblang.a
 
 $Oliblang.a: $(OBJS)
 
-$Olang_str.o: lang_str.c lang_str.h $(core)/gui_lang.h
+# lang_str.h needs to be generated here (once per build), thus the workaround
+$Olang.o: lang_str.h $(core)/gui_lang.h
 
-lang_str.h: $(tools)/makelang$(EXE) $(chdk)/LANG/english.lng $(chdk)/LANG/$(OPT_DEFAULT_LANG).lng
-	@echo $< \-\> $@
-	$(tools)/makelang$(EXE) $(chdk)/LANG/english.lng $(chdk)/LANG/$(OPT_DEFAULT_LANG).lng > lang_str.h
+lang_str.h: $(tools)/makelang$(EXE) $(chdk)/LANG/english.lng $(chdk)/LANG/$(OPT_DEFAULT_LANG).lng $(core)/gui_lang.h
+	@echo $< '->' $@
+	$(tools)/makelang$(EXE) $(core)/gui_lang.h $(chdk)/LANG/english.lng $(chdk)/LANG/$(OPT_DEFAULT_LANG).lng > lang_str.h
 
 clean:
 	rm -f $O*.* *.o *.a

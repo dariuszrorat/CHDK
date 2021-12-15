@@ -4,7 +4,7 @@ This project is fork of official CHDK
 
 https://app.assembla.com/spaces/chdk
 
-This fork is not based on newest CHDK version. This is fork of 1.4.1 version.
+This fork is based on 1.6.0 version. It is intended for pre-DIGIC 6 processors only.
 
 ## Installation
 

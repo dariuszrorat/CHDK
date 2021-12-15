@@ -27,6 +27,9 @@ OPT_PTP=1
 # Enable this to include debug code in the motion_detect module
 #OPT_MD_DEBUG=1
 
+# Enable this for an extra misc value display showing viewport history and FPS. Requires active_viewport_buffer FW variable.
+#OPT_VIEWPORT_DEBUG=1
+
 # needs proper fi2.inc in platform/ !!! see http://chdk.setepontos.com/index.php/topic,2995.0.html
 #OPT_FI2=1
 
@@ -64,8 +67,24 @@ OPT_GEN_STUBS=1
 # Create module .elf and .flt dump files
 #OPT_GEN_MODULE_DUMPS=1
 
-# Define this to use EABI instead of ELF for the GCC ABI
-#OPT_USE_GCC_EABI=1
+# Define this to disable runtime compatibility check in loader
+#OPT_DISABLE_COMPAT_CHECK=1
+
+# Define this to enable building of tools using the capstone library (http://www.capstone-engine.org/)
+# Required to rebuild stubs for thumb2 / digic 6 firmware
+#OPT_CAPSTONE_TOOLS=1
+
+# Set the following if capstone includes are not in the default search path
+#CAPSTONE_TOOLS_INC=-I/path/to/capstone/include
+
+# Set the following to the options required to link to the capstone library.
+# At a minimum, -lcapstone or similar is required. If the library is not
+# on the default search path, -L/path/to/capstone is also required
+#CAPSTONE_TOOLS_LINK=-L/path/to/capstone -lcapstone
+
+# Define this to disable E32 error (caused by broken image stabilizer)
+# Only enable for newer cameras with optical image stabilizer, otherwise build will fail (due to missing fw function)
+#OPT_DISABLE_CAM_ERROR=1
 
 # ***please new entries above this line for protecting the chdk shell against errors***
 

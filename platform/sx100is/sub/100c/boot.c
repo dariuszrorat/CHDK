@@ -19,12 +19,12 @@ void CreateTask_spytask()
 
 void taskCreateHook(int *p) {
     p-=16;
-    if (p[0]==0xffc4e2e0)  p[0]=(int)capt_seq_task;
-    if (p[0]==0xffc98f18)  p[0]=(int)exp_drv_task;
-    if (p[0]==0xffc4ae48)  p[0]=(int)movie_record_task;
-    if (p[0]==0xffdda798)  p[0]=(int)filewritetask;
-    if (p[0]==0xffc6358c)  p[0]=(int)init_file_modules_task;
-    if (p[0]==0xffc3802c)  p[0]=(int)JogDial_task_my;
+    if (p[0]==(int)0xffc4e2e0)  p[0]=(int)capt_seq_task;
+    if (p[0]==(int)0xffc98f18)  p[0]=(int)exp_drv_task;
+    if (p[0]==(int)0xffc4ae48)  p[0]=(int)movie_record_task;
+    if (p[0]==(int)0xffdda798)  p[0]=(int)filewritetask;
+    if (p[0]==(int)0xffc6358c)  p[0]=(int)init_file_modules_task;
+    if (p[0]==(int)0xffc3802c)  p[0]=(int)JogDial_task_my;
 }
 
 void boot()
@@ -226,7 +226,7 @@ asm volatile (
 "    MOV     R1, #0x300000 \n"
 "    MOV     R0, #0 \n"
 "    BL      sub_FFC19D78 \n"
-"    BL      sub_FFC19D24 \n"
+"    BL      sub_FFC19D24 /*_EnableDispatch*/ \n"
 "    MOV     R3, #0 \n"
 "    STR     R3, [SP] \n"
 "    LDR     R3, =task_Startup_my \n"  // --> Patched. Old value = 0xFFC0DC78.
@@ -450,7 +450,7 @@ asm volatile (
 "    MOV     R2, #0 \n"
 "    MOV     R1, #0x200 \n"
 "    MOV     R0, #3 \n"
-"    BL      sub_FFC58A28 \n"
+"    BL      _exmem_ualloc \n"
 "    MOVS    R4, R0 \n"
 "    BNE     loc_FFC3FFE8 \n"
 
@@ -468,7 +468,7 @@ asm volatile (
 "    CMP     R0, #1 \n"
 "    BNE     loc_FFC40014 \n"
 "    MOV     R0, #3 \n"
-"    BL      sub_FFC58B68 \n"
+"    BL      _exmem_ufree \n"
 "    B       loc_FFC3FFE0 \n"
 
 "loc_FFC40014:\n"
@@ -547,7 +547,7 @@ asm volatile (
 
 "loc_FFC4009C:\n"
 "    MOV     R0, #3 \n"
-"    BL      sub_FFC58B68 \n"
+"    BL      _exmem_ufree \n"
 "    CMP     R4, #0 \n"
 "    BNE     loc_FFC400D4 \n"
 "    MOV     R6, #0 \n"

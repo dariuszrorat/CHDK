@@ -25,7 +25,7 @@ int find_cstring(dump_t *dump, unsigned *pos, const char *string)
 {
 	unsigned i;
 	for(i=*pos; i<dump->size - strlen(string); i++) {
-		if(strcmp(dump->pb+i,string)==0) {
+		if(strcmp((const char *)(dump->pb+i),string)==0) {
 			*pos = i;
 			return 1;
 		}
@@ -80,7 +80,12 @@ int load_dump(const char *dumpname,const char *base, dump_t *dump)
 	size_t rcnt;
 
 	dump->base=strtoul(base,NULL,0);
-	if(dump->base != 0xFFC00000 && dump->base != 0xFF810000 && dump->base != 0xFF000000 && dump->base != 0xF8000000) {
+	if(dump->base != 0xFFC00000 
+        && dump->base != 0xFF810000 
+        && dump->base != 0xFF000000 
+        && dump->base != 0xF8000000
+        && dump->base != 0xFC000000
+        && dump->base != 0xE0000000) {
 		fprintf(stderr,"error base '%s' %x\n",base,dump->base);
 		return 0;
 	}
@@ -96,7 +101,7 @@ int load_dump(const char *dumpname,const char *base, dump_t *dump)
     }
 
     if ((p = malloc(st.st_size)) == NULL ) {
-        fprintf(stderr,"error: unable to allocate %lu bytes\n",st.st_size);
+        fprintf(stderr,"error: unable to allocate %lu bytes\n",(unsigned long)st.st_size);
         return 0;
     }
 
@@ -111,7 +116,7 @@ int load_dump(const char *dumpname,const char *base, dump_t *dump)
     rcnt=fread(p, 1, st.st_size, dumpfile);
     fclose(dumpfile);
 
-    if (rcnt != st.st_size) {
+    if (rcnt != (size_t)st.st_size) {
         fprintf(stderr,"error: unable to read %s\n",dumpname);
 		free(p);
         return 0;

@@ -17,12 +17,14 @@ extern void task_InitFileModules();
 extern void task_RotaryEncoder();
 extern void task_MovieRecord();
 extern void task_ExpDrv();
+extern void task_AGPSDownloader();
 
 /*----------------------------------------------------------------------
     spytask
 -----------------------------------------------------------------------*/
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
     core_spytask();
 }
 
@@ -64,12 +66,16 @@ void __attribute__((naked,noinline)) boot() {
 "    strcc.w r2, [r1], #4\n"
 "    bcc.n   loc_fc020024\n" // copy dryos kernel to RAM
 
-        // Install CreateTask patch
-        "adr     r0, patch_CreateTask\n"    // Patch data
-        "ldm     r0, {r1,r2}\n"             // Get two patch instructions
-        "ldr     r0, =orig_CreateTask\n"    // Address to patch
-        "bic     r0, #1\n"                  // clear thumb bit
-        "stm     r0, {r1,r2}\n"             // Store patch instructions
+// Install CreateTask patch
+// use half words in case source or destination not word aligned
+        "adr     r0, patch_CreateTask\n"    // src: Patch data
+        "ldr     r1, =hook_CreateTask\n"    // dest: Address to patch (hook_ has thumb bit off)
+        "add     r2, r0, #8\n" // two words
+"task_hook_loop:\n"
+        "ldrh   r3, [r0],#2\n"
+        "strh   r3, [r1],#2\n"
+        "cmp    r0,r2\n"
+        "blo    task_hook_loop\n"
 
 "    ldr     r0, =0x010c1000\n"
 "    ldr     r1, =0x0001f3c4\n"
@@ -118,25 +124,44 @@ asm volatile (
 "    orreq   r3, #1\n"
 "    BEQ     exitHook\n"
 
-"    LDR     R0, =task_DvlpSeq\n"
+"    LDR     R0, =task_DvlpSeqTask\n"
 "    CMP     R0, R3\n"
 "    itt     eq\n"
 "    LDREQ   R3, =developseq_task\n"
 "    orreq   r3, #1\n"
 "    BEQ     exitHook\n"
 
-/*
+"    LDR     R0, =task_TricInitTask\n"
+"    CMP     R0, R3\n"
+"    itt     eq\n"
+"    LDREQ   R3, =tricinittask\n"
+"    orreq   r3, #1\n"
+"    BEQ     exitHook\n"
 
 "    LDR     R0, =task_FileWrite\n"
 "    CMP     R0, R3\n"
+"    itt     eq\n"
 "    LDREQ   R3, =filewritetask\n"
+"    orreq   r3, #1\n"
 "    BEQ     exitHook\n"
+
+#if PLATFORMID == 12895
+"    LDR     R0, =task_AGPSDownloader\n"
+"    CMP     R0, R3\n"
+"    itt     eq\n"
+"    LDREQ   R3, =agps_downloader_task\n"
+"    orreq   r3, #1\n"
+"    BEQ     exitHook\n"
+#endif
+
 
 "    LDR     R0, =task_MovieRecord\n"
 "    CMP     R0, R3\n"
+"    itt     eq\n"
 "    LDREQ   R3, =movie_record_task\n"
+"    orreq   r3, #1\n"
 "    BEQ     exitHook\n"
-*/
+
 
 "    ldr     r0, =task_InitFileModules\n"
 "    cmp     r0, r3\n"
@@ -150,7 +175,7 @@ asm volatile (
 "    stmdb   sp!, {r1, r2, r3, r4, r5, r6, r7, r8, r9, lr}\n"
 "    mov     r4, r0\n"
 "    ldr     r0, =0x8154\n"
-"    ldr.w   pc, =(orig_CreateTask + 8) \n"  // Continue in firmware
+"    ldr.w   pc, =(hook_CreateTask + 8 + 1) \n"  // Continue in firmware, thumb bit set
 ".ltorg\n"
 );
 }
@@ -401,6 +426,15 @@ void __attribute__((naked,noinline)) sub_fc04f6c4_my() {
     "bl      sub_fc20d318\n"
     "bl      sub_fc0ba81c\n"
     "bl      sub_fc095750\n"
+
+#if defined(OPT_RUN_WITH_BATT_COVER_OPEN)
+"   mov     r0, #0x100000 \n"       // +
+"batt_loop1: \n"                    // +
+"   nop\n"                          // +
+"   SUBS    R0,R0,#1 \n"            // +
+"   BNE     batt_loop1 \n"          // +
+#endif
+
     "bl      sub_fc12ed44\n"
     "bl      sub_fc095b24\n"
     "bl      sub_fc09594a\n"
@@ -586,4 +620,140 @@ void __attribute__((naked,noinline)) sub_fc060900_my() {
     );
 }
 
+
+// following is for supporting "firmware update" boot
+void __attribute__((naked,noinline)) tricinittask() {
+    asm volatile(
+// capdis -f=chdk -s=task_TricInitTask -c=35 -stubs PRIMARY.BIN 0xfc000000
+// task_TricInitTask 0xfc373dc1
+"    push.w  {r1, r2, r3, r4, r5, r6, r7, r8, sb, sl, fp, lr}\n"
+"    blx     sub_fc251ad4\n"
+"    movs    r0, #8\n"
+"    ldr     r1, =0xfc374010\n" //  *"InitTskStart"
+"    bl      sub_fc28b7ee\n"
+"    ldr.w   fp, =0x0001bf74\n"
+"    movw    sl, #0x1000\n"
+"    ldr     r4, =0x0001bf70\n"
+"    movs    r2, #0\n"
+"    ldr     r1, =0x0003830f\n"
+"    ldr     r0, [r4]\n"
+"    blx     sub_fc251d4c\n" // j_WaitForAnyEventFlag
+"    lsls    r0, r0, #0x1f\n"
+"    beq     loc_fc373dfa\n"
+"    movs    r0, #8\n"
+"    ldr     r1, =0xfc374028\n" //  *"ER IniTskWait"
+"    bl      sub_fc28b84a\n"
+"    ldr     r1, =0x0001bf5c\n"
+"    movs    r0, #0\n"
+"    str     r0, [r1]\n"
+"    pop.w   {r1, r2, r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}\n"
+"loc_fc373dfa:\n"
+"    ldr     r4, =0x0001bf70\n"
+"    add     r1, sp, #8\n"
+"    ldr     r0, [r4]\n"
+"    blx     sub_fc251bec\n" // j_GetEventFlagValue
+"    ldr     r1, [sp, #8]\n"
+"    ldr     r0, [r4]\n"
+"    blx     sub_fc251c1c\n" // j_ClearEventFlag
+"    ldr     r6, [sp, #8]\n"
+"    lsls    r0, r6, #0x1e\n"
+"    beq     sub_fc373ed2\n" // loc -> sub
+"    lsls    r0, r6, #0x1f\n"
+"    beq     sub_fc373e1c\n" // loc -> sub
+
+"    ldr     r0, =0xd2020074\n" // +
+"    ldr     r0, [r0]\n"        // + nonzero when core already running
+"    subs    r0, #0\n"          // +
+"    beq     tric1\n"           // +
+"    ldr     r0, [r4]\n"        // +
+"    mov     r1, #0x80\n"       // +
+"    bl      _SetEventFlag\n"   // + core already initialized, set the SmacIdleCmp eventflag here
+"tric1:\n"                      // +
+
+"    bl      sub_fc374160\n"
+//"    b       loc_fc373e5e\n" // -
+"    ldr     pc, =0xfc373e5f\n" // -> continue in rom
+    );
+}
+
+#if PLATFORMID == 12895 // sx280 only
+// following supplies new URL for up-to-date AGPS data
+
+void update_url() {
+    strcpy(*(char**)(0xd1bc+0x1c),"http://epodownload.mediatek.com/EPO.DAT");
+}
+
+void __attribute__((naked,noinline)) agps_downloader_task() {
+    asm volatile(
+// capdis -f=chdk -s=task_AGPSDownloader -c=44 -stubs PRIMARY.BIN 0xfc000000
+// task_AGPSDownloader 0xfc07ba67
+"    push    {r3, r4, r5, r6, r7, lr}\n"
+"    movs    r4, #0\n"
+"    ldr     r7, =0x0000d1bc\n"
+"    subs    r6, r4, #1\n"
+"    b       loc_fc07bad6\n"
+"loc_fc07ba70:\n"
+"    ldr     r0, [r7]\n"
+"    movs    r2, #0\n"
+"    mov     r1, sp\n"
+"    blx     sub_fc251c84\n" // j_ReceiveMessageQueue
+"    mov     r4, r0\n"
+"    lsls    r0, r0, #0x1f\n"
+"    beq     loc_fc07ba8a\n"
+"    movs    r2, #0xf2\n"
+"    movs    r0, #0\n"
+"    ldr     r1, =0xfc07bc48\n" //  *"AGPSDownloader.c"
+"    blx     sub_fc251d9c\n" // j_DebugAssert
+"loc_fc07ba8a:\n"
+"    ldr     r0, [r7, #0x14]\n"
+"    adds    r0, r0, #1\n"
+"    bne     loc_fc07ba94\n"
+"    mov     r5, r6\n"
+"    b       loc_fc07ba98\n"
+"loc_fc07ba94:\n"
+"    ldr     r0, [sp]\n"
+"    ldr     r5, [r0]\n"
+"loc_fc07ba98:\n"
+"    ldr     r0, [sp]\n"
+"    bl      sub_fc2b7bfc\n" // j_free
+"    cmp     r5, #7\n"
+"    bhs     loc_fc07bad6\n"
+"    tbb     [pc, r5]\n" // (jumptable r5 7 elements)
+"branchtable_fc07baa6:\n"
+"    .byte((loc_fc07baae - branchtable_fc07baa6) / 2)\n" // (case 0)
+"    .byte((loc_fc07bab4 - branchtable_fc07baa6) / 2)\n" // (case 1)
+"    .byte((loc_fc07baba - branchtable_fc07baa6) / 2)\n" // (case 2)
+"    .byte((loc_fc07bac0 - branchtable_fc07baa6) / 2)\n" // (case 3)
+"    .byte((loc_fc07bac6 - branchtable_fc07baa6) / 2)\n" // (case 4)
+"    .byte((loc_fc07bacc - branchtable_fc07baa6) / 2)\n" // (case 5)
+"    .byte((loc_fc07bad2 - branchtable_fc07baa6) / 2)\n" // (case 6)
+".align 1\n"
+"loc_fc07baae:\n"
+"    bl      sub_fc07b9bc\n"
+"    bl      update_url\n"      // +
+"    b       loc_fc07bad6\n"
+"loc_fc07bab4:\n"
+"    bl      sub_fc07b918\n"
+"    b       loc_fc07bad6\n"
+"loc_fc07baba:\n"
+"    bl      sub_fc07b848\n"
+"    b       loc_fc07bad6\n"
+"loc_fc07bac0:\n"
+"    bl      sub_fc07b70e\n"
+"    b       loc_fc07bad6\n"
+"loc_fc07bac6:\n"
+"    bl      sub_fc07b5b8\n"
+"    b       loc_fc07bad6\n"
+"loc_fc07bacc:\n"
+"    bl      sub_fc07bb5c\n"
+"    b       loc_fc07bad6\n"
+"loc_fc07bad2:\n"
+"    bl      sub_fc07b4d0\n"
+"loc_fc07bad6:\n"
+"    lsls    r0, r4, #0x1f\n"
+"    beq     loc_fc07ba70\n"
+"    pop     {r3, r4, r5, r6, r7, pc}\n"
+    );
+}
+#endif // sx280
 

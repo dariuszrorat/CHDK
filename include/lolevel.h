@@ -25,8 +25,15 @@ extern int _MoveIrisWithAv(short*);
 #endif
 extern void _PutInNdFilter();
 extern void _PutOutNdFilter();
+extern short _get_nd_value(void);
+extern short _get_current_nd_value(void);
 extern volatile long focus_busy;
+extern long _GetCurrentShutterSpeed();
 extern long _GetCurrentAvValue();
+extern long _get_current_deltasv(void);
+extern long _GetCurrentDriveBaseSvValue(void);
+extern short _GetUsableMinAv(void);
+extern short _GetUsableMaxAv(void);
 extern long _GetCurrentTargetDistance();
 extern long _GetPropertyCase(long opt_id, void *buf, long bufsize);
 extern long _SetPropertyCase(long opt_id, void *buf, long bufsize);
@@ -41,7 +48,7 @@ extern int _GetAdChValue(int) ;
 #else
 extern int _GetAdChValue(int*) ;
 #endif
-extern void _PT_PlaySound(short , void*);
+extern void _PT_PlaySound(short , void*, int unk);
 extern void _RefreshPhysicalScreen(long f);
 extern void _Unmount_FileSystem();
 extern void _Mount_FileSystem();
@@ -160,6 +167,7 @@ extern long _iosDevDelete(void*);
 extern long _iosDrvInstall(void*,void*,void*,void*,void*,void*,void*);
 extern int _TakeSemaphore(int sem, int timeout);
 extern void _GiveSemaphore(int sem);
+extern void _DeleteSemaphore(int sem);
 
 /* misc */
 extern const char aPhysw;
@@ -251,6 +259,8 @@ extern void *_LocalTime(const /*time_t*/ unsigned long *_tod, void * t_m); // DR
 extern long _strftime(char *s, unsigned long maxsize, const char *format, const /*struct tm*/ void *timp);
 extern /*time_t*/ long _mktime(/*struct tm*/ void *timp); // VXWORKS
 extern /*time_t*/ long _mktime_ext(void *tim_extp); // DRYOS, doesn't take a struct tm *
+extern int _SetDate(void *setdate_p); // expects ptr to year, month, day, hour, min, sec, not compatible with tm
+                                      // appears to return non-DST adjusted time
 
 #ifdef CAM_DRYOS_2_3_R39
 extern int _SetFileTimeStamp(const char *file_path, int time1, int time2);
@@ -319,15 +329,22 @@ extern void _reboot_fw_update(const char* bootfile);
 extern int _add_ptp_handler(int, void*, int);
 extern void _set_control_event(int);
 extern void _PB2Rec();
-extern void _Rec2PB();
+/* DryOS 54 and later Rec2PB appears expects argument, levent or -1 for none. String ref "AC:Rec2PB x Repost" */
+extern void _Rec2PB(int event); 
+extern int _get_ptp_buf_size(int slot);
+extern char *_get_ptp_file_buf(void);
 
 #ifdef OPT_EXMEM_MALLOC
 // dryos + some vxworks only takes 3 params in reality
 // on some vxworks the function that is easy to match with sig finder takes an additional param,
 // set to zero in the real AllocateExMem
 // versions that don't expect a 4th param will just ignore it
-extern void *_exmem_alloc(int pool_id,int size,int unk,int unk2); 
+extern void *_exmem_alloc(unsigned int pool_id,unsigned int size,int unk,int unk2); 
 #endif
+
+// exmem
+extern void *_exmem_ualloc(unsigned int type, unsigned int size, void *allocinf); 
+extern void _exmem_ufree(unsigned int type); 
 
 // vxworks only
 // used on a few cameras that don't have memPartInfoGet, see CAM_NO_MEMPARTINFO

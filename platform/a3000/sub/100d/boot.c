@@ -1,7 +1,6 @@
 #include "lolevel.h"
 #include "platform.h"
 #include "core.h"
-#include "stdlib.h"
 #include "dryos31.h"
 #define offsetof(TYPE, MEMBER) ((int) &((TYPE *)0)->MEMBER)
 const char * const new_sa = &_end;
@@ -13,16 +12,16 @@ void CreateTask_spytask();
 void task_CaptSeqTask_my();
 void taskCreateHook(int *p) { 
 p-=17;
-if (p[0]==0xFFC736C4)  p[0]=(int)init_file_modules_task;
-if (p[0]==0xFFC5C1E8)  p[0]=(int)task_CaptSeqTask_my;
-if (p[0]==0xFFC95048)  p[0]=(int)exp_drv_task;
-if (p[0]==0xFFD138CC)  p[0]=(int)movie_record_task;
+if (p[0]==(int)0xFFC736C4)  p[0]=(int)init_file_modules_task;
+if (p[0]==(int)0xFFC5C1E8)  p[0]=(int)task_CaptSeqTask_my;
+if (p[0]==(int)0xFFC95048)  p[0]=(int)exp_drv_task;
+if (p[0]==(int)0xFFD138CC)  p[0]=(int)movie_record_task;
 }
 
 void taskCreateHook2(int *p) { 
 p-=17;
-if (p[0]==0xFFC736C4)  p[0]=(int)init_file_modules_task;
-if (p[0]==0xFFC95048)  p[0]=(int)exp_drv_task;
+if (p[0]==(int)0xFFC736C4)  p[0]=(int)init_file_modules_task;
+if (p[0]==(int)0xFFC95048)  p[0]=(int)exp_drv_task;
 }
 
 void __attribute__((naked,noinline)) boot() {
@@ -347,6 +346,7 @@ void __attribute__((naked,noinline)) task_Startup_my() {
 
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
     core_spytask();
 }
 void CreateTask_spytask() { 

@@ -18,7 +18,7 @@ DEF(physw_sleep_delay                       ,0x00008330) // Found @0xfc0601f6
 
 DEF(levent_table                            ,0xfc512634) // Found @0xfc0a4b40
 DEF(FlashParamsTable                        ,0xfc731440) // Found @0xfc10ac24
-DEF(movie_status                            ,0x00010b08) // or 0x10a88
+DEF(simple_movie_status                     ,0x00010af8)
 FAKEDEF(video_compression_rate, 1)
 DEF(full_screen_refresh                     ,0x00012a94) // Found @0xfc2b0fd8
 DEF(canon_menu_active                       ,0x0000ac58) // Found @0xfc27d140
@@ -32,16 +32,18 @@ DEF(focus_len_table                         ,0xfdf6ad20)
 DEF(zoom_busy                               ,0x00010814) // Found @0xfc1a0998
 DEF(focus_busy                              ,0x00010694) // Found @0xfc28b9ec
 DEF(recreview_hold                          ,0x00008DE4) // Found @0xfc2a2c9e
-DEF_CONST(uiprop_count                      ,0x00000083) // Found @0xfc090268
+//DEF_CONST(uiprop_count                      ,0x00000083) // Found @0xfc090268
 
 DEF(bitmap_buffer, 0xac18) // ?
 
 //.globl bitmap_buffer; bitmap_buffer: ; .long 0x427e3000 ; .long 0x42621000 ;
 
 
-DEF(active_bitmap_buffer, 0xac10) // or 0xac14? just a guess
-// FAKEDEF(viewport_buffers, 1) // ?
 // FAKEDEF(active_viewport_buffer, 1) // ?
+DEF(current_fb_d                            ,0x0000d960) // 0xd940 + 0x20, found @0xfc186624 (102c), similar to 0xfc1ba452 in g7x 100d
+DEF(current_viewport_buffer                 ,0x000087b4) // Contains viewport address that updates at ~30fps in rec mode, 0 or last rec value in pb
+DEF(viewport_buffers                        ,0xfc4d35fc)
+
 DEF(jog_position,                           0xdb48) // 0xdb34 +0x14, +0x18
 DEF(jog_hw_pos,                             0xd9854004) // found by browsing the 0xd985xxxx range...
 
@@ -49,3 +51,5 @@ DEF(jog_hw_pos,                             0xd9854004) // found by browsing the
 //FAKEDEF(enabled_refresh_physical_screen,    1)
 
 DEF(displaytype,                            0x8eb8) //0x8ea4 + 0x14, found  @ fc135f2a (GetDisplayType)
+
+DEF(task_AGPSDownloader, 0xFC07BA67)

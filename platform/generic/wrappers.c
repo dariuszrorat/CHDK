@@ -5,8 +5,17 @@
 #include "conf.h"
 #include "math.h"
 #include "levent.h"
-#include "stdlib.h"
 #include "ptp_chdk.h"
+#include "live_view.h"
+#include "usb_remote.h"
+#include "exmem.h"
+#include "stdio.h"
+
+// arbitrary timeout for canon heap semaphore
+#if !CAM_DRYOS
+#define CANON_HEAP_SEM_TIMEOUT 1000
+extern int canon_heap_sem;
+#endif
 
 //----------------------------------------------------------------------------
 // Char Wrappers (VxWorks - ARM stubs)
@@ -65,11 +74,34 @@ int task_id_list_get(int *idlist,int size)
 
 long get_property_case(long id, void *buf, long bufsize)
 {
+// workaround for missing PROPCASE_SHOOTING
+#if CAM_PROPSET == 7 || CAM_PROPSET == 9 || CAM_PROPSET == 10 || CAM_PROPSET == 11 || CAM_PROPSET == 12 || CAM_PROPSET == 13
+    if(id==PROPCASE_SHOOTING) {
+        int r=_GetPropertyCase(PROPCASE_SHOOTING_STATE, buf, bufsize);
+        // 1 50ms after half press, 2 after exp hook, 3 while shooting
+        // propset 6 has similar procase id 351, goes 3->0 when get_shooting goes false
+        // propset 4 and 5 id 352 is similar but only goes to 2
+        // (4 per https://chdk.setepontos.com/index.php?topic=11604.msg113712#msg113712)
+        if(*(char *)buf > 1) {
+            *(char *)buf = 1;
+        } else {
+            *(char *)buf = 0;
+        }
+        return r;
+    }
+#endif
     return _GetPropertyCase(id, buf, bufsize);
 }
 
 long set_property_case(long id, void *buf, long bufsize)
 {
+    // ignore set on fake prop
+#if CAM_PROPSET == 7 || CAM_PROPSET == 9 || CAM_PROPSET == 10 || CAM_PROPSET == 11 || CAM_PROPSET == 12 || CAM_PROPSET == 13
+    if(id==PROPCASE_SHOOTING) {
+        return 0;
+    }
+#endif
+
     return _SetPropertyCase(id, buf, bufsize);
 }
 
@@ -125,7 +157,7 @@ long set_parameter_data(long id, void *buf, long bufsize)
 short __attribute__((weak)) get_uiprop_value(unsigned long id)
 {
     // avoid asserts: return 0 if id is above limit
-    if (id >= uiprop_count)
+    if (id >= (unsigned long)uiprop_count)
         return 0;
     return _PTM_GetCurrentItem(id|0x8000);
 }
@@ -143,10 +175,13 @@ void mark_filesystem_bootable()
 #endif
 }
 
+// d6 cams must define, don't have usable _RefreshPhysicalScreen
+#ifndef THUMB_FW
 void __attribute__((weak)) vid_bitmap_refresh()
 {
     _RefreshPhysicalScreen(1);
 }
+#endif
 
 long lens_get_zoom_pos()
 {
@@ -157,6 +192,15 @@ long lens_get_zoom_point()
 {
     return _GetZoomLensCurrentPoint();
 }
+
+#ifdef CAM_ILC
+void lens_set_zoom_point(__attribute__ ((unused))long newpt) {}
+void lens_set_zoom_speed(__attribute__ ((unused))long newspd) {}
+#else // !CAM_ILC
+
+#if defined(CAM_USE_ALT_SET_ZOOM_POINT)
+static int mz_speed = 3; // max speed on cameras with multi-speed zoom, ignored on others
+#endif
 
 void lens_set_zoom_point(long newpt)
 {
@@ -170,39 +214,29 @@ void lens_set_zoom_point(long newpt)
 
 	if (lens_get_zoom_point() != newpt)
 	{
-		// Get current digital zoom mode & state
-		// state == 1 && mode == 0 --> Digital Zoom Standard
-		int digizoom_mode, digizoom_state, digizoom_pos;
-		get_property_case(PROPCASE_DIGITAL_ZOOM_MODE,&digizoom_mode,sizeof(digizoom_mode));
-		get_property_case(PROPCASE_DIGITAL_ZOOM_STATE,&digizoom_state,sizeof(digizoom_state));
+		int digizoom_pos;
 		get_property_case(PROPCASE_DIGITAL_ZOOM_POSITION,&digizoom_pos,sizeof(digizoom_pos));
-		if ((digizoom_state == 1) && (digizoom_mode == 0) && (digizoom_pos != 0))
+		// check current digital zoom mode & state
+		// state == 1 && mode == 0 --> Digital Zoom Standard
+		if ((shooting_get_digital_zoom_state() == 1) && (shooting_get_digital_zoom_mode() == 0) && (digizoom_pos != 0))
 		{
 			// reset digital zoom in case camera is in this zoom range
 			extern void _PT_MoveDigitalZoomToWide();
 			_PT_MoveDigitalZoomToWide();
 		}
 
-  #if defined(CAM_USE_ALT_PT_MoveOpticalZoomAt)
-		// SX30 - _MoveZoomLensWithPoint crashes camera
+		// starting around digic 4 - _MoveZoomLensWithPoint crashes many cameras
 		// _PT_MoveOpticalZoomAt works, and updates PROPCASE_OPTICAL_ZOOM_POSITION; but doesn't wait for zoom to finish
-        // IXUS220, SX220/230 - _MoveZoomLensWithPoint does not notify the JPEG engine of the new focal length,
-        //                      causing incorrect lens distortion fixes to be applied; _PT_MoveOpticalZoomAt works
-		extern void _PT_MoveOpticalZoomAt(long*);
-		_PT_MoveOpticalZoomAt(&newpt);
-  #else
-	    _MoveZoomLensWithPoint((short*)&newpt);
-  #endif
+        // _MoveOpticalZoom at is underlying function that accepts speed
+        // updates jpeg engine distortion correction setting, maintains focus position
+		extern void _MoveOpticalZoomAt(long pt,int speed);
+		_MoveOpticalZoomAt(newpt,mz_speed);
 
 		// have to sleep here, zoom_busy set in another task, without sleep this will hang
 		while (zoom_busy) msleep(10);
 
 		// g10,g12 & sx30 only use this value for optical zoom
 		zoom_status=ZOOM_OPTICAL_MAX;
-
-  #if !defined(CAM_USE_ALT_PT_MoveOpticalZoomAt) 
-	    _SetPropertyCase(PROPCASE_OPTICAL_ZOOM_POSITION, &newpt, sizeof(newpt));
-  #endif
 	}
 #else	// !(CAM_USE_ALT_SET_ZOOM_POINT)
     _MoveZoomLensWithPoint((short*)&newpt);
@@ -220,13 +254,29 @@ void lens_set_zoom_point(long newpt)
 
 void lens_set_zoom_speed(long newspd)
 {
+// translate % to speed values for _MoveOpticalZoomAt
+// which correspond to different speeds varies by camera
+#if defined(CAM_USE_ALT_SET_ZOOM_POINT)
+    if (newspd < 25) {
+        mz_speed = 0;
+    } else if (newspd < 50) {
+        mz_speed = 1;
+    } else if (newspd < 75) {
+        mz_speed = 2;
+    } else {
+        mz_speed = 3;
+    }
+#else  // !CAM_USE_ALT_SET_ZOOM_POINT
+    // a few old cameras support setting by %
     if (newspd < 5) {
         newspd = 5;
     } else if (newspd > 100) {
         newspd = 100;
     }
     _SetZoomActuatorSpeedPercent((short*)&newspd);
+#endif // !CAM_USE_ALT_SET_ZOOM_POINT
 }
+#endif // !CAM_ILC
 
 void lens_set_focus_pos(long newpos)
 {
@@ -252,7 +302,7 @@ void play_sound(unsigned sound)
     if(sound >= sizeof(sounds)/sizeof(sounds[0]))
         return;
 
-    _PT_PlaySound(sounds[sound], 0);
+    _PT_PlaySound(sounds[sound], 0, 0);
 }
 
 long stat_get_vbatt()
@@ -306,9 +356,47 @@ void PutInNdFilter()                { _PutInNdFilter(); }
 void PutOutNdFilter()               { _PutOutNdFilter(); }
 #endif
 
-long GetCurrentAvValue()            { return _GetCurrentAvValue(); }
+short shooting_get_nd_value_ev96(void)
+{
+#if CAM_HAS_ND_FILTER
+    return _get_nd_value();
+#else
+    return 0;
+#endif
+}
+
+short shooting_get_nd_current_ev96(void)
+{
+#if CAM_HAS_ND_FILTER
+    return _get_current_nd_value();
+#else
+    return 0;
+#endif
+}
+
+long shooting_get_current_tv96()
+{
+    // old cameras crash if _GetCurrentShutterSpeed called when inactive
+    if(!shooting_get_imager_active()) {
+        return SHOOTING_TV96_INVALID;
+    }
+    return _GetCurrentShutterSpeed();
+}
+long shooting_get_current_av96()    { return _GetCurrentAvValue(); }
+long shooting_get_current_delta_sv96() { return _get_current_deltasv(); }
+long shooting_get_current_base_sv96() { return _GetCurrentDriveBaseSvValue(); }
+
 long IsStrobeChargeCompleted()      { return _IsStrobeChargeCompleted(); }
 void SetCurrentCaptureModeType()    { _SetCurrentCaptureModeType(); }
+
+#if CAM_HAS_IRIS_DIAPHRAGM
+// returns available Av range in AV96 on cameras with iris.
+// Function exists on a few later cameras without iris, behavior unknown.
+// Appears to be the full range, including smaller (higher F/ number) than available in Canon UI.
+// Note Min = smallest physical aperture = largest Av96 value
+short GetUsableMinAv(void) { return _GetUsableMinAv(); }
+short GetUsableMaxAv(void) { return _GetUsableMaxAv(); }
+#endif
 
 #if CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO
 void UnsetZoomForMovie()            { _UnsetZoomForMovie(); }
@@ -326,11 +414,6 @@ short SetAE_ShutterSpeed(short *tv)             { return _SetAE_ShutterSpeed(tv)
 
 //----------------------------------------------------------------------------
 // I/O wrappers
-
-/*int creat (const char *name, int flags)
-{
-    return _creat(name, flags);
-}*/
 
 extern int fileio_semaphore;
 
@@ -632,7 +715,9 @@ struct	__stat  // DryOS pre R39
 
 #else
 
-struct __stat   // DryOS post R39
+#ifndef CAM_DRYOS_2_3_R59
+
+struct __stat   // DryOS R39...R58
 {
     unsigned long	st_unknown_1;
     unsigned long	st_attrib;
@@ -641,6 +726,21 @@ struct __stat   // DryOS post R39
     unsigned long	st_mtime;
     unsigned long	st_unknown_2;
 };
+
+#else
+
+struct __stat   // DryOS >= R59
+{
+    unsigned long	st_unknown_1;
+    unsigned long	st_attrib;
+    unsigned long	st_size;        // fixme: very likely 64bit, upper 32 bit is st_unknown_2
+    unsigned long	st_unknown_2;
+    unsigned long	st_ctime;
+    unsigned long	st_mtime;
+    unsigned long	st_unknown_3;
+};
+
+#endif//CAM_DRYOS_2_3_R59
 
 #endif//CAM_DRYOS_2_3_R39
 
@@ -720,7 +820,14 @@ int rename(const char *oldname, const char *newname) {
 }
 
 unsigned int GetFreeCardSpaceKb(void){
-	return (_GetDrive_FreeClusters(0)*(_GetDrive_ClusterSize(0)>>9))>>1;
+// get free clusters directly for digic >= 6, updates during video recording
+#ifdef THUMB_FW
+    extern unsigned long live_free_cluster_count;
+    unsigned long free_clusters = live_free_cluster_count;
+#else
+    unsigned long free_clusters = _GetDrive_FreeClusters(0);
+#endif
+	return (free_clusters*(_GetDrive_ClusterSize(0)>>9))>>1;
 }
 
 unsigned int GetTotalCardSpaceKb(void){
@@ -733,6 +840,7 @@ int errnoOfTaskGet(int tid) {
 #if !CAM_DRYOS
     return _errnoOfTaskGet(tid);
 #else
+    (void)tid;
     return 0;
 #endif
 }
@@ -811,6 +919,7 @@ const char *strerror(int en) {
     sprintf(msg,"errno 0x%X",en);
     return msg;
 #else
+    (void)en;
     return "error";
 #endif
 }
@@ -873,50 +982,110 @@ time_t mktime(struct tm *timp) {
 #endif
 }
 
+void set_clock(int year, int month, int day, int hour, int minute, int second)
+{
+    int buf[6];
+    buf[0] = year;
+    buf[1] = month;
+    buf[2] = day;
+    buf[3] = hour;
+    buf[4] = minute;
+    buf[5] = second;
+    _SetDate(buf);
+    // SetDate sets second, so adjust subsec offset
+    camera_info.tick_count_offset = get_tick_count() % 1000; 
+}
+
 //----------------------------------------------------------------------------
 // Math wrappers
 
-double _log(double x) {
+double log(double x) {
     return __log(x);
 }
 
-double _log10(double x) {
+double log10(double x) {
     return __log10(x);
 }
 
-double _pow(double x, double y) {
+double pow(double x, double y) {
     return __pow(x, y);
 }
 
-double _sqrt(double x) {
+double sqrt(double x) {
     return __sqrt(x);
 }
+
+// log2(x) = log(x) * (1 / log(2))
+double log2(double x) { return (log(x) * ((double)1.44269504088906)); }
 
 //----------------------------------------------------------------------------
 
 #ifdef OPT_EXMEM_MALLOC
-void *exmem_alloc(int pool_id,int size,int unk,int unk2)
+void *exmem_alloc_cached(unsigned int pool_id,unsigned int size,int unk,int unk2)
 {
     return _exmem_alloc(pool_id,size,unk,unk2);
 }
 #endif
 
+void *exmem_alloc_uncached(unsigned int type, unsigned int size, exmem_alloc_info *allocinf)
+{
+    return _exmem_ualloc(type, size, allocinf);
+}
+void exmem_free_uncached(unsigned int type)
+{
+    _exmem_ufree(type);
+}
+
 void *canon_malloc(long size)
 {
+#if CAM_DRYOS
     return _malloc(size);
+#else
+    if (_TakeSemaphore(canon_heap_sem,CANON_HEAP_SEM_TIMEOUT)) {
+        return 0;
+    } else {
+        void *r=_malloc(size);
+        _GiveSemaphore(canon_heap_sem);
+        return r;
+    }
+#endif
 }
 
 void canon_free(void *p)
 {
+#if CAM_DRYOS
     _free(p);
+#else
+    if (!_TakeSemaphore(canon_heap_sem,CANON_HEAP_SEM_TIMEOUT)) {
+       _free(p);
+       _GiveSemaphore(canon_heap_sem);
+    }
+#endif
 }
 
 void *umalloc(long size) {
+#if CAM_DRYOS
     return _AllocateUncacheableMemory(size);
+#else
+    if (_TakeSemaphore(canon_heap_sem,CANON_HEAP_SEM_TIMEOUT)) {
+        return 0;
+    } else {
+        void *r=_AllocateUncacheableMemory(size);
+        _GiveSemaphore(canon_heap_sem);
+        return r;
+    }
+#endif
 }
 
 void ufree(void *p) {
-    return _FreeUncacheableMemory(p);
+#if CAM_DRYOS
+    _FreeUncacheableMemory(p);
+#else
+    if (!_TakeSemaphore(canon_heap_sem,CANON_HEAP_SEM_TIMEOUT)) {
+        _FreeUncacheableMemory(p);
+       _GiveSemaphore(canon_heap_sem);
+    }
+#endif
 }
 
 void *memcpy(void *dest, const void *src, long n) {
@@ -973,22 +1142,25 @@ void GetMemInfo(cam_meminfo *camera_meminfo)
     camera_meminfo->free_block_count     = fw_info[7];
 #endif
 #else // vxworks
-extern int sys_mempart_id;
-    int fw_info[5];
+    extern int sys_mempart_id;
     // -1 for invalid
     memset(camera_meminfo,0xFF,sizeof(cam_meminfo));
+    if(!_TakeSemaphore(canon_heap_sem,CANON_HEAP_SEM_TIMEOUT)) {
 #ifdef CAM_NO_MEMPARTINFO
-    camera_meminfo->free_block_max_size = _memPartFindMax(sys_mempart_id);
+        camera_meminfo->free_block_max_size = _memPartFindMax(sys_mempart_id);
 #else
-    _memPartInfoGet(sys_mempart_id,fw_info);
-    // TODO we could fill in start address from _start + MEMISOSIZE, if chdk not in exmem
-    // these are guessed, look reasonable on a540
-    camera_meminfo->free_size = fw_info[0];
-    camera_meminfo->free_block_count = fw_info[1];
-    camera_meminfo->free_block_max_size = fw_info[2];
-    camera_meminfo->allocated_size = fw_info[3];
-    camera_meminfo->allocated_count = fw_info[4];
+        int fw_info[5];
+        _memPartInfoGet(sys_mempart_id,fw_info);
+        // TODO we could fill in start address from _start + MEMISOSIZE, if chdk not in exmem
+        // these are guessed, look reasonable on a540
+        camera_meminfo->free_size = fw_info[0];
+        camera_meminfo->free_block_count = fw_info[1];
+        camera_meminfo->free_block_max_size = fw_info[2];
+        camera_meminfo->allocated_size = fw_info[3];
+        camera_meminfo->allocated_count = fw_info[4];
 #endif
+        _GiveSemaphore(canon_heap_sem);
+    }
 #endif
 }
 
@@ -1294,7 +1466,7 @@ void create_partitions(void){
 #else
 
 // Dummy for scripts if not implemented in camera
-int swap_partitions(int new_partition) { return 0; }
+int swap_partitions(__attribute__ ((unused))int new_partition) { return 0; }
 int get_part_count(void) { return 1; }
 int get_part_type() { return 0; }
 unsigned char get_active_partition(void) { return 1; }
@@ -1488,6 +1660,14 @@ int __attribute__((weak)) vid_get_viewport_display_yoffset() {
 	return vid_get_viewport_yoffset();
 }
 
+// format of live view viewport
+#ifndef THUMB_FW
+int vid_get_viewport_type() {
+	return LV_FB_YUV8;
+}
+// D6 cameras must define
+#endif
+
 // for cameras with two (or more?) RAW buffers this can be used to speed up DNG creation by
 // calling reverse_bytes_order only once. Override in platform/sub/lib.c
 char __attribute__((weak)) *hook_alt_raw_image_addr() {
@@ -1520,6 +1700,18 @@ int add_ptp_handler(int opcode, ptp_handler handler, int unknown)
 #endif
 }
 
+#ifdef CAM_PTP_USE_NATIVE_BUFFER
+int get_ptp_file_buf_size(void)
+{
+    return _get_ptp_buf_size(CAM_PTP_FILE_BUFFER_ID);
+}
+
+char *get_ptp_file_buf(void)
+{
+    return _get_ptp_file_buf();
+}
+#endif
+
 int CreateTask (const char *name, int prio, int stack_size, void *entry)
 {
     return _CreateTask(name, prio, stack_size, entry, 0);
@@ -1532,9 +1724,31 @@ void ExitTask()
 
 // TODO not in sigs for vx yet
 #ifndef CAM_DRYOS
-void __attribute__((weak)) _reboot_fw_update(const char *fw_update)
+void __attribute__((weak)) _reboot_fw_update(__attribute__ ((unused))const char *fw_update)
 {
 	return;
+}
+#endif
+
+#ifdef CAM_PTP_SCREEN_UNLOCK_EVENT
+// function to take the camera out of the black screen mode
+// triggered by ptp GetObjectHandles
+static void do_ptp_screen_unlock(void)
+{
+    extern int cameracon_state;
+    int t;
+    // if in a transition state, wait up to 500ms for it to change
+    for(t = 0; cameracon_state > 4 && t < 50; t++) {
+        msleep(10);
+    }
+    // if in "black screen" ptp state, send event to switch to regular playback
+    if(cameracon_state == 3) {
+        PostLogicalEventToUI(CAM_PTP_SCREEN_UNLOCK_EVENTID,0);
+    }
+    // wait for state change triggered by event to complete
+    for(t = 0; cameracon_state != 2 && t < 100; t++) {
+        msleep(10);
+    }
 }
 #endif
 
@@ -1543,10 +1757,13 @@ int __attribute__((weak)) switch_mode_usb(int mode)
 {
 #ifdef CAM_CHDK_PTP
     if ( mode == 0 ) {
-        _Rec2PB();
+        _Rec2PB(-1);
         _set_control_event(0x80000000|CAM_USB_EVENTID);
     } else if ( mode == 1 ) {
         _set_control_event(CAM_USB_EVENTID);
+#ifdef CAM_PTP_SCREEN_UNLOCK_EVENT
+        do_ptp_screen_unlock();
+#endif
         _PB2Rec();
     } else return 0;
     return 1;
@@ -1566,6 +1783,9 @@ int __attribute__((weak)) switch_mode_usb(int mode)
 #ifdef CAM_USB_EVENTID_VXWORKS
         _SetScriptMode(1); // needed to override event
         _SetLogicalEventActive(CAM_USB_EVENTID_VXWORKS,0); // set levent "ConnectUSBCable" inactive
+#endif
+#ifdef CAM_PTP_SCREEN_UNLOCK_EVENT
+        do_ptp_screen_unlock();
 #endif
         levent_set_record();
     } else return 0;
@@ -1606,15 +1826,20 @@ unsigned char SetFileAttributes(const char* fn, unsigned char attr)
 int __attribute__((weak)) vid_get_viewport_display_xoffset_proper() { return vid_get_viewport_display_xoffset()*2; }
 int __attribute__((weak)) vid_get_viewport_display_yoffset_proper() { return vid_get_viewport_display_yoffset(); }
 int __attribute__((weak)) vid_get_viewport_buffer_width_proper()    { return 720; }
+#ifdef THUMB_FW
+int __attribute__((weak)) vid_get_viewport_width_proper()           { return vid_get_viewport_width(); }
+int __attribute__((weak)) vid_get_viewport_height_proper()          { return vid_get_viewport_height(); }
+#else
 int __attribute__((weak)) vid_get_viewport_width_proper()           { return vid_get_viewport_width()*2; }
 int __attribute__((weak)) vid_get_viewport_height_proper()          { return 240; }
-int __attribute__((weak)) vid_get_viewport_fullscreen_height()         { return 240; }
-int __attribute__((weak)) vid_get_viewport_fullscreen_width()          { return vid_get_viewport_buffer_width_proper(); }
+#endif
+int __attribute__((weak)) vid_get_viewport_fullscreen_height()      { return 240; }
+int __attribute__((weak)) vid_get_viewport_fullscreen_width()       { return vid_get_viewport_buffer_width_proper(); }
 
 int __attribute__((weak)) vid_get_palette_type()                    { return 0; }       // 0 = no palette into, 1 = 16 x 4 byte AYUV values, 
                                                                                         // 2 = 16 x 4 byte AYUV (A = 0..3), 3 = 256 x 4 byte AYUV (A = 0..3)
 int __attribute__((weak)) vid_get_palette_size()                    { return 0; }
-int __attribute__((weak)) vid_get_aspect_ratio()                    { return 0; }       // 0 = 4:3, 1 = 16:9 LCD Aspect Ratio
+int __attribute__((weak)) vid_get_aspect_ratio()                    { return 0; }       // 0 = 4:3, 1 = 16:9 LCD Aspect Ratio, 2 = 3:2
 
 void __attribute__((weak)) *vid_get_bitmap_active_buffer()
 {
@@ -1652,8 +1877,8 @@ void *vid_get_viewport_active_buffer()
  body is ifdef'd inside the body to allow exporting to modules
  eventproc version may require System.Create()/SystemEventInit first
 */
-void dbg_printf(char *fmt,...) {
 #ifdef DEBUG_LOGGING
+void dbg_printf(char *fmt,...) {
     char s[256];
     __builtin_va_list va;
     __builtin_va_start(va, fmt);
@@ -1663,11 +1888,21 @@ void dbg_printf(char *fmt,...) {
     // stdout - for use with uart redirection
     _ExecuteEventProcedure("Printf",s);
     // camera log - will show up in crash dumps, or in stdout on ShowCameraLog
-    // _LogPrintf(0x120,s);
+    // length limited, asserts if too long
+    //s[59]=0;
+    //_LogCameraEvent(0x20,s);
 
-    // file TODO
-#endif
+    // file
+    /*
+    FILE *f=fopen("A/DBGPRINT.LOG","ab");
+    if(!f) {
+        return;
+    }
+    fwrite(s,strlen(s),1,f);
+    fclose(f);
+    */
 }
+#endif
 
 #ifdef CAM_MISSING_RAND
 /* Some cameras does not have srand()/rand() functions in firmware, and should be aded here.
@@ -1696,7 +1931,6 @@ extern int usb_HPtimer_bad(int, int);
 extern int usb_HPtimer_good(int, int);
 
 int usb_HPtimer_handle=0;
-int usb_HPtimer_error_count=0;
 
 static int ARM_usb_HPtimer_good(int time, int interval) { return usb_HPtimer_good(time, interval); }
 static int ARM_usb_HPtimer_bad(int time, int interval) { return usb_HPtimer_bad(time, interval); }
@@ -1740,6 +1974,31 @@ int CancelHPTimer(int handle)
     return _CancelHPTimer(handle);
 }
 
+// Override HDMI power on in rec mode for using HDMI Hotplug detect as remote
+// note does not disable power if remote turned off or channel changed
+// May want to add support for controlling independent of remote as output signal
+#ifdef CAM_REMOTE_HDMI_POWER_OVERRIDE
+extern void _EnableHDMIPower();
+void update_hdmi_power_override()
+{
+    static int oldhdmistate = -1;
+    if ((camera_info.state.mode_rec == 1) && conf.remote_enable && (conf.remote_input_channel == REMOTE_INPUT_HDMI_HPD))
+    {
+        /* if switched to shooting mode and remote using HDMI hotplug is enabled, switch on HDMI Power */
+        /* just do it once on every change because it needs i2c communication depending on HDMI tranceiver */
+        if (oldhdmistate != 1)
+        {
+            _EnableHDMIPower();
+        }
+        oldhdmistate = 1;
+    }
+    else
+    {
+        oldhdmistate = 0;
+    }
+}
+#endif
+
 // disable camera error(s), E32 is the only error that can be handled at the moment (on newer 'IS' cameras)
 #if (OPT_DISABLE_CAM_ERROR)
 #warning OPT_DISABLE_CAM_ERROR enabled
@@ -1780,4 +2039,23 @@ void GiveSemaphore(int sem)
     _GiveSemaphore(sem);
 }
 
+void DeleteSemaphore(int sem)
+{
+    _DeleteSemaphore(sem);
+}
+
+//---------------------------------------------------------------
+// Video out
+#ifdef CAM_UNLOCK_ANALOG_AV_IN_REC
+void SetVideoOutType(int x) {
+    extern void _SetVideoOutType(int);
+    _TurnOffDisplay();
+    _SetVideoOutType(x);
+    _TurnOnDisplay();
+}
+int GetVideoOutType(void) {
+    extern int _GetVideoOutType(void);
+    return _GetVideoOutType();
+}
+#endif
 //---------------------------------------------------------------

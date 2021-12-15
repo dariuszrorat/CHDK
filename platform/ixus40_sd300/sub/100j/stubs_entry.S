@@ -7,9 +7,14 @@
 //   Canon DIGITAL IXUS 40
 
 // Values for makefile.inc
-//   PLATFORMID = 12479 (0x30bf) // Found @ 0xffd7014e
+//   DIGIC = 20# DIGIC II
+//   PLATFORMID = 12479# (0x30bf) Found @ 0xffd7014e
 //   MAXRAMADDR = 0x01ffffff
 //   MEMISOSTART = 0x00072dc0
+
+// Detected address ranges:
+// ROM      0xff810000 - 0xffffffff (8323072 bytes)
+// RAM data 0x00001900 - 0x00010460 copied from 0xffad76d0 (  60256 bytes)
 
 // Stubs below should be checked. Stub not matched 100%, or difference found to current 'stubs_entry_2.S'
 //    Name                                     Address      Rule  %  Comp to stubs_entry_2.S
@@ -52,8 +57,6 @@ NHSTUB(UpdateMBROnFlash                       ,0xff8704d0) //  1 96%
 // ERROR: Write is not found.                              //--- ---    *** != 0xff8716f4
 // ERROR: WriteSDCard is not found.                        //--- ---    *** != 0x00000000
 NHSTUB(add_ptp_handler                        ,0xffa13b10) //  1 96%
-NHSTUB(exmem_alloc                            ,0xff813a1c) //  1 92%
-// ALT: NHSTUB(exmem_alloc, 0xfff164cc) // 1 23/2
 // ERROR: free is not found.                               //--- ---    *** != 0xffac58d8
 // ERROR: kbd_p1_f is not found.                           //--- ---    *** != 0x00000000
 // ERROR: kbd_p1_f_cont is not found.                      //--- ---    *** != 0xff830ab4
@@ -100,6 +103,10 @@ NHSTUB(localtime                              ,0xffabceb4) //  1 93%
 //DEF(levent_table                            ,0xff9514f0) // Found @0xff9514f0,          stubs_min = 0xff9514f0 (0xFF9514F0)
 //DEF(FlashParamsTable                        ,0xff958138) // Found @0xff958138,          stubs_min = 0xff958138 (0xFF958138)
 DEF(fileio_semaphore                        ,0x00002e78) // Found @0xff86e884
+DEF(exmem_alloc_table                       ,0x00001c38) // Found @0xff813218
+DEF(exmem_types_table                       ,0xff812f70) // Found @0xff812f70
+DEF_CONST(exmem_type_count                  ,0x0000000a)
+DEF(imager_active                           ,0x00003314) // Found @0xff8c4c30 (0x3314 + 0)
 DEF_CONST(uiprop_count                      ,0x00000037) // Found @0xff959d00
 
 // Values below go in 'lib.c':
@@ -108,7 +115,18 @@ DEF_CONST(uiprop_count                      ,0x00000037) // Found @0xff959d00
 //#define CAM_3ARG_DebugAssert 1
 
 // Misc stuff
-// canon_data_src: 0xffad76d0, canon_data_len: 0xeb60
+
+// EXMEM types:
+// EXMEM_RAMDISK   0
+// EXMEM_COM       1
+// EXMEM_FORMATTER 2
+// EXMEM_SHADING   3
+// EXMEM_FAMODE    4
+// EXMEM_FILESTORE 5
+// EXMEM_MOVIE_REC 6
+// EXMEM_MOVIE_PLY 7
+// EXMEM_WIDE      8
+// EXMEM_NARROW    9
 
 // Stubs below matched 100%.
 //    Name                                     Address                Comp to stubs_entry_2.S
@@ -117,6 +135,7 @@ NHSTUB(CreateTask                             ,0xff823784) //120
 NHSTUB(DebugAssert                            ,0xff814c10) //1100
 NHSTUB(DeleteFile_Fut                         ,0xff8699b4) //  1
 // ALT: NHSTUB(DeleteFile_Fut, 0xfff17058) // 1 10/0
+NHSTUB(DeleteSemaphore                        ,0xff822d4c) //120
 NHSTUB(DoAELock                               ,0xff93e29c) //120
 NHSTUB(DoAFLock                               ,0xff93e07c) //120
 NHSTUB(ExitTask                               ,0xff823b44) //120
@@ -134,6 +153,7 @@ NHSTUB(Fwrite_Fut                             ,0xff869c28) //  1
 NHSTUB(GetBatteryTemperature                  ,0xffa48900) //102
 NHSTUB(GetCCDTemperature                      ,0xffa488ec) //102
 NHSTUB(GetCurrentAvValue                      ,0xffa692fc) //120
+NHSTUB(GetCurrentShutterSpeed                 ,0xffa69074) //120
 NHSTUB(GetDrive_ClusterSize                   ,0xff8707ec) //119
 NHSTUB(GetDrive_FreeClusters                  ,0xff87086c) //1103
 NHSTUB(GetDrive_TotalClusters                 ,0xff87082c) //119
@@ -156,6 +176,7 @@ NHSTUB(RenameFile_Fut                         ,0xff869934) //  1
 // ALT: NHSTUB(RenameFile_Fut, 0xfff16fd8) // 1 27/0
 NHSTUB(SetAE_ShutterSpeed                     ,0xffa6d448) //102
 NHSTUB(SetAutoShutdownTime                    ,0xff95608c) //120
+NHSTUB(SetDate                                ,0xff99f720) //120
 // ERROR: SetPropertyCase is not found.                    //--- ---        Overridden
 NHSTUB(SleepTask                              ,0xff8235e4) //120
 NHSTUB(TakeSemaphore                          ,0xff822f5c) //1101
@@ -175,6 +196,12 @@ NHSTUB(_sqrt                                  ,0xffab3ac4) //  1
 NHSTUB(apex2us                                ,0xff8aa1c4) //  1
 NHSTUB(close                                  ,0xffac288c) //  1
 // ALT: NHSTUB(close, 0xfff5693c) // 1 29/0
+NHSTUB(exmem_ualloc                           ,0xff813a1c) //122
+NHSTUB(exmem_ufree                            ,0xff813a68) //122
+NHSTUB(get_nd_value                           ,0xffa4a5d8) //120
+NHSTUB(get_current_nd_value                   ,0xffa4a5c4) //120
+NHSTUB(get_current_deltasv                    ,0xff8ab658) //122
+NHSTUB(GetCurrentDriveBaseSvValue             ,0xff8b4b84) //122
 NHSTUB(lseek                                  ,0xffac29d0) //  1
 // ALT: NHSTUB(lseek, 0xfff56a80) // 1 28/0
 NHSTUB(memcmp                                 ,0xffabc294) //120

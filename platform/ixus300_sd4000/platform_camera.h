@@ -46,6 +46,8 @@
     #undef CAM_DEFAULT_ALT_BUTTON
     #define CAM_DEFAULT_ALT_BUTTON  KEY_PLAYBACK   // alt button for cameras without adjustable alt
     #undef  CAM_HAS_DISP_BUTTON
+    #undef  CAM_KEY_PRESS_DELAY
+    #define CAM_KEY_PRESS_DELAY             100      // delay after a press
 
     #undef  DNG_BADPIXEL_VALUE_LIMIT
     #define DNG_BADPIXEL_VALUE_LIMIT        16      // Camera sensor apparently has bad pixels with value > 0 & <=16
@@ -101,9 +103,9 @@
     #define CAM_AF_LED                      2       // index of AF led in camera_set_led function
 
     #define CAM_NEED_SET_ZOOM_DELAY          300    // Define to add a delay after setting the zoom position
-    #define CAM_USE_ALT_SET_ZOOM_POINT       1      // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt 1      // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
  
     #define CAM_MIN_ISO_OVERRIDE            (125+1) // Defines min market (non-zero) ISO override value - lower value may crash if flash used [0 = AUTO, so always allowed] (+1 due to rounding issues)
+
+    #define CAM_HAS_FILEWRITETASK_HOOK      1
 
 //--------------------------------------------------

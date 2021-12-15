@@ -40,7 +40,7 @@ void debug_led(int state) {
         asm("nop\n nop\n");
 }
 
-void camera_set_led(int led, int state, int bright) {  // camera has three LED's (focus assist lamp & and a green/orange combo LED)
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {  // camera has three LED's (focus assist lamp & and a green/orange combo LED)
     static char led_table[3]={0,1,9};
     _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -92,7 +92,7 @@ void vid_bitmap_refresh() {
     void *vid_get_viewport_live_fb()
     {
         char vp ;
-        if (camera_info.state.mode_video || (movie_status==VIDEO_RECORD_IN_PROGRESS))
+        if (camera_info.state.mode_video || (get_movie_status()==VIDEO_RECORD_IN_PROGRESS))
             return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
 
         // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
@@ -119,11 +119,6 @@ void vid_bitmap_refresh() {
     // Physical width of viewport row in bytes
     int vid_get_viewport_byte_width() {
         return 960 * 6 / 4;     // IXUS 300 - wide screen LCD is 960 pixels wide, each group of 4 pixels uses 6 bytes (UYVYYY)
-    }
-
-    // Y multiplier for cameras with 480 pixel high viewports (CHDK code assumes 240)
-    int vid_get_viewport_yscale() {
-        return 1 ;               // IXUS 300 viewport is 240 pixels high
     }
 
     int vid_get_viewport_width()
@@ -157,7 +152,6 @@ void vid_bitmap_refresh() {
 
 // Additional Functions for PTP Live View system
 
-    int vid_get_viewport_width_proper()             { return vid_get_viewport_width() * 2 ; }
     int vid_get_viewport_display_xoffset_proper()   { return vid_get_viewport_display_xoffset() * 2 ; }
     int vid_get_viewport_height_proper()            { return 240; }
     int vid_get_viewport_buffer_width_proper()      { return 960; }

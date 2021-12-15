@@ -1,7 +1,6 @@
 #include "lolevel.h"
 #include "platform.h"
 #include "core.h"
-//#include "stdlib.h"
 #include "dryos31.h"
 
 #define offsetof(TYPE, MEMBER) ((int) &((TYPE *)0)->MEMBER)
@@ -14,6 +13,7 @@ void CreateTask_PhySw();
 void CreateTask_spytask();
 extern volatile int jogdial_stopped;
 void JogDial_task_my(void);
+extern void task_FileWrite();
 
 /*----------------------------------------------------------------------
 	taskCreateHook()
@@ -34,6 +34,7 @@ void taskCreateHook(context_t **context) {
 	if(tcb->entry == (void*)task_RotaryEncoder)		tcb->entry = (void*)JogDial_task_my;
 	if(tcb->entry == (void*)task_MovieRecord)		tcb->entry = (void*)movie_record_task;
 	if(tcb->entry == (void*)task_ExpDrv)			tcb->entry = (void*)exp_drv_task;
+    if(tcb->entry == (void*)task_FileWrite)         tcb->entry = (void*)filewritetask;
 }
 
 /*----------------------------------------------------------------------
@@ -349,6 +350,7 @@ void __attribute__((naked,noinline)) task_Startup_my() {
 -----------------------------------------------------------------------*/
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
     core_spytask();
 }
 

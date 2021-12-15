@@ -160,4 +160,8 @@
     #define CAM_SD_OVER_IN_AF                   1
     #define CAM_SD_OVER_IN_MF                   1
 
+    #define CAM_HAS_CANON_RAW                   1   // has native Canon raw
+
+    #define CAM_HAS_WIFI                        1   // Camera has wifi support
+
 //--------------------------------------------------

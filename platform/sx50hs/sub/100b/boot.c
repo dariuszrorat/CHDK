@@ -26,6 +26,7 @@ extern void task_FileWrite();
 -----------------------------------------------------------------------*/
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
     core_spytask();
 }
 
@@ -396,7 +397,7 @@ asm volatile (
 "    LDR     R1, =0x5CE000 \n"
 "    MOV     R0, #0 \n"
 "    BL      sub_FF020604 \n"
-"    BL      sub_0068C52C \n"
+"    BL      sub_0068C52C /*_EnableDispatch*/ \n"
 "    MOV     R3, #0 \n"
 "    STR     R3, [SP] \n"
 "    LDR     R3, =task_Startup_my \n"  // --> Patched. Old value = 0xFF00ADF4.

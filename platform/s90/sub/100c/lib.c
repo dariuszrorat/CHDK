@@ -1,5 +1,4 @@
 #include "platform.h"
-#include "stdlib.h"
 #include "lolevel.h"
 /*
 *********************
@@ -65,17 +64,6 @@ void *vid_get_viewport_fb_d()
 	return (void*)(*(int*)(0x2A20+0x58));   
 	 // S90: 0x58 @FF86FA30  0x2A50 @FF86F9F8 (Search for aImageplayer_c)
 }
-
-
-/* ERR99: ToDO: Check if this is also ok for S90 (taken from SX200IS port) */
-void JogDial_CW(void){
- _PostLogicalEventForNotPowerType(0x874, 1);  // RotateJogDialRight
-}
-
-void JogDial_CCW(void){
- _PostLogicalEventForNotPowerType(0x875, 1);  // RotateJogDialLeft
-}
-
 
 char *camera_jpeg_count_str()
 {

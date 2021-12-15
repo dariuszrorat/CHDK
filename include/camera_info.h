@@ -9,6 +9,9 @@
 //==========================================================
 
 #include "stdlib.h"
+#include "stddef.h"
+#include "stdio.h"
+#include "string.h"
 
 //==========================================================
 
@@ -38,14 +41,14 @@ typedef struct
 //      _cam_info   --> CAM_INFO_VERSION
 #define CAM_SCREEN_VERSION      {2,0}       // Version for camera_screen
 #define CAM_SENSOR_VERSION      {1,0}       // Version for camera_sensor
-#define CAM_INFO_VERSION        {1,0}       // Version for camera_info
+#define CAM_INFO_VERSION        {3,0}       // Version for camera_info
 
 typedef struct
 {
     int bits_per_pixel;
     int black_level;
     int white_level;
-    int raw_rows, raw_rowpix, raw_rowlen, raw_size;
+    unsigned raw_rows, raw_rowpix, raw_rowlen, raw_size;
     union                       // DNG JPEG info
     {
         struct
@@ -165,6 +168,8 @@ typedef struct
     int cam_key_press_delay, cam_key_release_delay;
     int cam_af_led;
     int circle_of_confusion;
+    int cam_digic; // digic number from makefile. Number x10, so digic 2 = 20,  digic IV = 40, digic IV+ = 41.
+    int cam_canon_raw; // cam has native raw support
     // Miscellaneous variables to record state information
     // Used to control communication between various tasks and modules
     struct
@@ -182,7 +187,7 @@ typedef struct
         int     state_kbd_script_run;       // Script execution state
         int     osd_title_line;             // Display state of CHDK OSD title line
 
-        int     gui_mode;                   // Current GUI mode (from gui_get_mode())
+        int     gui_mode;                   // Current GUI mode (from gui_mode->mode)
         int     gui_mode_none;              // Current GUI mode == GUI_MODE_NONE
         int     gui_mode_alt;               // Current GUI mode == GUI_MODE_ALT
 

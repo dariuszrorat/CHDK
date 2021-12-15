@@ -1,18 +1,6 @@
 # ARM GCC rules
 
-ifdef OPT_USE_GCC_EABI
-    CROSS_COMPILE=arm-none-eabi-
-    ifndef THUMB_FW
-        ARCH=-march=armv5te
-    else
-        ARCH=
-    endif
-    ABI=_eabi
-else
-    CROSS_COMPILE=arm-elf-
-    ARCH=
-    ABI=_elf
-endif
+CROSS_COMPILE=arm-none-eabi-
 
 CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
@@ -26,26 +14,31 @@ SIZE=$(CROSS_COMPILE)size
 GCC_VERSION=$(shell $(CC) -dumpversion)
 GCC_VERSION_MAJOR=$(firstword $(subst ., ,$(GCC_VERSION)))
 
-# -msoft-float is used per default but object files are marked as hard-float
+# check for valid GCC version.
+# Add DISABLE_GCC_VERSION_CHECK=1 to localbuildconf.inc if you know what you are doing
+ifndef DISABLE_GCC_VERSION_CHECK
+    ifneq ($(GCC_VERSION_MAJOR),$(filter $(GCC_VERSION_MAJOR),4 5 8 9 10))
+        $(error Invalid GCC version. CHDK build is supported on GCC 4, 5, 8, 9 or 10.)
+    endif
+endif
+
 # -fno-schedule-insns2 for this gcc bug http://gcc.gnu.org/bugzilla/show_bug.cgi?id=38644
 # technically not required for gcc >= 4.6.3, and probably not required for vxworks cams
 # see http://chdk.setepontos.com/index.php?topic=8273.msg100205#msg100205
 CFLAGS=-fno-inline -Os -fno-strict-aliasing -fno-schedule-insns2
-# for gcc >= v3, we want to allow use of strd etc
+# for gcc >= v4, we want to allow use of strd etc
+# Also set architecture version for modules (to prevent loading on wrong build)
 ifndef THUMB_FW
-    ifeq ($(GCC_VERSION_MAJOR),3)
-        CFLAGS+=-march=armv5te
-    else
-        ifeq ($(GCC_VERSION_MAJOR),4)
-            # TODO should be -mcpu, but breaks things ATM
-            CFLAGS+=-mtune=arm946e-s $(ARCH)
-        endif
-    endif
+    CFLAGS+=-mtune=arm946e-s -march=armv5te -DOPT_ARCHITECTURE=GCC_EABI_THUMB
 else
-    CFLAGS+=-march=armv7-r -mthumb -DTHUMB_FW
+    ifdef ARMV7A
+        CFLAGS+=-march=armv7-a -mthumb -DTHUMB_FW -DOPT_ARCHITECTURE=GCC_EABI_THUMB2A
+    else
+        CFLAGS+=-march=armv7-r -mthumb -DTHUMB_FW -DOPT_ARCHITECTURE=GCC_EABI_THUMB2
+    endif
 endif
 
-CFLAGS+=-I$(include) -I$(core) -I$(modules) -I$(cam) $(PLFLAGS)
+CFLAGS+=-I$(include) -I$(include)/std -I$(core) -I$(modules) -I$(cam)
 CFLAGS+=-DVER_$(VER) -DHDK_VERSION=\"$(VER)\" -DBUILD_NUMBER=\"$(BUILD_NUMBER)\" -DBUILD_SVNREV=\"$(BUILD_SVNREV)\"
 CFLAGS+=-Wall -Wno-unused -Wno-format
 
@@ -56,6 +49,10 @@ endif
 ifdef OPT_MD_DEBUG
 CFLAGS+=-DOPT_MD_DEBUG
 endif 
+
+ifdef OPT_VIEWPORT_DEBUG
+CFLAGS+=-DOPT_VIEWPORT_DEBUG
+endif
 
 ifdef OPT_DEBUGGING
 CFLAGS+=-DOPT_DEBUGGING
@@ -114,13 +111,18 @@ ifdef OPT_DBG_LUA_ASSERT
 CFLAGS+=-DOPT_DBG_LUA_ASSERT
 endif
 
+# make sure this is either 0 or 1
+ifdef OPT_DISABLE_CAM_ERROR
+CFLAGS+=-DOPT_DISABLE_CAM_ERROR=1
+else
+CFLAGS+=-DOPT_DISABLE_CAM_ERROR=0
+endif
+
 ifdef OPT_WARNINGS
-     ifeq ($(GCC_VERSION_MAJOR),3)
-           CFLAGS+=-Wwrite-strings -Wsign-compare -Wunused -Wno-unused-parameter
-     endif
-     ifeq ($(GCC_VERSION_MAJOR),4)
-           CFLAGS+=-Wextra -fdiagnostics-show-option -Wno-missing-field-initializers -Wunused -Wno-unused-parameter
-     endif
+    CFLAGS+=-Wextra -Wunused
+    ifeq ($(GCC_VERSION_MAJOR),$(filter $(GCC_VERSION_MAJOR),8 9 10))
+        CFLAGS+=-Wno-builtin-declaration-mismatch -Wno-implicit-fallthrough -Wno-cast-function-type
+    endif
 endif
 
 ifdef OPT_EXPIRE_TEST
@@ -131,21 +133,6 @@ endif
 
 ifdef OPT_FILEIO_STATS
 CFLAGS+=-DOPT_FILEIO_STATS
-endif
-
-# Architecture version for modules (to prevent loading on wrong build)
-ifndef THUMB_FW
-    ifdef OPT_USE_GCC_EABI
-        CFLAGS+=-DOPT_ARCHITECTURE=GCC_EABI_THUMB
-    else
-        CFLAGS+=-DOPT_ARCHITECTURE=GCC_ELF_THUMB
-    endif
-else
-    ifdef OPT_USE_GCC_EABI
-        CFLAGS+=-DOPT_ARCHITECTURE=GCC_EABI_THUMB2
-    else
-        CFLAGS+=-DOPT_ARCHITECTURE=GCC_ELF_THUMB2
-    endif
 endif
 
 

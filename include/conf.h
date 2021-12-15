@@ -9,6 +9,7 @@
 //==========================================================
 
 #include "stdlib.h"
+#include "color.h"
 #include "script.h"
 
 //==========================================================
@@ -29,9 +30,6 @@
 #define CONF_OSD_POS        5
 // Pointer to struct containing item count, item size and pointer to items
 #define CONF_STRUCT_PTR     6
-
-// Name of default symbol file (for reset)
-#define DEFAULT_SYMBOL_FILE "A/CHDK/SYMBOLS/icon_10.rbf"
 
 typedef struct {
     unsigned short  x, y;
@@ -78,7 +76,7 @@ typedef struct {
 // Don't make any of the entries conditionally compiled in - this will change the offsets between cameras causing problems with
 // making the modules camera/platform independent
 
-#define CONF_VERSION            {3,0}       // Version for Conf structure
+#define CONF_VERSION            {3,6}       // Version for Conf structure
 
 typedef struct
 {
@@ -109,6 +107,7 @@ typedef struct
     int show_osd;
     int hide_osd;
     int show_osd_in_review;
+    int rotate_osd;
     int script_shoot_delay;
     int show_histo;
     int script_allow_lua_native_calls;
@@ -148,6 +147,7 @@ typedef struct
     int show_values;
     int show_values_in_video;
     int show_overexp;
+    int show_hiddenfiles;
 
     int histo_mode;
     int histo_auto_ajust;
@@ -455,6 +455,18 @@ typedef struct
     int disable_lfn_parser_ui;     // 0 = use built-in opendir functions for long filenames in filebrowser on dryos,
                                    // 1 = only use firmware opendir
 
+    int enable_raw_shortcut;    // enable RAW state toggle keyboard shortcut, 0=no, 1=yes, 2=yes with RAW OSD enabled
+
+    int osd_platformid; // platform ID in OSD cfg file
+
+    int save_raw_in_canon_raw; // disable raw when Canon raw enabled
+
+    int clean_overlay;  // invisible Canon overlay: 0 = never, 1 = rec mode, 2 = during movie record
+
+    int unlock_av_out_in_rec;  // Force video out when in Rec if AV bit is set. Bool
+
+    int check_firmware_crc;  // Check firmware CRC on startup. 0 = no. 1 = Check and set to 0. 2 = always
+
 } Conf;
 
 typedef struct {
@@ -534,19 +546,9 @@ extern Vars vars;
 #define SCRIPT_AUTOSTART_ONCE             2
 #define SCRIPT_AUTOSTART_ALT              3
 
-// video quality defaults. Ideally, these should match the camera default settings
-#define VIDEO_DEFAULT_QUALITY   84  // ? where does 84 come from
-#define VIDEO_MAX_QUALITY       99
-#define VIDEO_DEFAULT_BITRATE   3   // should be 1 for all cams
-
 extern void conf_save();
 extern void conf_restore();
 extern void conf_load_defaults();
-
-extern void conf2_save();
-extern void conf2_restore();
-extern void conf2_load_defaults();
-
 extern void conf_change_dng(void);
 extern void conf_update_prevent_shutdown(void);
 extern void cb_autoiso_menu_change(unsigned int item);  // gui.c
@@ -588,6 +590,7 @@ typedef struct {
 
 #define CONF_INFO(id, param, type, def)             { id, sizeof( param ), type, &param, {def}, 0 }
 #define CONF_INFO2(id, param, type, px, py)         { id, sizeof( param ), type, &param, {pos:{px,py}}, 0 }
+#define CONF_INFOP(id, param, type, px, py)         { id, sizeof( param ), type, &param, {pos:{(px)*CAM_SCREEN_WIDTH/360,(py)*CAM_SCREEN_HEIGHT/240}}, 0 }
 #define CONF_INFOC(id, param, type, bc, fc, bt, ft) { id, sizeof( param ), type, &param, {cl:{fg:{fc,ft},bg:{bc,bt}}}, 0 }
 
 extern void config_save(ConfInfo *conf_info, const char *filename, int config_base);

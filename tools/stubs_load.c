@@ -23,6 +23,8 @@ stub_values* new_stub_values()
     p->makevals = 0;
     p->min_focus_len = 0;
     p->max_focus_len = 0;
+    p->propcases = 0;
+    p->propset = 0;
     return p;
 }
 
@@ -176,6 +178,7 @@ void load_funcs(stub_values *sv, char *name)
         p->type = TYPE_NHSTUB;
         continue;
     }
+    fclose(f);
 }
 
 // Load a specified file.
@@ -197,10 +200,11 @@ static void load_stubs_file(char *name, int exclude_comments, osig **hdr)
         int typ = TYPE_NHSTUB;
         int off = 7;
         s = strstr(line, "NHSTUB(");
+        if (s == 0) { off = 8; s = strstr(line, "NHSTUB2("); } // note may want to flag dif from NHSTUB
         if (s == 0) { off = 7; s = strstr(line, "IGNORE("); typ = TYPE_IGNORE; }
         if (s == 0) { off = 6; s = strstr(line, "NSTUB("); }
         if (s == 0) { off = 4; s = strstr(line, "DEF("); typ = TYPE_DEF; }
-        if (s == 0) { off = 9; s = strstr(line, "DEF_CONST("); typ = TYPE_CONST; }
+        if (s == 0) { off = 10; s = strstr(line, "DEF_CONST("); typ = TYPE_CONST; }
         if (s != 0)
         {
             char *c = strstr(line, "//");
@@ -217,6 +221,7 @@ static void load_stubs_file(char *name, int exclude_comments, osig **hdr)
             }
         }
     }
+    fclose(f);
 }
 
 // Load a specified stubs file.
@@ -304,7 +309,62 @@ void load_platform(stub_values *sv)
                 sv->max_focus_len = (v * 1000) / d;
 			}
 		}
+        s = strstr(line, "CAM_PROPSET");
+        if (s != 0)
+        {
+            char *c = strstr(line, "//");
+            if ((c == 0) || (c > s))
+            {
+                s = s + strlen("CAM_PROPSET");
+                s = get_str(s,val);
+                v = atoi(val);
+                sv->propset = v;
+            }
+        }
     }
+    fclose(f);
+}
+
+// Load procase values from propcaseN.h.
+void load_propcases(stub_values *sv,char *fn)
+{
+    FILE *f = fopen(fn, "rb");
+
+    if (f == NULL) return;
+
+    char line[500];
+    char *s;
+
+    while (read_line(f,line))
+    {
+        s = strstr(line, "#define");
+        if (s == 0)
+        {
+            continue;
+        }
+        char *c = strstr(line, "//");
+        if (c && c < s)
+        {
+            continue;
+        }
+        char *nm = strtok(s+strlen("#define")," \t");
+        if(!nm) 
+        {
+            continue;
+        }
+        if(strncmp(nm,"PROPCASE_",9) != 0)
+        {
+            continue;
+        }
+        char *val = strtok(NULL," \t");
+        if(!val) 
+        {
+            continue;
+        }
+
+        add_sig(nm, val, &sv->propcases, 0);
+    }
+    fclose(f);
 }
 
 // Load the build values from the makefile.inc source file
@@ -334,6 +394,7 @@ void load_a_makefile(stub_values *sv, char *fn)
 			}
 		}
     }
+    fclose(f);
 }
 
 void load_makefile(stub_values *sv)

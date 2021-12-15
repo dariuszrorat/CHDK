@@ -21,13 +21,13 @@ extern void fgets(void);
 extern void fopen(void);
 extern void fread(void);
 extern void fseek(void);
-extern void ftell(void);
 extern void log10(void);
 extern void lseek(void);
 extern void mkdir(void);
 extern void close(void);
 extern int conf3;
 extern int conf2;
+extern void __aeabi_idivmod(void);
 extern void utime(void);
 extern void ufree(void);
 extern void qsort(void);
@@ -41,10 +41,12 @@ extern int zoom_points;
 extern void kbd_is_key_pressed(void);
 extern void vid_get_viewport_active_buffer(void);
 extern int camera_info;
+extern void set_movie_status(void);
 extern void shooting_get_common_focus_mode(void);
 extern void CancelHPTimer(void);
 extern void draw_set_draw_proc(void);
 extern void shooting_get_sv96_from_iso(void);
+extern void shooting_get_min_av96(void);
 extern int user_submenu;
 extern void DoMFLock(void);
 extern void shooting_get_iso_from_sv96(void);
@@ -59,22 +61,28 @@ extern void action_push_func(void);
 extern void CreateTask(void);
 extern void gui_load_user_menu_script(void);
 extern void ExitTask(void);
+extern void shooting_get_current_delta_sv96(void);
 extern void conf_setValue(void);
 extern void enter_alt(void);
 extern void get_jogdial_direction(void);
 extern void vid_get_bitmap_fb(void);
+extern void color_to_rawpx(void);
 extern void get_target_dir_name(void);
 extern void get_part_count(void);
 extern void shooting_set_nd_filter_state(void);
 extern int libcurves;
 extern void shooting_sv96_market_to_real(void);
 extern void shooting_get_focus_state(void);
+extern int firmware_crc_desc;
 extern void opendir(void);
 extern void gui_mbox_init(void);
 extern void console_set_layout(void);
 extern void script_start_gui(void);
 extern void shooting_get_subject_distance(void);
 extern void exit_alt(void);
+extern void shooting_get_current_av96(void);
+extern void shooting_get_current_tv96(void);
+extern void draw_dblpixel_raw(void);
 extern void DoAELock(void);
 extern void DoAFLock(void);
 extern void remotecap_set_timeout(void);
@@ -85,13 +93,25 @@ extern void draw_string(void);
 extern void stop_usb_HPtimer(void);
 extern void config_save(void);
 extern void closedir(void);
+extern void __aeabi_ui2f(void);
+extern void __aeabi_ui2d(void);
+extern void __aeabi_dsub(void);
+extern void __aeabi_dadd(void);
+extern void __aeabi_ddiv(void);
+extern void __aeabi_dmul(void);
+extern void __aeabi_d2iz(void);
+extern void __aeabi_fdiv(void);
+extern void __aeabi_fmul(void);
+extern void __aeabi_idiv(void);
 extern void conf_save(void);
 extern void gui_menu_back(void);
 extern void vid_get_viewport_yscale(void);
 extern void conf_getValue(void);
+extern void exmem_free_uncached(void);
 extern void levent_table(void);
 extern void raw_get_path(void);
 extern void levent_count(void);
+extern void shooting_get_nd_current_ev96(void);
 extern void GetTotalCardSpaceKb(void);
 extern void img_exts(void);
 extern void module_exit_alt(void);
@@ -104,7 +124,6 @@ extern int libmpopup;
 extern void console_set_autoredraw(void);
 extern void fwrite(void);
 extern void action_stack_create(void);
-extern void __fixdfsi(void);
 extern void readdir(void);
 extern void shooting_in_progress(void);
 extern void remotecap_get_target(void);
@@ -123,9 +142,13 @@ extern void memcpy(void);
 extern void memset(void);
 extern void vid_get_viewport_display_yoffset(void);
 extern void msleep(void);
+extern void kbd_force_analog_av(void);
+extern void vid_get_viewport_height_proper(void);
 extern void conf_setAutosave(void);
 extern void vid_bitmap_refresh(void);
+extern void DeleteSemaphore(void);
 extern void draw_button(void);
+extern void GiveSemaphore(void);
 extern void get_active_partition(void);
 extern void errnoOfTaskGet(void);
 extern void shooting_get_iso_real(void);
@@ -140,14 +163,12 @@ extern void lang_str(void);
 extern void levent_set_play(void);
 extern void get_property_case(void);
 extern void load_config_file(void);
-extern void __extendsfdf2(void);
 extern void GetARamInfo(void);
 extern void dcache_clean_all(void);
 extern void ptp_script_write_error_msg(void);
 extern void gui_browser_progress_show(void);
+extern void exmem_type_count(void);
 extern void JogDial_CCW(void);
-extern void __floatunsisf(void);
-extern void __floatunsidf(void);
 extern void shooting_get_av96_from_aperture(void);
 extern void get_ccd_temp(void);
 extern void GetMemInfo(void);
@@ -162,8 +183,10 @@ extern void strtoul(void);
 extern void strncpy(void);
 extern void strncmp(void);
 extern void set_focus_bypass(void);
+extern void shooting_get_nd_value_ev96(void);
 extern void PostLogicalEventToUI(void);
 extern void get_optical_temp(void);
+extern void CreateBinarySemaphore(void);
 extern void levent_id_for_name(void);
 extern int camera_screen;
 extern void GetCombinedMemInfo(void);
@@ -217,18 +240,22 @@ extern void get_parameter_size(void);
 extern void get_part_type(void);
 extern void get_parameter_data(void);
 extern void shooting_get_drive_mode(void);
+extern void __aeabi_uidivmod(void);
 extern void shooting_sv96_real_to_market(void);
 extern void ptp_script_write_msg(void);
-extern void conf2_save(void);
 extern int script_version;
 extern void is_raw_possible(void);
 extern void set_property_case(void);
+extern void shooting_get_imager_active(void);
 extern void shooting_set_mode_chdk(void);
+extern void erase_zebra(void);
+extern void set_clock(void);
 extern void vid_get_viewport_image_offset(void);
 extern void kbd_get_autoclicked_key(void);
 extern int libfselect;
 extern void module_set_script_lang(void);
 extern void shooting_set_av96_direct(void);
+extern void vid_get_viewport_width_proper(void);
 extern void shooting_get_focus_ok(void);
 extern void get_target_file_num(void);
 extern void switch_mode_usb(void);
@@ -264,44 +291,40 @@ extern void isupper(void);
 extern void ispunct(void);
 extern void islower(void);
 extern void iscntrl(void);
-extern void __truncdfsf2(void);
 extern void isalpha(void);
 extern void isalnum(void);
 extern void shooting_set_zoom_speed(void);
+extern void TakeSemaphore(void);
 extern void script_set_terminate_key(void);
 extern void draw_restore(void);
 extern void gui_osd_draw_clock(void);
 extern void action_push(void);
-extern void __udivsi3(void);
+extern void shooting_get_max_av96(void);
 extern int libshothisto;
 extern void vid_get_viewport_display_xoffset(void);
 extern void shooting_is_flash(void);
 extern void TurnOnBackLight(void);
 extern void script_console_add_line(void);
-extern void __adddf3(void);
-extern void __floatsidf(void);
-extern void __floatsisf(void);
+extern void __aeabi_uidiv(void);
+extern void __aeabi_d2uiz(void);
+extern void __aeabi_f2uiz(void);
 extern void draw_pixel(void);
 extern void sd_over_modes(void);
+extern void draw_vline(void);
+extern void draw_hline(void);
 extern void shooting_set_mode_canon(void);
 extern void rbf_char_width(void);
 extern void script_console_add_error(void);
 extern void vid_get_viewport_row_offset(void);
 extern void camera_shutdown_in_a_second(void);
-extern void __divsi3(void);
-extern void __divsf3(void);
-extern void __divdf3(void);
 extern void action_push_delay(void);
 extern void action_push_click(void);
 extern void action_pop_func(void);
 extern void action_push_shoot(void);
 extern void action_push_press(void);
-extern void __umodsi3(void);
-extern void __modsi3(void);
 extern void console_redraw(void);
+extern void live_view_get_data(void);
 extern void raw_prepare_develop(void);
-extern void __mulsf3(void);
-extern void __muldf3(void);
 extern void draw_text_justified(void);
 extern void debug_led(void);
 extern void chdkColorToCanonColor(void);
@@ -312,13 +335,16 @@ extern void live_histogram_read_y(void);
 extern void rbf_draw_char(void);
 extern void shooting_get_focus_mode(void);
 extern void umalloc(void);
+extern void __aeabi_d2f(void);
+extern void __aeabi_f2d(void);
+extern void __aeabi_i2f(void);
+extern void __aeabi_i2d(void);
 extern void set_raw_pixel(void);
 extern void shooting_get_aperture_from_av96(void);
 extern void JogDial_CW(void);
 extern void SetScriptMode(void);
 extern void module_get_adr(void);
 extern void shooting_get_flash_mode(void);
-extern void draw_get_pixel(void);
 extern void remotecap_using_dng_module(void);
 extern void process_file(void);
 extern void get_curr_menu(void);
@@ -333,21 +359,27 @@ extern void rbf_draw_menu_header(void);
 extern void gui_draw_osd_elements(void);
 extern void remotecap_set_target(void);
 extern void gui_set_mode(void);
+extern void shooting_set_canon_image_format(void);
 extern void draw_string_scaled(void);
+extern void exmem_alloc_uncached(void);
 extern void levent_set_record(void);
 extern void ptp_script_read_msg(void);
 extern void hook_raw_image_addr(void);
 extern void get_flash_params_count(void);
 extern void TurnOnDisplay(void);
-extern void __fixunssfsi(void);
-extern void __fixunsdfsi(void);
-extern void __subdf3(void);
 extern int libtxtread;
 extern void module_run(void);
 extern void SetLogicalEventActive(void);
 extern void GetJpgCount(void);
 extern void GetExMemInfo(void);
+extern void get_exmem_type_name(void);
 extern void img_prefixes(void);
+extern void __aeabi_dcmple(void);
+extern void __aeabi_dcmplt(void);
+extern void __aeabi_dcmpeq(void);
+extern void __aeabi_dcmpge(void);
+extern void __aeabi_dcmpgt(void);
+extern void draw_or_erase_edge_pixel(void);
 extern int recreview_hold;
 extern int root_menu;
 extern void rbf_load_from_file(void);
@@ -355,10 +387,10 @@ extern void shooting_get_sv96_real(void);
 extern int libtextbox;
 extern void user_color(void);
 extern void shooting_set_playrec_mode(void);
+extern void get_exmem_type_status(void);
 extern void shooting_get_real_focus_mode(void);
 extern void _ExecuteEventProcedure(void);
 extern void opendir_chdk(void);
-extern int movie_status;
 extern void GetFreeCardSpaceKb(void);
 extern void call_func_ptr(void);
 extern void shooting_get_exif_subject_dist(void);
@@ -372,12 +404,13 @@ extern void strftime(void);
 extern void strerror(void);
 extern void text_dimensions(void);
 extern void shooting_get_user_tv96(void);
+extern void shooting_get_canon_image_format(void);
 extern void shooting_get_user_av96(void);
+extern void get_movie_status(void);
+extern void shooting_get_current_base_sv96(void);
 extern void get_localtime(void);
-extern void __gtdf2(void);
 extern void get_focal_length(void);
 extern void __bswapsi2(void);
-extern void __ltdf2(void);
 extern void vid_get_viewport_byte_width(void);
 extern void shooting_get_is_mode(void);
 extern void gui_set_need_restore(void);
@@ -402,13 +435,13 @@ sym_hash symbol_hash_table[] =
 { 0x0a341a17, fopen },
 { 0x0a3599f1, fread },
 { 0x0a3614db, fseek },
-{ 0x0a3ae3d2, ftell },
 { 0x0a539140, log10 },
 { 0x0a5eb951, lseek },
 { 0x0a65b59c, mkdir },
 { 0x0a8b6733, close },
 { 0x0a8bfd72, &conf3 },
 { 0x0a8bfd73, &conf2 },
+{ 0x0ab300e0, __aeabi_idivmod },
 { 0x0af19de5, utime },
 { 0x0af90364, ufree },
 { 0x0b3a652e, qsort },
@@ -422,10 +455,12 @@ sym_hash symbol_hash_table[] =
 { 0x0f6eb19c, kbd_is_key_pressed },
 { 0x10858af0, vid_get_viewport_active_buffer },
 { 0x108b2f6d, &camera_info },
+{ 0x10a76c0b, set_movie_status },
 { 0x1178025e, shooting_get_common_focus_mode },
 { 0x1360469c, CancelHPTimer },
 { 0x15a18af6, draw_set_draw_proc },
 { 0x1725a355, shooting_get_sv96_from_iso },
+{ 0x1740ec11, shooting_get_min_av96 },
 { 0x17dc415c, &user_submenu },
 { 0x1913600e, DoMFLock },
 { 0x19c54a15, shooting_get_iso_from_sv96 },
@@ -440,22 +475,28 @@ sym_hash symbol_hash_table[] =
 { 0x1d8d47ec, CreateTask },
 { 0x1e2e5835, gui_load_user_menu_script },
 { 0x1e3188a8, ExitTask },
+{ 0x1fd49e67, shooting_get_current_delta_sv96 },
 { 0x227aa017, conf_setValue },
 { 0x232f2d6b, enter_alt },
 { 0x2402ca54, get_jogdial_direction },
 { 0x24240670, vid_get_bitmap_fb },
+{ 0x245ed06f, color_to_rawpx },
 { 0x2657b785, get_target_dir_name },
 { 0x2662d767, get_part_count },
 { 0x26d694f5, shooting_set_nd_filter_state },
 { 0x27739326, &libcurves },
 { 0x277c8885, shooting_sv96_market_to_real },
 { 0x294f94f8, shooting_get_focus_state },
+{ 0x29a1b137, &firmware_crc_desc },
 { 0x2bd212ae, opendir },
 { 0x2f11845c, gui_mbox_init },
 { 0x2f29864a, console_set_layout },
 { 0x30364011, script_start_gui },
 { 0x30f6a6dc, shooting_get_subject_distance },
 { 0x31b0a543, exit_alt },
+{ 0x331bd6f2, shooting_get_current_av96 },
+{ 0x3326ac47, shooting_get_current_tv96 },
+{ 0x33a935e3, draw_dblpixel_raw },
 { 0x3445f981, DoAELock },
 { 0x347c4282, DoAFLock },
 { 0x34afc5ca, remotecap_set_timeout },
@@ -466,13 +507,25 @@ sym_hash symbol_hash_table[] =
 { 0x3b031f26, stop_usb_HPtimer },
 { 0x3b4340d1, config_save },
 { 0x3b43a40c, closedir },
+{ 0x3ba6a21c, __aeabi_ui2f },
+{ 0x3ba6a21e, __aeabi_ui2d },
+{ 0x3baf9fd4, __aeabi_dsub },
+{ 0x3bafc8b1, __aeabi_dadd },
+{ 0x3bafde0b, __aeabi_ddiv },
+{ 0x3baff8c4, __aeabi_dmul },
+{ 0x3bb0a251, __aeabi_d2iz },
+{ 0x3bb317c9, __aeabi_fdiv },
+{ 0x3bb33186, __aeabi_fmul },
+{ 0x3bb5caa6, __aeabi_idiv },
 { 0x3c45f77f, conf_save },
 { 0x3e755d66, gui_menu_back },
 { 0x4146e742, vid_get_viewport_yscale },
 { 0x42e7d683, conf_getValue },
+{ 0x457b4b7a, exmem_free_uncached },
 { 0x45a91724, levent_table },
 { 0x45e72fda, raw_get_path },
 { 0x460475f9, levent_count },
+{ 0x46b310a3, shooting_get_nd_current_ev96 },
 { 0x46d4b128, GetTotalCardSpaceKb },
 { 0x497924c3, img_exts },
 { 0x4a682106, module_exit_alt },
@@ -485,7 +538,6 @@ sym_hash symbol_hash_table[] =
 { 0x510d2108, console_set_autoredraw },
 { 0x5135c19e, fwrite },
 { 0x51ac0771, action_stack_create },
-{ 0x51c4baaa, __fixdfsi },
 { 0x52683608, readdir },
 { 0x53269cb0, shooting_in_progress },
 { 0x53fdce54, remotecap_get_target },
@@ -504,9 +556,13 @@ sym_hash symbol_hash_table[] =
 { 0x57832de2, memset },
 { 0x58b62712, vid_get_viewport_display_yoffset },
 { 0x58ca1d87, msleep },
+{ 0x58e971b7, kbd_force_analog_av },
+{ 0x5aac7c29, vid_get_viewport_height_proper },
 { 0x5ab03872, conf_setAutosave },
 { 0x5ece2ec0, vid_bitmap_refresh },
+{ 0x5f6bc826, DeleteSemaphore },
 { 0x5f92c62c, draw_button },
+{ 0x5fbac2c2, GiveSemaphore },
 { 0x6173d13d, get_active_partition },
 { 0x62743ed3, errnoOfTaskGet },
 { 0x628de60c, shooting_get_iso_real },
@@ -521,14 +577,12 @@ sym_hash symbol_hash_table[] =
 { 0x67a31a43, levent_set_play },
 { 0x67ab0760, get_property_case },
 { 0x6865620f, load_config_file },
-{ 0x6a877a06, __extendsfdf2 },
 { 0x6bdf6d02, GetARamInfo },
 { 0x6d235989, dcache_clean_all },
 { 0x6d6ae702, ptp_script_write_error_msg },
 { 0x6de5ee33, gui_browser_progress_show },
+{ 0x6e2b8a66, exmem_type_count },
 { 0x6f745d4f, JogDial_CCW },
-{ 0x705a8421, __floatunsisf },
-{ 0x705a8516, __floatunsidf },
 { 0x705c2882, shooting_get_av96_from_aperture },
 { 0x707589bb, get_ccd_temp },
 { 0x7085a498, GetMemInfo },
@@ -543,8 +597,10 @@ sym_hash symbol_hash_table[] =
 { 0x74223b94, strncpy },
 { 0x74223c20, strncmp },
 { 0x74450101, set_focus_bypass },
+{ 0x767cd081, shooting_get_nd_value_ev96 },
 { 0x76a5b155, PostLogicalEventToUI },
 { 0x76e6a313, get_optical_temp },
+{ 0x76f00394, CreateBinarySemaphore },
 { 0x7781032b, levent_id_for_name },
 { 0x7794b20f, &camera_screen },
 { 0x77dec71d, GetCombinedMemInfo },
@@ -598,18 +654,22 @@ sym_hash symbol_hash_table[] =
 { 0x850e7d3c, get_part_type },
 { 0x85107f8a, get_parameter_data },
 { 0x862a804c, shooting_get_drive_mode },
+{ 0x883b5e75, __aeabi_uidivmod },
 { 0x895f6045, shooting_sv96_real_to_market },
 { 0x896e9ba5, ptp_script_write_msg },
-{ 0x8a0d05ed, conf2_save },
 { 0x8adea80f, &script_version },
 { 0x8c7fbcc6, is_raw_possible },
 { 0x8f2b4574, set_property_case },
+{ 0x8fef48ba, shooting_get_imager_active },
 { 0x913578b0, shooting_set_mode_chdk },
+{ 0x919e3e14, erase_zebra },
+{ 0x91ed1850, set_clock },
 { 0x923f51d6, vid_get_viewport_image_offset },
 { 0x9265fcd6, kbd_get_autoclicked_key },
 { 0x92c4cbcc, &libfselect },
 { 0x93f680a9, module_set_script_lang },
 { 0x9406c1e2, shooting_set_av96_direct },
+{ 0x9412bcd0, vid_get_viewport_width_proper },
 { 0x9447428b, shooting_get_focus_ok },
 { 0x9448f26d, get_target_file_num },
 { 0x9552f290, switch_mode_usb },
@@ -645,44 +705,40 @@ sym_hash symbol_hash_table[] =
 { 0xa5264da3, ispunct },
 { 0xa56f80fc, islower },
 { 0xa5e3cff8, iscntrl },
-{ 0xa64144fe, __truncdfsf2 },
 { 0xa64f37eb, isalpha },
 { 0xa64f9244, isalnum },
 { 0xa78e1107, shooting_set_zoom_speed },
+{ 0xa79be084, TakeSemaphore },
 { 0xa79ceb79, script_set_terminate_key },
 { 0xa7cd6bd2, draw_restore },
 { 0xa9e77d31, gui_osd_draw_clock },
 { 0xab28a0da, action_push },
-{ 0xac102142, __udivsi3 },
+{ 0xac786c4f, shooting_get_max_av96 },
 { 0xacbdf42b, &libshothisto },
 { 0xaedd8b93, vid_get_viewport_display_xoffset },
 { 0xaee06b40, shooting_is_flash },
 { 0xaf0f0e0c, TurnOnBackLight },
 { 0xb0485ead, script_console_add_line },
-{ 0xb254e815, __adddf3 },
-{ 0xb2881f2d, __floatsidf },
-{ 0xb288211a, __floatsisf },
+{ 0xb07bb953, __aeabi_uidiv },
+{ 0xb1c51fe4, __aeabi_d2uiz },
+{ 0xb1e70ee6, __aeabi_f2uiz },
 { 0xb410d4b2, draw_pixel },
 { 0xb45da2ec, sd_over_modes },
+{ 0xb47950e2, draw_vline },
+{ 0xb4aca97c, draw_hline },
 { 0xb7dc99b9, shooting_set_mode_canon },
 { 0xb84bcf4d, rbf_char_width },
 { 0xb8557f9b, script_console_add_error },
 { 0xb8bd095b, vid_get_viewport_row_offset },
 { 0xb91769c2, camera_shutdown_in_a_second },
-{ 0xb9503917, __divsi3 },
-{ 0xb9503a38, __divsf3 },
-{ 0xb95069af, __divdf3 },
 { 0xb9875b10, action_push_delay },
 { 0xb9bdfa6b, action_push_click },
 { 0xb9fdccca, action_pop_func },
 { 0xbae1acea, action_push_shoot },
 { 0xbae8e762, action_push_press },
-{ 0xbb2b173f, __umodsi3 },
-{ 0xbb72712a, __modsi3 },
 { 0xbb9797fa, console_redraw },
+{ 0xbc853e67, live_view_get_data },
 { 0xbcc32601, raw_prepare_develop },
-{ 0xbd41d117, __mulsf3 },
-{ 0xbd422980, __muldf3 },
 { 0xbe8eafc7, draw_text_justified },
 { 0xbebd61a6, debug_led },
 { 0xbece5557, chdkColorToCanonColor },
@@ -693,13 +749,16 @@ sym_hash symbol_hash_table[] =
 { 0xc0f25d8b, rbf_draw_char },
 { 0xc3253dcc, shooting_get_focus_mode },
 { 0xc32b4ad0, umalloc },
+{ 0xc3bf88c4, __aeabi_d2f },
+{ 0xc3bf90c4, __aeabi_f2d },
+{ 0xc3bfb7c9, __aeabi_i2f },
+{ 0xc3bfb7cb, __aeabi_i2d },
 { 0xc46f2ccb, set_raw_pixel },
 { 0xc4a7bc82, shooting_get_aperture_from_av96 },
 { 0xc5511a0c, JogDial_CW },
 { 0xc706abcb, SetScriptMode },
 { 0xc7db3d9e, module_get_adr },
 { 0xc8409b30, shooting_get_flash_mode },
-{ 0xcc0cec9b, draw_get_pixel },
 { 0xcdaf359d, remotecap_using_dng_module },
 { 0xd2312817, process_file },
 { 0xd2403396, get_curr_menu },
@@ -714,21 +773,27 @@ sym_hash symbol_hash_table[] =
 { 0xd9554054, gui_draw_osd_elements },
 { 0xda4cf5c0, remotecap_set_target },
 { 0xdb38dd1f, gui_set_mode },
+{ 0xddb8f561, shooting_set_canon_image_format },
 { 0xde946cec, draw_string_scaled },
+{ 0xe018c863, exmem_alloc_uncached },
 { 0xe02924ca, levent_set_record },
 { 0xe0c82faa, ptp_script_read_msg },
 { 0xe2522849, hook_raw_image_addr },
 { 0xe2ff6ac3, get_flash_params_count },
 { 0xe3952943, TurnOnDisplay },
-{ 0xe3b125f5, __fixunssfsi },
-{ 0xe3bfa382, __fixunsdfsi },
-{ 0xe4284a90, __subdf3 },
 { 0xe4b337a8, &libtxtread },
 { 0xe5973009, module_run },
 { 0xe5c5f184, SetLogicalEventActive },
 { 0xe5db210d, GetJpgCount },
 { 0xe6031ce5, GetExMemInfo },
+{ 0xe689934b, get_exmem_type_name },
 { 0xe6ce46df, img_prefixes },
+{ 0xe733d947, __aeabi_dcmple },
+{ 0xe733d956, __aeabi_dcmplt },
+{ 0xe733da3a, __aeabi_dcmpeq },
+{ 0xe733da6c, __aeabi_dcmpge },
+{ 0xe733da7d, __aeabi_dcmpgt },
+{ 0xe77879d3, draw_or_erase_edge_pixel },
 { 0xe959753b, &recreview_hold },
 { 0xe95bc2af, &root_menu },
 { 0xe95cc4da, rbf_load_from_file },
@@ -736,10 +801,10 @@ sym_hash symbol_hash_table[] =
 { 0xea82b78a, &libtextbox },
 { 0xeaec3c96, user_color },
 { 0xeb3be0c4, shooting_set_playrec_mode },
+{ 0xec6e6e98, get_exmem_type_status },
 { 0xec74fca9, shooting_get_real_focus_mode },
 { 0xecfd9164, _ExecuteEventProcedure },
 { 0xed6c9e95, opendir_chdk },
-{ 0xee3ba296, &movie_status },
 { 0xef55ebde, GetFreeCardSpaceKb },
 { 0xf008034f, call_func_ptr },
 { 0xf0496f58, shooting_get_exif_subject_dist },
@@ -753,12 +818,13 @@ sym_hash symbol_hash_table[] =
 { 0xf7e47148, strerror },
 { 0xfb3704c4, text_dimensions },
 { 0xfbb6e19f, shooting_get_user_tv96 },
+{ 0xfbbb17f5, shooting_get_canon_image_format },
 { 0xfbbc902a, shooting_get_user_av96 },
+{ 0xfc09159f, get_movie_status },
+{ 0xfd08b46a, shooting_get_current_base_sv96 },
 { 0xfd77d414, get_localtime },
-{ 0xfdd492e6, __gtdf2 },
 { 0xfdfac988, get_focal_length },
 { 0xfe23fe3a, __bswapsi2 },
-{ 0xfe765f6d, __ltdf2 },
 { 0xfebe6070, vid_get_viewport_byte_width },
 { 0xfeed621a, shooting_get_is_mode },
 { 0xff6fe821, gui_set_need_restore },

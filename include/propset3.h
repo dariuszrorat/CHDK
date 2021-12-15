@@ -43,6 +43,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_DIGITAL_ZOOM_POSITION      95
 #define PROPCASE_DISPLAY_MODE               105
 #define PROPCASE_BRACKET_MODE               29
+#define PROPCASE_LANGUAGE                   61     // Upper byte = language (see default.lua for known values) lowest bit: 0 = NTSC, 1 = PAL
 #define PROPCASE_FLASH_SYNC_CURTAIN         64
 #define PROPCASE_METERING_MODE              155
 #define PROPCASE_WB_MODE                    270     // 0 = Auto, 1 = Daylight, 2 = Cloudy, 3 = Tungsten, 4 = Fluorescent, 5 = Fluorescent H, 7 = Custom
@@ -52,8 +53,11 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_OPTICAL_ZOOM_POSITION      197
 #define PROPCASE_VIDEO_RESOLUTION           169
 #define PROPCASE_AF_ASSIST_BEAM             5       // 0=disabled,  1=enabled
+#define PROPCASE_AF_FRAME                   8       // 1 = FlexiZone, 2 = Face AiAF / Tracking AF
 #define PROPCASE_AF_LOCK                    11      // 0 = AF not locked, 1 = AF locked
 #define PROPCASE_CONTINUOUS_AF              12      // 0 = Continuous AF off, 1 = Continuous AF on
 #define PROPCASE_SERVO_AF                   297     // 0 = Servo AF off, 1 = Servo AF on
 #define PROPCASE_TIMER_SHOTS                336     // Number of shots for TIMER_MODE=Custom
+#define PROPCASE_ND_FILTER_STATE            194     // 0 = out, 1 = in
+#define PROPCASE_JPEG_WITH_RAW              284     // RAW+JPEG menu setting, 0 = Off, 1 = On
 #endif

@@ -170,12 +170,16 @@ asm volatile (
 "    BEQ     exitHook\n"
 
 /*** INSTALL movie_record_task() hook ***/
-/*
 "    LDR     R0, =task_MovieRecord\n"
 "    CMP     R0, R3\n"
 "    LDREQ   R3, =movie_record_task\n"
 "    BEQ     exitHook\n"
-*/
+
+/*** INSTALL liveimage_task() hook ***/
+"    LDR     R0, =task_LiveImageTask\n"
+"    CMP     R0, R3\n"
+"    LDREQ   R3, =liveimage_task\n"
+"    BEQ     exitHook\n"
 
 /*** INSTALL init_file_modules_task() hook ***/
 "    LDR     R0, =task_InitFileModules\n"
@@ -384,7 +388,7 @@ asm volatile (
 "    LDR     R1, =0x60E000 \n"
 "    MOV     R0, #0 \n"
 "    BL      sub_FF836BF0 \n"
-"    BL      sub_006B8DD4 \n"
+"    BL      sub_006B8DD4 /*_EnableDispatch*/ \n"
 "    MOV     R3, #0 \n"
 "    STR     R3, [SP] \n"
 "    LDR     R3, =task_Startup_my \n"  // --> Patched. Old value = 0xFF827BB0.

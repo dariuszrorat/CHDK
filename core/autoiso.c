@@ -1,4 +1,3 @@
-#include "stdlib.h"
 #include "camera_info.h"
 #include "math.h"
 #include "conf.h"
@@ -6,8 +5,6 @@
 #include "shooting.h"
 #include "modes.h"
 #include "lens.h"
-#include "fileutil.h"
-
 
 //-------------------------------------------------------------------
 // AUTO ISO
@@ -20,11 +17,19 @@
 // This module is used in AutoISO2 mechanizm.
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-// Define how many viewport blocks to step in each loop iteration. Each block is 6 bytes (UYVYYY) or 4 image pixels
-#define	HISTO_STEP_SIZE	6
-#define OVEREXPOSURE_EV_AUTO 7
+// This uses 30 'Y' values from each row (or seccond row for cameras with 2x height YUV viewports).
+// Is summing 30 columns of data a good selection for histogram?
 
-static unsigned short live_histogram_proc[256]; // Buffer for histogram
+// Define how many viewport bytes to step in each loop iteration. Skip 6 sets of 4 pixels.
+#ifdef THUMB_FW
+// Digic 6: Each block is 4 bytes (UYVY) 2 Y values
+#define HISTO_STEP_SIZE 48
+#else
+// Each block is 6 bytes (UYVYYY) / 4 Y values
+#define HISTO_STEP_SIZE 36
+#endif
+
+#define OVEREXPOSURE_EV_AUTO 7
 
 int clip192(int x)
 {
@@ -70,47 +75,69 @@ int calculate_ev_auto(int range, int threshold, int yover, int ev_bias)
     return 0;
 }
 
+
 /*
 build histogram of viewport Y values (downsampled by HISTO_STEP_SIZE)
 NOTE also used by lua get_live_histo
 */
 int live_histogram_read_y(unsigned short *h)
 {
-    int total;
+#ifdef THUMB_FW
+    int vp_width = vid_get_viewport_width_proper() * 2;             // X bytes per row
+#else
+    int vp_width = vid_get_viewport_width_proper() * 6 / 4;         // X bytes per row
+#endif
 
-    int vp_width = vid_get_viewport_width();
-    int vp_height = vid_get_viewport_height();
-    int vp_offset = vid_get_viewport_row_offset();
+    int yscale = vid_get_viewport_yscale();   // Y scale factor (2 for 480 line high lv buffer on pre-d6)
+    int vp_height_full = vid_get_viewport_height_proper();
+    // for large resolutions, increase yscale to avoid overflow
+    if(vp_height_full > 480)
+    {
+        // minimum 2
+        yscale = vp_height_full/240;
+    }
 
-    total = (vp_width * vp_height) / (HISTO_STEP_SIZE * 2);
+    int vp_height = vp_height_full / yscale;      // Number of rows to process
+
+    // account for cases where step does not exactly divide width
+    int total = ((vp_width + HISTO_STEP_SIZE/2)/HISTO_STEP_SIZE) * vp_height;
+
     memset(h, 0, sizeof(unsigned short)*256);
 
     unsigned char *img = vid_get_viewport_active_buffer();
-    if (!img) return total;
-
-    img += vid_get_viewport_image_offset() + 1;
-
-    int y;
-    for (y=0; y<vp_height; y++, img += vp_offset)
+    if (img)
     {
-        int x;
-        for (x=0; x<vp_width; x += HISTO_STEP_SIZE*2, img+=HISTO_STEP_SIZE*6)
+        int vp_offset = vid_get_viewport_byte_width() * yscale;     // Bytes length of each row (or double row)
+        img += vid_get_viewport_image_offset() + 1; // Skip border and move to 1st Y component in each block
+
+        int x, y;
+        for (y=0; y<vp_height; y+=1, img+=vp_offset)
         {
-            ++h[*img];
+            for (x=HISTO_STEP_SIZE/2; x<vp_width; x+=HISTO_STEP_SIZE)
+            {
+                h[img[x]] += 1;
+//                img[x] = img[x+2] = 255;  // Change sampled values on screen for debugging
+            }
         }
+    }
+    else
+    {
+        // if no live buffer, act as if all black
+        // should be rare, generally only happens in playback with video selected
+        h[0] = total;
     }
 
     return total;
 }
 
-static int live_histogram_get_range(int total,int from, int to)
+static int live_histogram_get_range(unsigned short *histo, int total,int from, int to)
 {
     if (from < 0) from = 0;
     if (to > 255) to = 255;
 
     int rv = 0;
     for(; from<=to; from++)
-        rv += live_histogram_proc[from];
+        rv += histo[from];
 
     return (rv * 100) / total;
 }
@@ -173,38 +200,51 @@ void shooting_set_autoiso(int iso_mode)
         return;
     }
 
-    vars.auto_ev_ae_value = 0;
+    conf.autoiso_max_iso_hi_real    = shooting_iso_market_to_real(iso_values[conf.autoiso_max_iso_hi]) ;
+    conf.autoiso_max_iso_auto_real  = shooting_iso_market_to_real(iso_values[conf.autoiso_max_iso_auto]) ;
+    conf.autoiso_min_iso_real	    = shooting_iso_market_to_real(iso_values[conf.autoiso_min_iso]) ;
+    conf.autoiso2_max_iso_auto_real = shooting_iso_market_to_real(iso_values[conf.autoiso2_max_iso_auto]) ;
 
     // TODO also long shutter ?
     if (!(camera_info.state.mode_shooting==MODE_AUTO || camera_info.state.mode_shooting==MODE_P || camera_info.state.mode_shooting==MODE_AV))
         return; //Only operate inside of AUTO, P and Av
 
     int ev_overexp = 0;
-    // No shoot_histogram exist here because no future shot exist yet :)
-    int total = live_histogram_read_y(live_histogram_proc);
-    int range = live_histogram_get_range(total,255-conf.autoiso2_over,255);
+    vars.overexp_percent = 0;
+    int total = 0;
+    int range = 0;
+    unsigned short *histo = malloc(256*sizeof(unsigned short));
+    if (histo)
+    {
+        total = live_histogram_read_y(histo);
+        range = live_histogram_get_range(histo,total,255-conf.autoiso2_over,255);
+    }
 
     if (conf.overexp_ev_enum)
     {
-
-        if (conf.overexp_ev_enum != OVEREXPOSURE_EV_AUTO)
+        if (histo)
         {
-            // step 32 is 1/3ev for tv96
-            if (range >= conf.overexp_threshold)
+            if (conf.overexp_ev_enum != OVEREXPOSURE_EV_AUTO)
             {
-                ev_overexp = conf.overexp_ev_enum << 5;
+                // step 32 is 1/3ev for tv96
+                if (range >= conf.overexp_threshold)
+                {
+                    ev_overexp = conf.overexp_ev_enum << 5;
+                    vars.auto_ev_ae_value = ev_overexp >> 5;
+                }
+            }
+            else
+            {
+                int ev_bias = shooting_get_ev_correction1();
+                ev_overexp = calculate_ev_auto(range, conf.overexp_threshold, conf.autoiso2_over, ev_bias);
                 vars.auto_ev_ae_value = ev_overexp >> 5;
             }
         }
-        else
-        {
-            int ev_bias = shooting_get_ev_correction1();
-            ev_overexp = calculate_ev_auto(range, conf.overexp_threshold, conf.autoiso2_over, ev_bias);
-            vars.auto_ev_ae_value = ev_overexp >> 5;
-        }
+
     }
 
     vars.overexp_percent = range;
+    if (histo) free(histo);
 
     float current_shutter = shooting_get_shutter_speed_from_tv96(shooting_get_tv96());
 

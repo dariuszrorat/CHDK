@@ -43,7 +43,6 @@
     #define CAM_RAW_ROWS                        3060 // actual size from fw 12754080pix at FF375484 -> 19131120/12*8
 
     #define CAM_HAS_CMOS                        1
-    #define CAM_HAS_ND_FILTER                   1
     #define CAM_HAS_JOGDIAL                     1
     #define CAM_HAS_VIDEO_BUTTON                1
     #define CAM_HAS_MOVIE_DIGEST_MODE           1
@@ -105,8 +104,6 @@
 
     #define CAM_QUALITY_OVERRIDE                1
 
-    #define CAM_USE_ALT_SET_ZOOM_POINT          1   // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt    1   // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
 
     #undef  CAMERA_MIN_DIST
     #define CAMERA_MIN_DIST                     99  // Override min subject distance

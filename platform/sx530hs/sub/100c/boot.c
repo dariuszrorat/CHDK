@@ -22,6 +22,7 @@ extern void task_ExpDrv();
 -----------------------------------------------------------------------*/
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
 	core_spytask();
 }
 
@@ -39,7 +40,7 @@ void CreateTask_spytask()
 short *jog_position;
 
 #define GREEN_LED       0xC022D1FC
-#define AF_LED          0xC022D1FC
+#define AF_LED          0xC022D034
 //debug use only
 
 int debug_blink(int save_R0) {
@@ -222,6 +223,7 @@ asm volatile (
 "    LDREQ   R3, =exp_drv_task\n"
 "    BEQ     exitHook\n"
 
+
 /*** INSTALL filewrite() hook ***/
 //"    LDR     R0, =task_FileWrite\n"
 //"    CMP     R0, R3\n"
@@ -229,16 +231,24 @@ asm volatile (
 //"    BEQ     exitHook\n"
 
 /*** INSTALL JogDial() hook ***/
-"    LDR     R0, =task_RotaryEncoder\n"
-"    CMP     R0, R3\n"
-"    LDREQ   R3, =JogDial_task_my\n"
-"    BEQ     exitHook\n"
+// was commented out in boot.c from http://chdk.setepontos.com/index.php?topic=12418.msg123489#msg123489
+// but not in codegen file - reyalp
+//"    LDR     R0, =task_RotaryEncoder\n"
+//"    CMP     R0, R3\n"
+//"    LDREQ   R3, =JogDial_task_my\n"
+//"    BEQ     exitHook\n"
 
 /*** INSTALL movie_record_task() hook ***/
-//"    LDR     R0, =task_MovieRecord\n"
-//"    CMP     R0, R3\n"
-//"    LDREQ   R3, =movie_record_task\n"
-//"    BEQ     exitHook\n"
+"    LDR     R0, =task_MovieRecord\n"
+"    CMP     R0, R3\n"
+"    LDREQ   R3, =movie_record_task\n"
+"    BEQ     exitHook\n"
+
+/*** INSTALL liveimage_task() hook ***/
+"    LDR     R0, =task_LiveImageTask\n"
+"    CMP     R0, R3\n"
+"    LDREQ   R3, =liveimage_task\n"
+"    BEQ     exitHook\n"
 
 /*** INSTALL init_file_modules_task() hook ***/
 "    LDR     R0, =task_InitFileModules\n"
@@ -260,12 +270,10 @@ asm volatile (
 void __attribute__((naked,noinline)) sub_FF0203C4_my() {
 
     //Replacement of sub_ for correct power-on.
-    //(short press = playback mode, long press = record mode)
-
-    // look at power-on switch sub_FF00BD98
-    // value and pointer from sub_FF04EAFC
-    //*(int*)(0x2cf4+0x8) = (*(int*)0xC0220104)&1 ? 0x200000 : 0x100000;
-    *(int*)(0x2cf4+0x8) = 0x400000;
+    //(short press on ON/OFF button = playback mode, long press = record mode)
+    // see sub_ff02bbc0 and sub_ff073c68 (100c)
+    // NOTE this might break other startup modes (such as NFC)
+    *(int*)(0x2cf4+0x8) = (*(int*)0xc022f48c) & 0x80000 ? 0x400000 : 0x200000;
 
 asm volatile (
 "    LDR     R0, =0xFF02043C \n"
@@ -452,7 +460,7 @@ asm volatile (
 "    LDR     R1, =0x60E000 \n"
 "    MOV     R0, #0 \n"
 "    BL      sub_FF03822C \n"
-"    BL      sub_006B8E18 \n"
+"    BL      sub_006B8E18 /*_EnableDispatch*/ \n"
 "    MOV     R3, #0 \n"
 "    STR     R3, [SP] \n"
 "    LDR     R3, =task_Startup_my \n"  // --> Patched. Old value = 0xFF0279DC.
@@ -543,6 +551,7 @@ asm volatile (
 "    BL      sub_FF038308 \n"
 "    BL      CreateTask_spytask\n" // added
 "    BL      taskcreatePhySw_my \n"  // --> Patched. Old value = 0xFF02BA68.
+"    BL      init_required_fw_features\n" // added
 "    BL      sub_FF0314D8 \n"
 "    BL      sub_FF0C74B4 \n"
 "    BL      sub_FF028E34 \n"
@@ -586,6 +595,13 @@ asm volatile (
 );
 }
 
+// Workaround for cards becoming read-only in camera when diskboot'ing to playback mode.
+// The following flag is checked by the function that calls WriteSDCard (sub_ff0300dc)
+// See the porting thread for related discussions. https://chdk.setepontos.com/index.php?topic=12418
+void fix_writable_media_flag() {
+    *(int*)0x1d60 = 1;
+}
+
 /*************************************************************/
 //** init_file_modules_task @ 0xFF061C70 - 0xFF061CA4, length=14
 void __attribute__((naked,noinline)) init_file_modules_task() {
@@ -598,6 +614,7 @@ asm volatile (
 "    MOVNE   R0, R5 \n"
 "    BLNE    _PostLogicalEventToUI \n"
 "    BL      sub_FF0B0B84 \n"
+"    BL      fix_writable_media_flag\n" // port specific hack
 "    BL      core_spytask_can_start\n"  // CHDK: Set "it's-safe-to-start" flag for spytask
 "    CMP     R4, #0 \n"
 "    LDMNEFD SP!, {R4-R6,PC} \n"
@@ -837,4 +854,15 @@ asm volatile (
 "    STR     R1, [R0, #0x108] \n"
 "    B       loc_FF0748F0 \n"
 );
+}
+/*
+    *** TEMPORARY workaround ***
+    Init stuff to avoid asserts on cameras running DryOS r54+
+    Execute this only once
+ */
+void init_required_fw_features(void) {
+    extern void _init_focus_eventflag();
+    //extern void _init_zoom_semaphore(); // for MoveZoomLensWithPoint
+
+    _init_focus_eventflag();
 }

@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "modes.h"
 #include "viewport.h"
@@ -274,8 +273,6 @@ void script_end()
 
 long script_start_gui( int autostart )
 {
-    int i;
-
     if (conf.script_file[0] == 0) return 0;
 
     libshothisto->shot_histogram_set(0);

@@ -1,6 +1,5 @@
 #include "platform.h"
 #include "conf.h"
-#include "histogram.h"
 #include "font.h"
 #include "raw.h"
 #include "gui.h"
@@ -67,24 +66,51 @@ void conf_update_prevent_shutdown(void) {
 }
 
 //-------------------------------------------------------------------
-void clear_values()
-{	
-
+void reset_alt_button()
+{
 #if CAM_ADJUSTABLE_ALT_BUTTON
     extern const char* gui_alt_mode_button_enum(int change, int arg);
     gui_alt_mode_button_enum(0,0); // will reset if not in list of valid alt buttons
 #else
     conf.alt_mode_button = CAM_DEFAULT_ALT_BUTTON; // if not adjustable, force to default
 #endif
+}
+
+void clear_values()
+{
+    reset_alt_button();
 
     if (conf.platformid != PLATFORMID) // the following config entries will be resetted if you switch the camera using the same cfg
     {
         conf.fast_ev = 0;
         conf.fast_movie_control = 0;
         conf.fast_movie_quality_control = 0;
-        conf.zoom_scale = 100;
         conf.platformid = PLATFORMID;
         conf.flash_video_override = 0;
+
+        // remote input channel - all cams assumed to support USB
+        // TODO could reset only if invalid on current cam
+        conf.remote_input_channel = REMOTE_INPUT_USB;
+
+        // video related entries are interpreted differently on D6 cameras
+        conf.video_mode = 0;
+        conf.video_quality = VIDEO_DEFAULT_QUALITY;
+        conf.video_bitrate = VIDEO_DEFAULT_BITRATE;
+        shooting_video_bitrate_change(conf.video_bitrate);
+#ifdef CAM_MOVIEREC_NEWSTYLE
+        shooting_video_minbitrate_change(conf.video_quality);
+#endif
+    }
+    if (conf.osd_platformid != PLATFORMID) // the following config entries will be resetted if you switch the camera using the same cfg
+    {
+        conf.zoom_scale = 100;
+        // battery voltages are camera dependent
+        conf.batt_volts_max = get_vbatt_max();
+        conf.batt_volts_min = get_vbatt_min();
+        conf.osd_platformid = PLATFORMID;
+
+        conf.mem_view_addr_init = 0x1000;
+
     }
 
     if (conf.clear_override)
@@ -111,6 +137,9 @@ void clear_values()
         conf.video_quality = VIDEO_DEFAULT_QUALITY;
         conf.video_bitrate = VIDEO_DEFAULT_BITRATE;
         shooting_video_bitrate_change(conf.video_bitrate);
+#ifdef CAM_MOVIEREC_NEWSTYLE
+        shooting_video_minbitrate_change(conf.video_quality);
+#endif
     }
     //conf.edge_overlay_pano = 0; // reset it because otherwise this feature cant be used at startup (when buffer is empty) - needs workaround other than this!
 }
@@ -121,7 +150,7 @@ static ConfInfo user_menu_conf_info[] = {
     CONF_INFO(  2, conf.user_menu_as_root,      CONF_DEF_VALUE, i:0),
     CONF_INFO(  3, conf.user_menu_enable,       CONF_DEF_VALUE, i:0),
 
-    {0,0,0,0,{0}}
+    {0}
 };
 
 void user_menu_conf_info_func(unsigned short id)
@@ -147,24 +176,28 @@ static ConfInfo osd_conf_info[] = {
     CONF_INFO(  3, conf.override_disable,                       CONF_DEF_VALUE, i:0),
     CONF_INFO(  4, conf.override_disable_all,                   CONF_DEF_VALUE, i:1),
     CONF_INFO(  5, conf.hide_osd,                               CONF_DEF_VALUE, i:1),
+    CONF_INFO(  6, conf.rotate_osd,                             CONF_DEF_VALUE, i:0),
+    CONF_INFO(  7, conf.show_hiddenfiles,                       CONF_DEF_VALUE, i:0),
 
-    CONF_INFO2( 20, conf.histo_pos,                             CONF_OSD_POS,   45,CAM_SCREEN_HEIGHT-HISTO_HEIGHT-40),
-    CONF_INFO2( 21, conf.dof_pos,                               CONF_OSD_POS,   90,45),
-    CONF_INFO2( 22, conf.batt_icon_pos,                         CONF_OSD_POS,   178,0),
-    CONF_INFO2( 23, conf.batt_txt_pos,                          CONF_OSD_POS,   178,FONT_HEIGHT),
-    CONF_INFO2( 24, conf.mode_state_pos,                        CONF_OSD_POS,   35,0),
-    CONF_INFO2( 25, conf.values_pos,                            CONF_OSD_POS,   CAM_SCREEN_WIDTH-9*FONT_WIDTH,30),
-    CONF_INFO2( 26, conf.clock_pos,                             CONF_OSD_POS,   CAM_SCREEN_WIDTH-5*FONT_WIDTH-2,0),
-    CONF_INFO2( 27, conf.space_icon_pos,                        CONF_OSD_POS,   CAM_SCREEN_WIDTH-100,0),
-    CONF_INFO2( 28, conf.space_txt_pos,                         CONF_OSD_POS,   128,0),
-    CONF_INFO2( 29, conf.mode_raw_pos,                          CONF_OSD_POS,   CAM_SCREEN_WIDTH-7*FONT_WIDTH-2,CAM_SCREEN_HEIGHT-3*FONT_HEIGHT-2),
-    CONF_INFO2( 30, conf.space_ver_pos,                         CONF_OSD_POS,   CAM_SCREEN_WIDTH-7,0),
-    CONF_INFO2( 31, conf.space_hor_pos,                         CONF_OSD_POS,   0,CAM_SCREEN_HEIGHT-7),   
-    CONF_INFO2( 32, conf.mode_video_pos,                        CONF_OSD_POS,   CAM_SCREEN_WIDTH-25*FONT_WIDTH-2,CAM_SCREEN_HEIGHT-6*FONT_HEIGHT-2),
-    CONF_INFO2( 33, conf.mode_ev_pos,                           CONF_OSD_POS,   CAM_SCREEN_WIDTH-40*FONT_WIDTH-2,CAM_SCREEN_HEIGHT-8*FONT_HEIGHT-2),
-    CONF_INFO2( 34, conf.temp_pos,                              CONF_OSD_POS,   CAM_SCREEN_WIDTH-9*FONT_WIDTH-2,FONT_HEIGHT),
-    CONF_INFO2( 35, conf.ev_video_pos,                          CONF_OSD_POS,   18,80),
-    CONF_INFO2( 36, conf.usb_info_pos,                          CONF_OSD_POS,   95,0),
+    // The default X & Y position values below are based on 360x240 size screen display.
+    // The CONF_INFOP macro scales these, at build time, based on the actual camera screen size (CAM_SCREEN_WIDTH & CAM_SCREEN_HEIGHT).
+    CONF_INFOP( 20, conf.histo_pos,                             CONF_OSD_POS,   45,150),
+    CONF_INFOP( 21, conf.dof_pos,                               CONF_OSD_POS,   90,45),
+    CONF_INFOP( 22, conf.batt_icon_pos,                         CONF_OSD_POS,   178,0),
+    CONF_INFOP( 23, conf.batt_txt_pos,                          CONF_OSD_POS,   178,16),
+    CONF_INFOP( 24, conf.mode_state_pos,                        CONF_OSD_POS,   35,0),
+    CONF_INFOP( 25, conf.values_pos,                            CONF_OSD_POS,   288,30),
+    CONF_INFOP( 26, conf.clock_pos,                             CONF_OSD_POS,   294,0),
+    CONF_INFOP( 27, conf.space_icon_pos,                        CONF_OSD_POS,   260,0),
+    CONF_INFOP( 28, conf.space_txt_pos,                         CONF_OSD_POS,   128,0),
+    CONF_INFOP( 29, conf.mode_raw_pos,                          CONF_OSD_POS,   302,214),
+    CONF_INFOP( 30, conf.space_ver_pos,                         CONF_OSD_POS,   353,0),
+    CONF_INFOP( 31, conf.space_hor_pos,                         CONF_OSD_POS,   0,233),
+    CONF_INFOP( 32, conf.mode_video_pos,                        CONF_OSD_POS,   158,142),
+    CONF_INFOP( 33, conf.mode_ev_pos,                           CONF_OSD_POS,   38,110),
+    CONF_INFOP( 34, conf.temp_pos,                              CONF_OSD_POS,   286,16),
+    CONF_INFOP( 35, conf.ev_video_pos,                          CONF_OSD_POS,   18,80),
+    CONF_INFOP( 36, conf.usb_info_pos,                          CONF_OSD_POS,   95,0),
 
     // Keep these together
     CONF_INFOC( 50, conf.histo_color,                           CONF_DEF_VALUE, IDX_COLOR_GREY_DK,IDX_COLOR_WHITE,1,1),
@@ -262,7 +295,7 @@ static ConfInfo osd_conf_info[] = {
     CONF_INFO(202, conf.remaining_raw_treshold,                 CONF_DEF_VALUE, i:0),
     CONF_INFO(203, conf.raw_exceptions_warn,                    CONF_DEF_VALUE, i:1),
 
-    CONF_INFO(210, conf.show_movie_time,                        CONF_DEF_VALUE, i:3),
+    CONF_INFO(210, conf.show_movie_time,                        CONF_DEF_VALUE, i:0),
     CONF_INFO(211, conf.show_movie_refresh,                     CONF_DEF_VALUE, i:1),
 
     CONF_INFO(220, conf.show_temp,                              CONF_DEF_VALUE, i:1),
@@ -308,13 +341,20 @@ static ConfInfo osd_conf_info[] = {
     CONF_INFO2( 295, conf.ev_video_scale,                          CONF_OSD_POS, 1,1  ),
     CONF_INFO2( 296, conf.usb_info_scale,                          CONF_OSD_POS, 0,0  ),
 
-    {0,0,0,0,{0}}
+    CONF_INFO( 297, conf.enable_raw_shortcut,                      CONF_DEF_VALUE, i:0),
+
+    CONF_INFO( 298, conf.osd_platformid,                           CONF_DEF_VALUE, i:PLATFORMID),
+
+    {0}
 };
 
 void osd_conf_info_func(unsigned short id)
 {
     switch (id)
     {
+    case 6:
+        update_draw_proc();
+        break;
     case 131: 
         rbf_load_from_file(conf.menu_rbf_file, FONT_CP_WIN);
         break;
@@ -405,6 +445,8 @@ static ConfInfo conf_info[] = {
     CONF_INFO( 89, conf.fast_movie_control,                     CONF_DEF_VALUE, i:0),
     CONF_INFO( 90, conf.fast_movie_quality_control,             CONF_DEF_VALUE, i:0),
     CONF_INFO( 91, conf.ext_video_time,                         CONF_DEF_VALUE, i:0),
+    CONF_INFO( 92, conf.clean_overlay,                          CONF_DEF_VALUE, i:0),
+    CONF_INFO( 93, conf.unlock_av_out_in_rec,                   CONF_DEF_VALUE, i:0),
 
     CONF_INFO(100, conf.clear_override,                         CONF_DEF_VALUE, i:1),
     
@@ -492,9 +534,13 @@ static ConfInfo conf_info[] = {
 
     CONF_INFO(250, conf.disable_lfn_parser_ui,                  CONF_DEF_VALUE, i:0),
 
+    CONF_INFO(251, conf.save_raw_in_canon_raw,                  CONF_DEF_VALUE, i:1),
+
+    CONF_INFO(252, conf.check_firmware_crc,                     CONF_DEF_VALUE, i:1),
+
     CONF_INFO(999, conf.script_allow_lua_native_calls,          CONF_DEF_VALUE, i:0),
 
-    {0,0,0,0,{0}}
+    {0}
 };
 
 void conf_info_func(unsigned short id)
@@ -518,18 +564,22 @@ void conf_info_func(unsigned short id)
     case  54:
         script_load(conf.script_file);
         break;
+#ifdef CAM_MOVIEREC_NEWSTYLE
+    case  81:
+        shooting_video_minbitrate_change(conf.video_quality);
+        break;
+#endif
     case  82: 
         shooting_video_bitrate_change(conf.video_bitrate);
         break;
     case 200:
     case 204:
     case 205:   // USB Remote
+    case 208:
         set_usb_remote_state();
         break;
     case 220:
-#ifndef CAM_ADJUSTABLE_ALT_BUTTON
-        conf.alt_mode_button = KEY_PRINT;
-#endif
+        reset_alt_button();
         break;
     case 221: 
         conf_update_prevent_shutdown(); 
@@ -575,7 +625,7 @@ static ConfInfo gps_conf_info[] = {
     CONF_INFO( 30, conf.gps_beep_warn,              CONF_DEF_VALUE,     i:0),
     CONF_INFO( 31, conf.gps_on_off,                 CONF_DEF_VALUE,     i:0),
 
-    {0,0,0,0,{0}}
+    {0}
 };
 #endif
 
@@ -619,7 +669,7 @@ static short conf_map_1_2[] =
     1020, // 2 conf.save_raw
     1050, // 3 conf.script_shoot_delay
     1060, // 4 conf.show_histo
-    0,
+    2006, // 5 conf.rotate_osd
     1052, // 6 conf.script_param_set
     2150, // 7 conf.show_dof
     2100, // 8 conf.batt_volts_max
@@ -916,6 +966,7 @@ static short conf_map_1_2[] =
     1231, // 299 conf.memdmp_size
     1214, // 300 conf.flash_exp_comp
     1215, // 301 conf.flash_enable_exp_comp
+    2297, // 302 conf.enable_raw_shortcut
 };
 
 //-------------------------------------------------------------------
@@ -1162,12 +1213,12 @@ void config_restore(ConfInfo *ci, const char *filename, void (*info_func)(unsign
             offs = 2 * sizeof(int);
             while (1)
             {
-                if (offs + sizeof(short) > rcnt)
+                if (offs + (int)sizeof(short) > rcnt)
                     break;
                 id = *((short*)(buf + offs));
                 offs += sizeof(short);
 
-                if (offs + sizeof(short) > rcnt)
+                if (offs + (int)sizeof(short) > rcnt)
                     break;
                 size = *((short*)(buf + offs));
                 offs += sizeof(short);
@@ -1217,12 +1268,12 @@ static int config_restore_1_2(const char *filename)
             offs = sizeof(int);
             while (1)
             {
-                if (offs + sizeof(short) > rcnt)
+                if (offs + (int)sizeof(short) > rcnt)
                     break;
                 id = conf_map_1_2[*((short*)(buf + offs))];
                 offs += sizeof(short);
 
-                if (offs + sizeof(short) > rcnt)
+                if (offs + (int)sizeof(short) > rcnt)
                     break;
                 size = *((short*)(buf + offs));
                 offs += sizeof(short);
@@ -1546,8 +1597,12 @@ int is_raw_exception() {
     //       variables should be named conf.disable_save_raw_in_XXX
     return (
         (is_video_recording() && conf.save_raw_in_video) ||                                 // True is movie mode and save_raw_in_video is disabled
-        (shooting_get_resolution()==5) ||                                                   // True if Canon RAW enabled, for cams that treat it as a resolution setting (g9, g10, s90, sx1? not g12, g1x)
+#ifdef CAM_HAS_CANON_RAW
+        ((shooting_get_canon_image_format() & SHOOTING_CANON_FMT_RAW) && conf.save_raw_in_canon_raw) ||                                                   // True if Canon RAW enabled, for cams that treat it as a resolution setting (g9, g10, s90, sx1? not g12, g1x)
+#endif
+#ifdef CAM_HAS_SPORTS_MODE
         ((m==MODE_SPORTS) && conf.save_raw_in_sports) ||                                    // True if sports mode and save_raw_in_sports is disabled
+#endif
         ((m==MODE_AUTO) && conf.save_raw_in_auto) ||                                        // True if auto mode and save_raw_in_auto is disabled
         (conf.edge_overlay_enable && conf.save_raw_in_edgeoverlay) ||                       // True if edge overlay on and save_raw_in_edgeoverlay is disabled
         ((shooting_get_drive_mode()==1) && conf.save_raw_in_burst && !(m==MODE_SPORTS)) ||  // True if drive mode is continuous and save_raw_in_burst is disabled and not sports mode
@@ -1561,31 +1616,10 @@ is raw possible (i.e. valid raw buffer exists in current mode)
 TODO this might be better as a platform lib.c function rather than a bunch of camera.h ifdefs
 */
 int is_raw_possible() {
-    int m = camera_info.state.mode_shooting;
-    return !(0   // Return false if any of these tests are true
-#ifdef CAM_DISABLE_RAW_IN_AUTO
-       || (m == MODE_AUTO)                   // some cameras don't have valid raw in auto mode
-#endif
-#ifdef CAM_DISABLE_RAW_IN_ISO_3200
-       || (m == MODE_ISO_3200)           // some cameras don't have valid raw in ISO3200 binned mode, not the same as low light
-#endif
+    return !(                                           // Return false if any of these tests are true
+       (camera_info.state.mode & MODE_DISABLE_RAW)      // Disable if bit set in modemap
 #ifdef CAM_DISABLE_RAW_IN_LOW_LIGHT_MODE
-       || (shooting_get_resolution()==7)     // True if shooting resolution is 'low light'
-#endif
-#if defined(CAM_DISABLE_RAW_IN_HQ_BURST)
-       || (m == MODE_HIGHSPEED_BURST)    // True if HQ Burst mode (SX40HS corrupts JPEG images if RAW enabled in this mode)
-#endif
-#if defined(CAM_DISABLE_RAW_IN_HANDHELD_NIGHT_SCN)
-       || (m == MODE_NIGHT_SCENE)            // True if HandHeld Night Scene (SX40HS corrupts JPEG images if RAW enabled in this mode)
-#endif
-#if defined(CAM_DISABLE_RAW_IN_DIGITAL_IS)
-       || (m == MODE_DIGITAL_IS)            // True if Digital IS mode (ixus160_elph160 crashes if RAW enabled in this mode)
-#endif
-#if defined(CAM_DISABLE_RAW_IN_HYBRID_AUTO)
-       || (m == MODE_HYBRID_AUTO)            // True if Hybrid Auto mode (SX280HS raw hook conflicts with the saving of digest movie)
-#endif
-#if defined(CAM_DISABLE_RAW_IN_SPORTS)
-       || (m == MODE_SPORTS)            // True if Sports mode (SX280HS, multiple issues with raw buffer; storing raw makes little sense in this mode anyway)
+       || (shooting_get_resolution()==7)                // True if shooting resolution is 'low light'
 #endif
     );
 }
@@ -1595,6 +1629,7 @@ int is_raw_enabled()
     return is_raw_possible() && !is_raw_exception();
 }
 
+//-------------------------------------------------------------------
 //-------------------------------------------------------------------
 
 void conf2_save()

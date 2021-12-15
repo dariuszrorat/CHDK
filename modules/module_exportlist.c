@@ -41,7 +41,6 @@
             &conf3
             &vars
             &zoom_points
-            &movie_status
             &recreview_hold
             &root_menu
             &user_submenu
@@ -50,6 +49,8 @@
             free
             umalloc
             ufree
+            exmem_alloc_uncached
+            exmem_free_uncached
             dcache_clean_all
             load_file
             process_file
@@ -76,7 +77,6 @@
             feof
             fflush
             fgets
-            ftell
             SetFileAttributes
 
             get_tick_count
@@ -87,6 +87,7 @@
             mktime
             strftime
             msleep
+            set_clock
 
             rand
             srand
@@ -134,13 +135,20 @@
             draw_string_scaled
             draw_line
             draw_char
-            draw_get_pixel
             draw_pixel
+            draw_or_erase_edge_pixel
             draw_ellipse
             draw_set_draw_proc
             draw_restore
             draw_button
             draw_rectangle
+            draw_hline
+            draw_vline
+
+            // special functions for yuv overlay (DIGIC 6)
+            erase_zebra
+            draw_dblpixel_raw
+            color_to_rawpx
 
             chdkColorToCanonColor
             user_color
@@ -166,6 +174,8 @@
             vid_get_bitmap_active_palette
             vid_get_viewport_height
             vid_get_viewport_width
+            vid_get_viewport_height_proper
+            vid_get_viewport_width_proper
             vid_get_viewport_byte_width
             vid_get_viewport_display_xoffset
             vid_get_viewport_display_yoffset
@@ -191,6 +201,7 @@
             get_jogdial_direction
             JogDial_CCW
             JogDial_CW
+            kbd_force_analog_av
 
             debug_led
             camera_set_led
@@ -210,6 +221,8 @@
             shooting_get_iso_market
             shooting_get_iso_mode
             shooting_get_iso_real
+            shooting_get_max_av96
+            shooting_get_min_av96
             shooting_get_prop
             shooting_get_real_focus_mode
             shooting_get_resolution
@@ -260,6 +273,17 @@
             shooting_get_shutter_speed_from_tv96
             shooting_can_focus
             is_video_recording
+            get_movie_status
+            set_movie_status
+            shooting_get_nd_value_ev96
+            shooting_get_nd_current_ev96
+            shooting_get_current_av96
+            shooting_get_current_tv96
+            shooting_get_current_delta_sv96
+            shooting_get_current_base_sv96
+            shooting_get_imager_active
+            shooting_get_canon_image_format
+            shooting_set_canon_image_format
 
             rbf_char_width
             rbf_font_height
@@ -276,6 +300,9 @@
             GetExMemInfo
             GetARamInfo
             GetCombinedMemInfo
+            get_exmem_type_name
+            get_exmem_type_status
+            exmem_type_count
 
             img_prefixes
             img_exts
@@ -328,7 +355,6 @@
             config_restore
             conf_getValue
             conf_save
-            conf2_save
             conf_setValue
             conf_setAutosave
             save_config_file
@@ -413,3 +439,11 @@
 
             set_focus_bypass
             sd_over_modes
+
+            &firmware_crc_desc
+            live_view_get_data
+
+            TakeSemaphore
+            GiveSemaphore
+            CreateBinarySemaphore
+            DeleteSemaphore

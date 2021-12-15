@@ -2,7 +2,7 @@
 //Update the CHDK/LANG/*.lng files to make changes.
 //Generated from ../../CHDK/LANG/english.lng
 
-static char* gui_lang_default = \
+static char* gui_lang_default = 
 /*  1*/ "Main Menu\0"
 /*  2*/ "RAW (digital negative)\0"
 /*  3*/ "OSD Settings\0"
@@ -74,10 +74,19 @@ static char* gui_lang_default = \
 /* 69*/ "Calendar\0"
 /* 70*/ "Text File Reader\0"
 /* 71*/ "Games\0"
-/* 72*/ "Flashlight\0"
+#ifdef CAM_SWIVEL_SCREEN
+/* 72*/ "Flashlight"
+#endif
+        "\0"
 /* 73*/ "Show Splash Screen on Load\0"
-/* 74*/ "Use Zoom Buttons for MF\0"
-/* 75*/ "<ALT> Mode Button\0"
+#ifdef CAM_USE_ZOOM_FOR_MF
+/* 74*/ "Use Zoom Buttons for MF"
+#endif
+        "\0"
+#ifdef CAM_ADJUSTABLE_ALT_BUTTON
+/* 75*/ "<ALT> Mode Button"
+#endif
+        "\0"
 /* 76*/ "Draw Palette\0"
 /* 77*/ "Show Build Info\0"
 /* 78*/ "Show Memory Info\0"
@@ -103,7 +112,7 @@ static char* gui_lang_default = \
 /* 98*/ "Wrap by Words\0"
 /* 99*/ "Enable Autoscroll\0"
 /*100*/ "Autoscroll Delay (sec)\0"
-/*101*/ "\0"
+/*101*/ "Rotate OSD\0"
 /*102*/ "Reversi\0"
 /*103*/ "Sokoban\0"
 /*104*/ "*** Reset Options ***\0"
@@ -161,10 +170,10 @@ static char* gui_lang_default = \
 /*156*/ "*** Wrong move ***\0"
 /*157*/ "You can't place here!\0"
 /*158*/ "This cell is not empty!\0"
-/*159*/ "Move: You     \0"
-/*160*/ "Move: Computer\0"
-/*161*/ "  GAME  OVER  \0"
-/*162*/ " White  Black \0"
+/*159*/ "\0"
+/*160*/ "\0"
+/*161*/ "\0"
+/*162*/ "\0"
 /*163*/ "*** About ***\0"
 /*164*/ "  Level\0"
 /*165*/ "  Moves\0"
@@ -238,21 +247,30 @@ static char* gui_lang_default = \
 /*233*/ "Video Parameters\0"
 /*234*/ "Video Parameters\0"
 /*235*/ "Video Mode\0"
-/*236*/ "Video Bitrate\0"
+#ifndef CAM_VIDEO_QUALITY_ONLY
+/*236*/ "Video Bitrate"
+#endif
+        "\0"
 /*237*/ "Video Quality\0"
 /*238*/ "Enhanced Photo Operations\0"
 /*239*/ "Enhanced Photo Operations\0"
 /*240*/ "  Ev Step Value\0"
-/*241*/ "  Long Exp. Value\0"
+#ifdef CAM_EXT_TV_RANGE
+/*241*/ "  Long Exp. Value"
+#endif
+        "\0"
 /*242*/ "Override Av\0"
 /*243*/ "Override ISO\0"
-/*244*/ "Short Exp. Value\0"
+/*244*/ "  Short Exp. Value\0"
 /*245*/ "Override Subj. Dist.\0"
-/*246*/ "Change by +/-\0"
+/*246*/ "  Change by +/-\0"
 /*247*/ "Bracketing in Continuous Mode\0"
 /*248*/ "Bracketing in Continuous Mode\0"
 /*249*/ "TV Bracketing\0"
-/*250*/ "AV Bracketing\0"
+#ifdef CAM_HAS_IRIS_DIAPHRAGM
+/*250*/ "AV Bracketing"
+#endif
+        "\0"
 /*251*/ "ISO Bracketing\0"
 /*252*/ "\0"
 /*253*/ "Subj. Dist. Bracket (mm)\0"
@@ -264,8 +282,14 @@ static char* gui_lang_default = \
 /*259*/ "Enable Lua Native Calls?\0"
 /*260*/ "*** TERMINATED ***\0"
 /*261*/ "*** Autostart ***\0"
-/*262*/ "Enable Unsafe IO?\0"
-/*263*/ "Enabling 'unsafe IO' will allow\nCHDK to perform some IO while also\nrecording video. This may cause\ncrashes, or lockups of your camera.\n\nDo you want to enable 'unsafe IO'?\0"
+#ifdef CAM_IS_VID_REC_WORKS
+/*262*/ "Enable Unsafe IO?"
+#endif
+        "\0"
+#ifdef CAM_IS_VID_REC_WORKS
+/*263*/ "Enabling 'unsafe IO' will allow\nCHDK to perform some IO while also\nrecording video. This may cause\ncrashes, or lockups of your camera.\n\nDo you want to enable 'unsafe IO'?"
+#endif
+        "\0"
 /*264*/ "Disable Overrides on Startup\0"
 /*265*/ "Show Canon Overexp. Value\0"
 /*266*/ "RAW develop\0"
@@ -275,18 +299,36 @@ static char* gui_lang_default = \
 /*270*/ "RAW average\0"
 /*271*/ "Not enough memory card space:\n%dM required, %dM available.\0"
 /*272*/ "Show OSD in Review Mode\0"
-/*273*/ "Task List start\0"
-/*274*/ "\0"
+#ifndef CAM_DRYOS
+/*273*/ "Task List start"
+#endif
+        "\0"
+/*274*/ "Show Hidden Files\0"
 /*275*/ "Disable Bracketing on Startup\0"
-/*276*/ "Create card with two partitions\0"
-/*277*/ "Swap partitions\0"
-/*278*/ "This DESTROYS ALL INFORMATION\non card. Continue?\0"
-/*279*/ "This card has only one partition.\0"
+#ifdef CAM_MULTIPART
+/*276*/ "Create card with two partitions"
+#endif
+        "\0"
+#ifdef CAM_MULTIPART
+/*277*/ "Swap partitions"
+#endif
+        "\0"
+#ifdef CAM_MULTIPART
+/*278*/ "This DESTROYS ALL INFORMATION\non card. Continue?"
+#endif
+        "\0"
+#ifdef ___NOT_USED___
+/*279*/ "This card has only one partition."
+#endif
+        "\0"
 /*280*/ "Error\0"
 /*281*/ "Warning\0"
 /*282*/ "Information\0"
 /*283*/ "RGB zebra (overexp. only)\0"
-/*284*/ "ND filter state\0"
+#ifdef CAM_HAS_ND_FILTER
+/*284*/ "ND filter state"
+#endif
+        "\0"
 /*285*/ "Show Histo Ev Grid\0"
 /*286*/ "OSD Warning\0"
 /*287*/ "OSD Warning Background\0"
@@ -304,7 +346,7 @@ static char* gui_lang_default = \
 /*299*/ "User Menu Enable\0"
 /*300*/ "User Menu\0"
 /*301*/ "User Menu Edit\0"
-/*302*/ "Adapter Lens Scale, 100=1x\0"
+/*302*/ " Adapter Lens Scale, 100=1x\0"
 /*303*/ "Show Space Bar\0"
 /*304*/ "  Size on screen\0"
 /*305*/ "  Width/Height\0"
@@ -312,7 +354,10 @@ static char* gui_lang_default = \
 /*307*/ "  MB Threshold\0"
 /*308*/ "Warning Unit\0"
 /*309*/ "  Warning threshold\0"
-/*310*/ "Enable Optical Zoom\0"
+#ifdef CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO
+/*310*/ "Enable Optical Zoom"
+#endif
+        "\0"
 /*311*/ "Clock\0"
 /*312*/ "Clock Settings\0"
 /*313*/ "Clock format\0"
@@ -328,8 +373,14 @@ static char* gui_lang_default = \
 /*323*/ "Enable Custom Auto ISO\0"
 /*324*/ "Minimum Shutter speed\0"
 /*325*/ "User Factor (1/FL/factor)\0"
-/*326*/ "IS Factor (Tv*factor)\0"
-/*327*/ "Max ISO HI\0"
+#ifdef CAM_HAS_IS
+/*326*/ "IS Factor (Tv*factor)"
+#endif
+        "\0"
+#ifdef CAM_HAS_HI_ISO_AUTO_MODE
+/*327*/ "Max ISO HI"
+#endif
+        "\0"
 /*328*/ "Max ISO AUTO\0"
 /*329*/ "Min ISO\0"
 /*330*/ "Menu Title Text Color\0"
@@ -337,7 +388,10 @@ static char* gui_lang_default = \
 /*332*/ "Cursor Text Color\0"
 /*333*/ "Cursor Background Color\0"
 /*334*/ "Center Menu\0"
-/*335*/ "Mute during zooming\0"
+#ifdef CAM_CAN_MUTE_MICROPHONE
+/*335*/ "Mute during zooming"
+#endif
+        "\0"
 /*336*/ "Manual bad pixel removal\0"
 /*337*/ "Off\0"
 /*338*/ "Averag.\0"
@@ -347,7 +401,10 @@ static char* gui_lang_default = \
 /*342*/ "Disable Overrides\0"
 /*343*/ "  Include AutoIso & Bracketing?\0"
 /*344*/ "  Hide in ?\0"
-/*345*/ "Disable @ Video Rec?\0"
+#ifdef CAM_HAS_VIDEO_BUTTON
+/*345*/ "Disable @ Video Rec?"
+#endif
+        "\0"
 /*346*/ "Show remaining videotime?\0"
 /*347*/ "  Refreshrate (~sec)\0"
 /*348*/ "Remaining video time\0"
@@ -382,14 +439,26 @@ static char* gui_lang_default = \
 /*377*/ "Enable Synchable Remote\0"
 /*378*/ "Enable Synch\0"
 /*379*/ "Enable Synch Delay\0"
-/*380*/ "Synch Delay 0.1ms\0"
+#ifndef CAM_REMOTE_USES_PRECISION_SYNC
+/*380*/ "Synch Delay 0.1ms"
+#endif
+        "\0"
 /*381*/ "\0"
-/*382*/ "AF key\0"
+#ifdef CAM_AF_SCAN_DURING_VIDEO_RECORD
+/*382*/ "AF key"
+#endif
+        "\0"
 /*383*/ "Load default param values\0"
 /*384*/ "Saved Parameters Set\0"
-/*385*/ "Disable Raw @ Sports\0"
+#ifdef CAM_HAS_SPORTS_MODE
+/*385*/ "Disable Raw @ Sports"
+#endif
+        "\0"
 /*386*/ "Disable Raw @ Burst\0"
-/*387*/ "Disable Raw @ EV Bracketing\0"
+#ifdef CAM_BRACKETING
+/*387*/ "Disable Raw @ EV Bracketing"
+#endif
+        "\0"
 /*388*/ "Disable Raw @ Timer\0"
 /*389*/ "Exceptions\0"
 /*390*/ "RAW Exceptions Menu\0"
@@ -397,7 +466,10 @@ static char* gui_lang_default = \
 /*392*/ "Auto select 1st entry @ menu\0"
 /*393*/ "Time-out (0.1s)\0"
 /*394*/ "synchable remote\0"
-/*395*/ "Fast Video Control?\0"
+#ifdef CAM_VIDEO_CONTROL
+/*395*/ "Fast Video Control?"
+#endif
+        "\0"
 /*396*/ "Temperature\0"
 /*397*/ "Show temperature?\0"
 /*398*/ "Video Quality Control?\0"
@@ -425,7 +497,10 @@ static char* gui_lang_default = \
 /*420*/ "\0"
 /*421*/ "Load+Set Zoom\0"
 /*422*/ "Panorama Mode\0"
-/*423*/ "Rear curtain flash sync\0"
+#ifdef CAM_REAR_CURTAIN
+/*423*/ "Rear curtain flash sync"
+#endif
+        "\0"
 /*424*/ "DNG format\0"
 /*425*/ "RAW buffer cached\0"
 /*426*/ "Cannot load CHDK/badpixel.bin\nUse 'Create badpixel.bin' first\0"
@@ -439,10 +514,16 @@ static char* gui_lang_default = \
 /*434*/ "The game ended a draw\0"
 /*435*/ "Disable Raw @ EdgerOverlay\0"
 /*436*/ "Disable Raw @ Auto Mode\0"
-/*437*/ "   ONLY in video\0"
+#ifdef CAM_HAS_VIDEO_BUTTON
+/*437*/ "   ONLY in video"
+#endif
+        "\0"
 /*438*/ "Auto Flash + Exp. Comp.\0"
 /*439*/ "'DNG' file extension\0"
-/*440*/ "DNG visible via USB\0"
+#ifdef DNG_EXT_FROM
+/*440*/ "DNG visible via USB"
+#endif
+        "\0"
 /*441*/ "Mastermind\0"
 /*442*/ "available colors\0"
 /*443*/ "on the right place\0"
@@ -456,7 +537,10 @@ static char* gui_lang_default = \
 /*451*/ "Reset menu fonts\0"
 /*452*/ "restart camera...\0"
 /*453*/ "Manual Flash + Power\0"
-/*454*/ "Override JPEG Quality\0"
+#ifdef CAM_QUALITY_OVERRIDE
+/*454*/ "Override JPEG Quality"
+#endif
+        "\0"
 /*455*/ "Restart Lua on error\0"
 /*456*/ "Filter edges\0"
 /*457*/ "Always show\0"
@@ -464,9 +548,18 @@ static char* gui_lang_default = \
 /*459*/ "Create badpixel.bin\0"
 /*460*/ "You need to be in REC-mode\nfor this operation.\0"
 /*461*/ "%s disabled in build\0"
-/*462*/ "Touchscreen overrides\0"
-/*463*/ "Video AE Controls\0"
-/*464*/ "<Alt> Shortcut Buttons\0"
+#ifdef CAM_TOUCHSCREEN_UI
+/*462*/ "Touchscreen overrides"
+#endif
+        "\0"
+#ifdef CAM_TOUCHSCREEN_UI
+/*463*/ "Video AE Controls"
+#endif
+        "\0"
+#ifdef CAM_TOUCHSCREEN_UI
+/*464*/ "<Alt> Shortcut Buttons"
+#endif
+        "\0"
 /*465*/ "USB info\0"
 /*466*/ "Show USB info\0"
 /*467*/ "Save ROM crash log\0"
@@ -486,75 +579,267 @@ static char* gui_lang_default = \
 /*481*/ "Remove dir\0"
 /*482*/ "Current custom curve\0"
 /*483*/ "Tetris\0"
-/*484*/ "Show partition number\0"
-/*485*/ "Video without time limit\0"
-/*486*/ "Sensor may overheat during long recordings!\0"
-/*487*/ "GPS Settings\0"
-/*488*/ "Navigation to current photo\0"
-/*489*/ "Show Compass\0"
-/*490*/ "Show geo-coordinates\0"
-/*491*/ "Show altitude\0"
-/*492*/ "Save waypoint to each JPG\0"
-/*493*/ "GPX-Track - Time Interval\0"
-/*494*/ "Start GPX-TRACK Recording\0"
-/*495*/ "Stop GPX-TRACK Recording\0"
-/*496*/ "Stop showing compass\0"
-/*497*/ "Disable navigating to photo\0"
-/*498*/ "Waiting Time for GPS-Signal\0"
-/*499*/ "Compass    - Sample interval\0"
-/*500*/ "Navigation - Sample interval\0"
-/*501*/ "Time to change to play-mode\0"
-/*502*/ "Time to deactivate backlight\0"
-/*503*/ "Common     - Settings\0"
-/*504*/ "GPS wait sampling interval\0"
-/*505*/ "Attenuation of compass\0"
-/*506*/ "Logging    - Settings\0"
-/*507*/ "Tagging    - Settings\0"
-/*508*/ "Navigation - Settings\0"
-/*509*/ "Shutdown at battery % level\0"
-/*510*/ "Delayed Tagging - Short string\0"
-/*511*/ "0 - 2D-3D Fix\0"
-/*512*/ "Blinking LED during Delayed Tagging\0"
-/*513*/ "Change to play-mode\0"
-/*514*/ "Shutdown backlight\0"
-/*515*/ "Change to play-mode\0"
-/*516*/ "Shutdown backlight\0"
-/*517*/ "Time to change to play-mode\0"
-/*518*/ "Time to deactivate backlight\0"
-/*519*/ "Show GPS Status\0"
-/*520*/ "Alert on low battery\0"
-/*521*/ "Set position as home location\0"
-/*522*/ "Navigate to home\0"
-/*523*/ "Set position as current timezone\0"
-/*524*/ "Show track record symbol\0"
-/*525*/ "Disable navigating to home\0"
-/*526*/ "Check change of Timezone\0"
-/*527*/ "Audio Warnings            \0"
-/*528*/ "Enable CHDK GPS functions\0"
-/*529*/ "No GPS!\0"
-/*530*/ "Timezone has changed!\0"
-/*531*/ "Battery below setting!\0"
-/*532*/ "Camera will shutdown in %02d seconds!\0"
-/*533*/ "Automatic shutdown cancelled!\0"
-/*534*/ "Camera will wait for GPS for %01d:%02d\0"
-/*535*/ "Navigation to Home Loc\n is not possible!\0"
-/*536*/ "Can't navigate to photo: %s!\0"
-/*537*/ "Distance:    = %i m\0"
-/*538*/ "Duration:    = %i:%i:%i\0"
-/*539*/ "Pace:        = %s km/h\0"
-/*540*/ "Direction:   = %i°\0"
-/*541*/ "Destination: = %i°\0"
-/*542*/ "Navigation to photo %s started\0"
-/*543*/ "lat=%s - long=%s \0"
-/*544*/ "heading = %i°\0"
-/*545*/ "Navigation to home started\0"
+#ifdef CAM_MULTIPART
+/*484*/ "Show partition number"
+#endif
+        "\0"
+#ifdef CAM_CHDK_HAS_EXT_VIDEO_TIME
+/*485*/ "Video without time limit"
+#endif
+        "\0"
+#ifdef CAM_CHDK_HAS_EXT_VIDEO_TIME
+/*486*/ "Sensor may overheat during long recordings!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*487*/ "GPS Settings"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*488*/ "Navigation to current photo"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*489*/ "Show Compass"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*490*/ "Show geo-coordinates"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*491*/ "Show altitude"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*492*/ "Save waypoint to each JPG"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*493*/ "GPX-Track - Time Interval"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*494*/ "Start GPX-TRACK Recording"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*495*/ "Stop GPX-TRACK Recording"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*496*/ "Stop showing compass"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*497*/ "Disable navigating to photo"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*498*/ "Waiting Time for GPS-Signal"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*499*/ "Compass    - Sample interval"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*500*/ "Navigation - Sample interval"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*501*/ "Time to change to play-mode"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*502*/ "Time to deactivate backlight"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*503*/ "Common     - Settings"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*504*/ "GPS wait sampling interval"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*505*/ "Attenuation of compass"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*506*/ "Logging    - Settings"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*507*/ "Tagging    - Settings"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*508*/ "Navigation - Settings"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*509*/ "Shutdown at battery % level"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*510*/ "Delayed Tagging - Short string"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*511*/ "0 - 2D-3D Fix"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*512*/ "Blinking LED during Delayed Tagging"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*513*/ "Change to play-mode"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*514*/ "Shutdown backlight"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*515*/ "Change to play-mode"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*516*/ "Shutdown backlight"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*517*/ "Time to change to play-mode"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*518*/ "Time to deactivate backlight"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*519*/ "Show GPS Status"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*520*/ "Alert on low battery"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*521*/ "Set position as home location"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*522*/ "Navigate to home"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*523*/ "Set position as current timezone"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*524*/ "Show track record symbol"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*525*/ "Disable navigating to home"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*526*/ "Check change of Timezone"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*527*/ "Audio Warnings            "
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*528*/ "Enable CHDK GPS functions"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*529*/ "No GPS!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*530*/ "Timezone has changed!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*531*/ "Battery below setting!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*532*/ "Camera will shutdown in %02d seconds!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*533*/ "Automatic shutdown cancelled!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*534*/ "Camera will wait for GPS for %01d:%02d"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*535*/ "Navigation to Home Loc\n is not possible!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*536*/ "Can't navigate to photo: %s!"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*537*/ "Distance:    = %i m"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*538*/ "Duration:    = %i:%i:%i"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*539*/ "Pace:        = %s km/h"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*540*/ "Direction:   = %i°"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*541*/ "Destination: = %i°"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*542*/ "Navigation to photo %s started"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*543*/ "lat=%s - long=%s "
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*544*/ "heading = %i°"
+#endif
+        "\0"
+#ifdef CAM_HAS_GPS
+/*545*/ "Navigation to home started"
+#endif
+        "\0"
 /*546*/ "Fallback Min. Shutter Speed\0"
 /*547*/ "Fallback Max ISO\0"
 /*548*/ "OverExposure Compensation\0"
 /*549*/ "OverExposed Pixel Percentage\0"
-/*550*/ "To cancel [Press half]\0"
+#ifdef CAM_HAS_GPS
+/*550*/ "To cancel [Press half]"
+#endif
+        "\0"
 /*551*/ "Enable script start\0"
-/*552*/ "Disable Zoom Assist button\0"
+#ifdef CAM_ZOOM_ASSIST_BUTTON_CONTROL
+/*552*/ "Disable Zoom Assist button"
+#endif
+        "\0"
 /*553*/ "DNG version\0"
 /*554*/ "Menu Settings\0"
 /*555*/ "Show <ALT> Help Screen\0"
@@ -577,7 +862,10 @@ static char* gui_lang_default = \
 /*572*/ "Add script to User Menu\0"
 /*573*/ "Infinity Focus\0"
 /*574*/ "Chg Focus Factor\0"
-/*575*/ "ON/OFF button in <ALT> mode\0"
+#ifdef CAM_OPTIONAL_EXTRA_BUTTON
+/*575*/ "ON/OFF button in <ALT> mode"
+#endif
+        "\0"
 /*576*/ "Modules\0"
 /*577*/ "Module Inspector\0"
 /*578*/ "Enable Logging\0"
@@ -625,33 +913,101 @@ static char* gui_lang_default = \
 /*620*/ "Force eyefi wlan off\0"
 /*621*/ "Cannot find network\0"
 /*622*/ "No network found\0"
-/*623*/ "Input channel\0"
+#ifdef CAM_REMOTE_MULTICHANNEL
+/*623*/ "Input channel"
+#endif
+        "\0"
 /*624*/ "ERROR: MISSING MODULES\0"
 /*625*/ "DNG Crop Size\0"
-/*626*/ "Hotshoe override\0"
-/*627*/ "In use\0"
-/*628*/ "Empty\0"
-/*629*/ "Off\0"
+#ifdef CAM_HOTSHOE_OVERRIDE
+/*626*/ "Hotshoe override"
+#endif
+        "\0"
+#ifdef CAM_HOTSHOE_OVERRIDE
+/*627*/ "In use"
+#endif
+        "\0"
+#ifdef CAM_HOTSHOE_OVERRIDE
+/*628*/ "Empty"
+#endif
+        "\0"
+#ifdef CAM_HOTSHOE_OVERRIDE
+/*629*/ "Off"
+#endif
+        "\0"
 /*630*/ "CHDK Color Test\0"
 /*631*/ "Reset All Colors\0"
 /*632*/ "Are you SURE to reset\nall colors to default?\0"
-/*633*/ "Disable long filename support\0"
+#ifdef CAM_DRYOS
+/*633*/ "Disable long filename support"
+#endif
+        "\0"
 /*634*/ "START\0"
 /*635*/ "Log\0"
 /*636*/ "SD Test\0"
 /*637*/ "Text output   :\0"
-/*638*/ "Load Zones From File...\0"
-/*639*/ "Select Zone File\0"
-/*640*/ "Current Zone System\0"
-/*641*/ "Show Zone Legend\0"
-/*642*/ "Waveform parade mode\0"
-/*643*/ "Color Temperature & Tint\0"
-/*644*/ "Show percent overexposed\0"
-/*645*/ "Show auto EV compensation\0"
-/*646*/ "Zebra RGB as\0"
+/*638*/ "Enable RAW Toggle Shortcut Key\0"
+/*639*/ "CPU Info\0"
+/*640*/ "Wrote %s\0"
+/*641*/ "Sudoku\0"
+/*642*/ " Check sudoku \0"
+/*643*/ " Solve sudoku \0"
+/*644*/ " New sudoku \0"
+/*645*/ " Enter sudoku \0"
+/*646*/ " Info \0"
+/*647*/ " Exit \0"
+/*648*/ " Save and Exit \0"
+/*649*/ " Del save game \0"
+/*650*/ "Congratulations!\0"
+/*651*/ "You did it!\0"
+/*652*/ "Everything's correct!\0"
+/*653*/ "Tada!\0"
+/*654*/ "0 mistakes!\0"
+/*655*/ "Info\0"
+/*656*/ "A number occurs twice\0"
+/*657*/ "Solved\0"
+/*658*/ "Not complete\0"
+/*659*/ "Not solvable\0"
+/*660*/ "Couldn't find a mistake\0"
+/*661*/ "There's something wrong here...\0"
+/*662*/ "Snake\0"
+/*663*/ "Points: %d\0"
+/*664*/ "uBASIC Scripting\0"
+/*665*/ "Lua Scripting\0"
+/*666*/ "Motion Detection\0"
+/*667*/ "Popup Menu\0"
+#ifdef CAM_MOVIEREC_NEWSTYLE
+/*668*/ "VBR Minimum Bitrate"
+#endif
+        "\0"
+#ifdef CAM_HAS_CANON_RAW
+/*669*/ "Disable Raw @ Canon RAW"
+#endif
+        "\0"
+#ifdef CAM_CLEAN_OVERLAY
+/*670*/ "Clear Canon Overlays"
+#endif
+        "\0"
+#ifdef CAM_UNLOCK_ANALOG_AV_IN_REC
+/*671*/ "Enable video out in rec"
+#endif
+        "\0"
+/*672*/ "Possible Canon ROM corruption!\nPlease report on CHDK forum.\0"
+/*673*/ "Failed chunks:\0"
+/*674*/ "Click OK to dump ROM\0"
+/*675*/ "Checksum ROM at boot\0"
+/*676*/ "Load Zones From File...\0"
+/*677*/ "Select Zone File\0"
+/*678*/ "Current Zone System\0"
+/*679*/ "Show Zone Legend\0"
+/*680*/ "Waveform parade mode\0"
+/*681*/ "Color Temperature & Tint\0"
+/*682*/ "Show percent overexposed\0"
+/*683*/ "Show auto EV compensation\0"
+/*684*/ "Zebra RGB as\0"
 ;
 
 //Sanity check of GUI_LANG_ITEMS
-#if (GUI_LANG_ITEMS != 646)
-#error GUI_LANG_ITEMS value have to be 646. Please fix at gui_lang.h
+#if (GUI_LANG_ITEMS != 684)
+#error GUI_LANG_ITEMS value have to be 684. Please fix at gui_lang.h
 #endif

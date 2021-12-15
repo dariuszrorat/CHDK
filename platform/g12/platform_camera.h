@@ -129,13 +129,12 @@
 
     #define CAM_AV_OVERRIDE_IRIS_FIX            1   // for cameras that require _MoveIrisWithAv function to override Av.
 
-    #define CAM_DISABLE_RAW_IN_LOW_LIGHT_MODE   1   // For cameras with 'low light' mode that does now work with raw define this
+    #define CAM_DISABLE_RAW_IN_LOW_LIGHT_MODE   1   // For cameras with 'low light' mode that does not work with raw define this
 
     #define CAM_LOAD_CUSTOM_COLORS              1   // Enable loading CHDK colors into the camera palette memory/hardware
 
 //    #define REMOTE_SYNC_STATUS_LED     0xC0xxyyyy        // specifies an LED that turns on while camera waits for USB remote to sync
 
-    #define CAM_USE_ALT_SET_ZOOM_POINT          1   // Define to use the alternate code in lens_set_zoom_point()
     #define CAM_USE_OPTICAL_MAX_ZOOM_STATUS     1   // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom in gui_std_kbd_process()
 
     #undef  CAMERA_MIN_DIST
@@ -155,5 +154,10 @@
     #define CAM_SD_OVER_IN_MF                   1
 
     #define CAM_IS_VID_REC_WORKS                1   // is_video_recording() function works
+    
+    #define CAM_REMOTE_USES_PRECISION_SYNC   	1    		// USB remote precision sync patch works with this camera
+    #define GPIO_VSYNC_CURRENT               	0xC0F070C8  // vsync current status register used by USB remote precision sync
+
+    #define CAM_HAS_CANON_RAW                   1   // has native Canon raw
 
 //--------------------------------------------------

@@ -10,12 +10,12 @@ void my_touchw_task(void);
 
 void taskCreateHook(int *p) {
     p-=16;
-    if (p[0]==0xff85c038)  p[0]=(int)capt_seq_task;
-    if (p[0]==0xff8af7b0)  p[0]=(int)exp_drv_task;
-    if (p[0]==0xff8584ec)  p[0]=(int)movie_record_task;
-    if (p[0]==0xffa082a4)  p[0]=(int)filewritetask;
-    if (p[0]==0xff871070)  p[0]=(int)init_file_modules_task;
-    if (p[0]==0xff8e85f8)  p[0]=(int)my_touchw_task;
+    if (p[0]==(int)0xff85c038)  p[0]=(int)capt_seq_task;
+    if (p[0]==(int)0xff8af7b0)  p[0]=(int)exp_drv_task;
+    if (p[0]==(int)0xff8584ec)  p[0]=(int)movie_record_task;
+    if (p[0]==(int)0xffa082a4)  p[0]=(int)filewritetask;
+    if (p[0]==(int)0xff871070)  p[0]=(int)init_file_modules_task;
+    if (p[0]==(int)0xff8e85f8)  p[0]=(int)my_touchw_task;
 }
 
 void boot()
@@ -57,6 +57,7 @@ FUNC start=0xFF8101A4 length=27
 >>>
     //http://chdk.setepontos.com/index.php/topic,4194.0.html
     *(int*)0x1930=(int)taskCreateHook;
+    *(int*)0x1934=(int)taskCreateHook;
 
     // replacement of sub_FF844050 for correct power-on.
     //(short press = playback mode, long press = record mode)

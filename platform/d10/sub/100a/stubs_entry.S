@@ -8,14 +8,19 @@
 //   Canon PowerShot D10
 
 // Values for makefile.inc
+//   DIGIC = 40# DIGIC 4
 //   PLATFORMOSVER = 31
-//   PLATFORMID = 12732 (0x31bc) // Found @ 0xfffe0130
+//   PLATFORMID = 12732# (0x31bc) Found @ 0xfffe0130
 //   MAXRAMADDR = 0x03ffffff
 //   MEMISOSTART = 0x00146a2c
-//   KEYSYS = d4                 // Found @ 0xffff3564
-//   NEED_ENCODED_DISKBOOT = 2   // Found @ 0xffff3574
-//   ARAM_HEAP_START = 0x34e000  // Found @ 0xff93c6d8
-//   ARAM_HEAP_SIZE  = 0x32000   // Found @ 0xff93c698
+//   KEYSYS = d4# Found @ 0xffff3564
+//   NEED_ENCODED_DISKBOOT = 2# Found @ 0xffff3574
+//   ARAM_HEAP_START = 0x34e000# Found @ 0xff93c6d8
+//   ARAM_HEAP_SIZE  = 0x32000# Found @ 0xff93c698
+
+// Detected address ranges:
+// ROM      0xff810000 - 0xffffffff (8323072 bytes)
+// RAM data 0x00001900 - 0x0000cda0 copied from 0xffb4efa4 (  46240 bytes)
 
 // Stubs below should be checked. Stub not matched 100%, or difference found to current 'stubs_entry_2.S'
 //    Name                                     Address      Rule  %  Comp to stubs_entry_2.S
@@ -56,7 +61,12 @@ DEF(palette_buffer_ptr                      ,0x00008494) // Found @0xff9b4838
 // Offset from start of palette_buffer to color data = 12 (Found @0xff9b3914)
 // Camera appears to have only 1 RAW buffer @ 0x41643dec (Found @0xffa9e638)
 DEF(fileio_semaphore                        ,0x00002850) // Found @0xff854418
+DEF(exmem_alloc_table                       ,0x000147cc) // Found @0xff86c214
+DEF(exmem_types_table                       ,0xffb50320) // Found @0x00002c7c
+DEF_CONST(exmem_type_count                  ,0x00000012)
+DEF(imager_active                           ,0x00001eb0) // Found @0xff834970 (0x1eac + 4)
 DEF_CONST(uiprop_count                      ,0x0000006b) // Found @0xff959ab8
+DEF(cameracon_state                         ,0x0000300c) // Found @0xff879248
 
 // Values below go in 'lib.c':
 //void *vid_get_bitmap_fb()        { return (void*)0x403f1000; }             // Found @0xff842dc8
@@ -74,6 +84,8 @@ DEF(jpeg_count_str                          ,0x000525e4) // Found @0xff9abbc0
 //#define USB_IDX             2
 //#define BATTCOVER_FLAG      0x00008000 // Found @0xffad6334, levent 0x905
 //#define BATTCOVER_IDX       2
+//#define ANALOG_AV_FLAG      0x00002000 // Found @0xffad6268, levent 0x900 (non-inverted logic)
+//#define ANALOG_AV_IDX       1
 
 // Keymap values for kbd.c. Additional keys may be present, only common values included here.
 //static KeyMap keymap[] = {
@@ -102,8 +114,49 @@ DEF(jpeg_count_str                          ,0x000525e4) // Found @0xff9abbc0
 //#define CAM_UNCACHED_BIT  0x40000000 // Found @0xff827744
 //#define PARAM_CAMERA_NAME 4 // Found @0xffb3539c
 
+// Below goes in 'filewrite.c' or 'platform_camera.h':
+//#define MAX_CHUNKS_FOR_FWT 3 // Found @0xffa26018
+
+// Known propcases
+// //      PROPCASE_AFSTEP 13
+// #define PROPCASE_FOCUS_STATE 18
+// #define PROPCASE_AV 23
+// #define PROPCASE_BV 34
+// //      PROPCASE_DELTA_DIGITALGAIN 77
+// #define PROPCASE_DELTA_SV 79
+// //      PROPCASE_DELTA_ND 80
+// #define PROPCASE_EV_CORRECTION_2 207
+// #define PROPCASE_ORIENTATION_SENSOR 219
+// #define PROPCASE_SV_MARKET 246
+// //      PROPCASE_SVFIX 247
+// #define PROPCASE_TV 262
+// Guessed propset: 2
+
 // Misc stuff
 DEF(ctypes, 0xffad03aa)
+
+// EXMEM types:
+// EXMEM_RAMDISK        0
+// EXMEM_COM            1
+// EXMEM_FORMATTER      2
+// EXMEM_SHADING        3
+// EXMEM_FAMODE         4
+// EXMEM_FIRMUP         5
+// EXMEM_FIRMUP_VRAM    6
+// EXMEM_FIRMUP_INFLATE 7
+// EXMEM_DVLPWORK       8
+// EXMEM_EVF            9
+// EXMEM_SCRIPT         10
+// EXMEM_FILESTORE      11
+// EXMEM_MOVIE_REC      12
+// EXMEM_MOVIE_PLY      13
+// EXMEM_WIDE           14
+// EXMEM_NARROW         15
+// EXMEM_CRAW_REC       16
+// EXMEM_PCEVF          17
+
+// ISR flag: 0x1960, pointer to current task's control block: 0x195c
+// pointer to TCB area: 0x19ec, found @ 0xff81574c
 
 // LED table init @ 0xff8df43c
 // LED #1: 0xc0220134, offset 0x4
@@ -122,6 +175,7 @@ NHSTUB(CreateTask                             ,0xff81afac) //120
 NHSTUB(DebugAssert                            ,0xff81b284) //107
 NHSTUB(DeleteDirectory_Fut                    ,0xff823640) //116
 NHSTUB(DeleteFile_Fut                         ,0xff82355c) //112
+NHSTUB(DeleteSemaphore                        ,0xff826fa0) //120
 NHSTUB(DoAELock                               ,0xff825770) //120
 NHSTUB(ExecuteEventProcedure                  ,0xff86df60) //104
 NHSTUB(ExitTask                               ,0xff81b23c) //120
@@ -139,6 +193,7 @@ NHSTUB(Fwrite_Fut                             ,0xff8237d8) //120
 NHSTUB(GetBatteryTemperature                  ,0xff849844) //102
 NHSTUB(GetCCDTemperature                      ,0xff8497d0) //102
 NHSTUB(GetCurrentAvValue                      ,0xff928378) //120
+NHSTUB(GetCurrentShutterSpeed                 ,0xff88cc4c) //120
 NHSTUB(GetDrive_ClusterSize                   ,0xff855d3c) //  5
 NHSTUB(GetDrive_FreeClusters                  ,0xff855d94) //  5
 NHSTUB(GetDrive_TotalClusters                 ,0xff855d68) //  5
@@ -163,6 +218,7 @@ NHSTUB(MakeDirectory_Fut                      ,0xff8235d0) //116
 NHSTUB(MoveFocusLensToDistance                ,0xffa98b5c) //102
 NHSTUB(MoveIrisWithAv                         ,0xffa46724) //120
 NHSTUB(MoveZoomLensWithPoint                  ,0xffa46cac) //120
+NHSTUB(MoveOpticalZoomAt                      ,0xff824f30) //109
 NHSTUB(Open                                   ,0xff823c88) //120
 NHSTUB(PB2Rec                                 ,0xff87ad90) //104
 NHSTUB(PT_MoveDigitalZoomToWide               ,0xff85e8dc) //120
@@ -181,6 +237,7 @@ NHSTUB(Restart                                ,0xff828e54) //122
 NHSTUB(SetAE_ShutterSpeed                     ,0xffa9b33c) //102
 NHSTUB(SetAutoShutdownTime                    ,0xff877dd4) //120
 NHSTUB(SetCurrentCaptureModeType              ,0xff87edec) //120
+NHSTUB(SetDate                                ,0xffa9cd78) //120
 NHSTUB(SetFileAttributes                      ,0xff823fdc) //  1
 NHSTUB(SetFileTimeStamp                       ,0xff823f8c) //  1
 NHSTUB(SetLogicalEventActive                  ,0xff877adc) //120
@@ -210,7 +267,13 @@ NHSTUB(apex2us                                ,0xff9ba774) //121
 NHSTUB(close                                  ,0xff8198fc) //109
 NHSTUB(err_init_task                          ,0xff814e2c) //111
 NHSTUB(exmem_alloc                            ,0xff86c810) //103
+NHSTUB(exmem_ualloc                           ,0xff86c664) //103
+NHSTUB(exmem_ufree                            ,0xff86c7b0) //103
 NHSTUB(free                                   ,0xff813a3c) //112
+NHSTUB(get_nd_value                           ,0xffa39d2c) //123
+NHSTUB(get_current_nd_value                   ,0xffa39ce8) //122
+NHSTUB(get_current_deltasv                    ,0xff88d7dc) //122
+NHSTUB(GetCurrentDriveBaseSvValue             ,0xff8929e4) //123
 NHSTUB(kbd_p1_f                               ,0xff821e60) //109
 NHSTUB(kbd_p1_f_cont                          ,0xff821e6c) //109
 NHSTUB(kbd_p2_f                               ,0xff821724) //109
@@ -260,3 +323,7 @@ NHSTUB(SetHPTimerAfterNow                     ,0xff86d540) //119
 NHSTUB(PT_MFOn                                ,0xff85e954) //120
 NHSTUB(PT_MFOff                               ,0xff85e964) //120
 NHSTUB(GetAdChValue                           ,0xff844824) //120
+NHSTUB(get_ptp_buf_size                       ,0xff8c9374) //122
+NHSTUB(get_ptp_file_buf                       ,0xff9f6b28) //121
+NHSTUB(SetVideoOutType                        ,0xffa9bb28) //109
+NHSTUB(GetVideoOutType                        ,0xffa9ba8c) //120

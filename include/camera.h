@@ -25,9 +25,11 @@
 
     #undef  CAM_DRYOS                           // Camera is DryOS-based
     #undef  CAM_PROPSET                         // Camera's properties group (the generation)
+    #undef  CAM_ILC                             // Camera uses interchangable lenses (EOS M series)
     #define CAM_FLASHPARAMS_VERSION         3   // flash parameters structure version (every camera from 2005 on is version 3)
     #undef  CAM_DRYOS_2_3_R39                   // Define for cameras with DryOS release R39 or greater
     #undef  CAM_DRYOS_2_3_R47                   // Define for cameras with DryOS release R47 or greater -> Cameras can boot from FAT32
+    #undef  CAM_DRYOS_2_3_R59                   // Define for cameras with DryOS release R59 or greater -> some support for 64bit files
 
     #define CAM_CIRCLE_OF_CONFUSION         5   // CoC value for camera/sensor (see http://www.dofmaster.com/digital_coc.html)
 
@@ -42,6 +44,9 @@
     #define CAM_REMOTE                      1   // Camera supports a remote
     #undef  CAM_REMOTE_AtoD_CHANNEL             // Camera supports using 3rd battery terminal as well as USB for remote - value = A/D channel to poll (normally 5)
     #define CAM_REMOTE_AtoD_THRESHOLD       200 // 3rd battery terminal A/D reading threshold ( lower = 1, higher = 0 )
+    #undef  CAM_REMOTE_HDMI_HPD                 // Camera supports using HDMI hotplug detect for remote signal
+    #undef  CAM_REMOTE_HDMI_POWER_OVERRIDE      // Camera requires HDMI power to be forced on in rec mode
+    #undef  CAM_REMOTE_ANALOG_AV                // Camera supports analog AV detect for remote signal
     #undef  CAM_REMOTE_USES_PRECISION_SYNC      // Disable experimental remote  precision sync patch
     #define CAM_ALLOWS_USB_PORT_FORCING     1   // USB remote state can be forced to be present (supported on all cameras that use common kbd code, others may undef)
     #define CAM_REMOTE_USB_HIGHSPEED        1   // Enable highspeed measurements of pulse width & counts on USB port 
@@ -55,6 +60,8 @@
     #define CAM_HAS_IRIS_DIAPHRAGM          1   // Camera has real diaphragm mechanism (http://en.wikipedia.org/wiki/Diaphragm_%28optics%29)
     #undef  CAM_HAS_ND_FILTER                   // Camera has build-in ND filter
     #undef  CAM_HAS_NATIVE_ND_FILTER            // Camera has built-in ND filter with Canon menu support for enable/disable
+    #undef  CAM_ND_SET_AV_VALUE                 // Camera needs AV propcase set to override ND. Only valid for cameras without iris.
+                                                // Defaults on for cameras with ND only, define 0 to force off
 
     #define CAM_HAS_MANUAL_FOCUS            1   // Camera has native manual focus mode (disables MF shortcut feature)
     #undef  CAM_SD_OVER_IN_AF                   // Camera allows SD override if MF & AFL not set
@@ -63,7 +70,7 @@
 
     #define CAM_HAS_USER_TV_MODES           1   // Camera has tv-priority or manual modes with ability to set tv value
     #undef  CAM_SHOW_OSD_IN_SHOOT_MENU          // On some cameras Canon shoot menu has additional functionality and useful in this case to see CHDK OSD in this mode
-    #define CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO 1 // Camera can unlock optical zoom in video (if it is locked)
+    #define CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO 1 // Camera can unlock optical zoom in video (if it is locked in Canon firmare, do not define for cameras that already allow)
     #undef  CAM_FEATURE_FEATHER                 // Cameras with "feather" or touch wheel.
     #define CAM_HAS_IS                      1   // Camera has image stabilizer
     #undef  CAM_HAS_JOGDIAL                     // Camera has a "jog dial"
@@ -94,6 +101,8 @@
     #define CAM_VIDEO_CONTROL               1   // pause / unpause video recordings
     #undef  CAM_VIDEO_QUALITY_ONLY              // Override Video Bitrate is not supported
     #undef  CAM_CHDK_HAS_EXT_VIDEO_TIME         // Camera can override time limit of video record -> sx220/230
+    #undef  CAM_SIMPLE_MOVIE_STATUS             // Firmware movie_status nonzero when recording, zero when not - makes CAM_VIDEO_CONTROL ineffective
+    #undef  CAM_MOVIEREC_NEWSTYLE               // Define for new style video recording code in fw (DIGIC 6)
     #undef  CAM_HAS_MOVIE_DIGEST_MODE           // The values in the 'movie_status' variable change if the camera has this mode (see is_video_recording())
     #undef  CAM_HAS_SPORTS_MODE                 // Define to enable the RAW exception override control for SPORTS mode (s3is, sx30, sx40, etc)
 
@@ -142,12 +151,11 @@
     
     #define CAM_KEY_PRESS_DELAY             30  // delay after a press - TODO can we combine this with above ?
     #define CAM_KEY_RELEASE_DELAY           30  // delay after a release - TODO do we really need to wait after release ?
-
+    
     //camera sensor values for AOV and FOV, default 1/2.5" sensor
     #define CAM_SENSOR_WIDTH                5.744f
     #define CAM_SENSOR_HEIGHT               4.308f
     #define CAM_SENSOR_DIAGONAL             7.18f
-
     // RAW & DNG related values
     #define DEFAULT_RAW_EXT                 1   // extension to use for raw (see raw_exts in conf.c)
     #define DNG_BADPIXEL_VALUE_LIMIT        0   // Max value of 'bad' pixel - this value or lower is considered a defective pixel on the sensor
@@ -204,14 +212,8 @@
     #undef  CAM_AV_OVERRIDE_IRIS_FIX            // for cameras that require _MoveIrisWithAv function to override Av (for bracketing).
 
     #undef  CAM_DISABLE_RAW_IN_LOW_LIGHT_MODE   // For cameras with 'low light' mode that does not work with raw define this
-    #undef  CAM_DISABLE_RAW_IN_ISO_3200         // For cameras that don't have valid raw in ISO3200 mode (different from low light)
-    #undef  CAM_DISABLE_RAW_IN_AUTO             // For cameras that don't have valid raw in AUTO mode
-    #undef  CAM_DISABLE_RAW_IN_HQ_BURST         // For cameras with 'HQ Burst' mode that does not work with raw define this
-    #undef  CAM_DISABLE_RAW_IN_HANDHELD_NIGHT_SCN // For cameras with 'HandHeld Night Scene' mode that does not work with raw define this
-    #undef  CAM_DISABLE_RAW_IN_HYBRID_AUTO      // For cameras that lock up while saving raw in "Hybrid Auto" mode
-    #undef  CAM_DISABLE_RAW_IN_DIGITAL_IS       // For cameras with 'Digital IS' mode that does not work with raw define this    
-    #undef  CAM_DISABLE_RAW_IN_SPORTS           // For cameras that corrupt DNG/JPEG in Sports mode
     #undef  CAM_ISO_LIMIT_IN_HQ_BURST           // Defines max 'market' ISO override value for HQ Burst mode (higher values crash camera)
+    #undef  CAM_MAX_ISO_OVERRIDE                // Defines max 'market' (non-zero) ISO override value - higher value may crash
     #undef  CAM_MIN_ISO_OVERRIDE                // Defines min 'market' (non-zero) ISO override value - lower value may crash if flash used [0 = AUTO, so always allowed]
     
     #undef  CAM_HAS_GPS                         // for cameras with GPS reseiver: includes the GPS coordinates in in DNG file
@@ -222,6 +224,8 @@
                                                 // requires load_chdk_palette() and vid_get_bitmap_active_palette() to be defined
                                                 // correctly for the camera along with
 
+    #undef  CAM_CLEAN_OVERLAY                   // define when port supports making Canon overlay invisible (DIGIC 6)
+
     #define CAM_USB_EVENTID         0x902       // event ID for USB control. Changed to 0x202 in DryOS R49 so needs to be overridable.
                                                 // For DryOS only. These are "control events", and don't have the same IDs as "logical events"
 
@@ -229,11 +233,14 @@
                                                 // this is the logical event "ConnectUSBCable", usually 0x1085
                                                 // different from CAM_USB_EVENTID since it should be undefined on most cameras
 
-    #undef  CAM_NEED_SET_ZOOM_DELAY             // Define to add a delay after setting the zoom position before resetting the focus position in shooting_set_zoom 
+    #define CAM_PTP_SCREEN_UNLOCK_EVENT 1       // define to allow sending event in switch_mode_usb
 
-    #undef  CAM_USE_ALT_SET_ZOOM_POINT          // Define to use the alternate code in lens_set_zoom_point()
-    #undef  CAM_USE_ALT_PT_MoveOpticalZoomAt    // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
-    #undef  CAM_USE_OPTICAL_MAX_ZOOM_STATUS     // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom in gui_std_kbd_process()
+    #undef  CAM_NEED_SET_ZOOM_DELAY             // Define to add a delay after setting the zoom position before resetting the focus position in shooting_set_zoom 
+                                                // ignored if CAM_REFOCUS_AFTER_ZOOM is 0 (default when CAM_USE_ALT_SET_ZOOM_POINT set)
+
+    #undef  CAM_USE_ALT_SET_ZOOM_POINT          // Define to use the alternate code in lens_set_zoom_point(). Defaults on for Digic 4 and above, may be used on earlier cams
+    #undef  CAM_USE_OPTICAL_MAX_ZOOM_STATUS     // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom in gui_std_kbd_process(). Only meaningful with CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO
+    #undef  CAM_REFOCUS_AFTER_ZOOM              // save and restore focus distance after set_zoom, Defaults off (0) for CAM_USE_ALT_SET_ZOOM_POINT, on for others
 
     #undef  CAM_HAS_HI_ISO_AUTO_MODE            // Define if camera has 'HI ISO Auto' mode (as well as Auto ISO mode), needed for adjustment in user auto ISO menu 
 
@@ -267,9 +274,25 @@
 
     #undef  CAM_IS_VID_REC_WORKS                // Define if the 'is_video_recording()' function works
 
+    #undef  CAM_HAS_CANON_RAW                   // Define if the camera has native raw in the canon firmware
+
     // Keyboard repeat and initial delays (override in platform_camera.h if needed)
     #define KBD_REPEAT_DELAY                175
     #define KBD_INITIAL_DELAY               500
+    #undef CAM_PTP_USE_NATIVE_BUFFER            // define to use native firmware buffers for PTP transfers
+                                                // for cameras that have problems transfering to cached RAM
+                                                // or specific alignment requirements
+
+    #undef CAM_PTP_FILE_BUFFER_ID               // define to override default ID for file transfer buffer
+
+    #undef CAM_UNLOCK_ANALOG_AV_IN_REC          // define to enable analog video out in rec mode for cameras without native support
+                                                // ANALOG_AV_IDX and ANALOG_AV_FLAG must be identified. Some cameras crash if AF point zoom enabled
+
+    #undef CAM_HAS_WIFI                         // Camera has wifi support. Note in some cases Canon uses the same firmware
+                                                // for models with and without wireless hardware. Where possible, this define
+                                                // should reflect the actual hardware
+
+    #undef CAM_HAS_DISPLAY_REFRESH_FLAG         // 'display_needs_refresh' variable is available to trigger CHDK UI update.
 
 // Base 'market' ISO value. Most (all?) DryOS R49 and later use 200, use tests/isobase.lua to check
 #if defined(CAM_DRYOS_REL) && CAM_DRYOS_REL >= 49 // CAM_DRYOS_REL defined on command line, not from platform_camera.h
@@ -308,12 +331,33 @@
     #endif 
 #endif
 
+// default CAM_USE_ALT_SET_ZOOM_POINT for digic >= 4
+#if CAM_DIGIC >= 40
+    #define  CAM_USE_ALT_SET_ZOOM_POINT       1   // Define to use the alternate code in lens_set_zoom_point()
+#endif
+
 //----------------------------------------------------------
 // Overridden values for each camera
 //----------------------------------------------------------
 
 // Include the settings file for the camera model currently being compiled.
 #include "platform_camera.h"
+
+// force off for ILC - CAM_ILC is a platform_camera define, not makefile, so has to be after
+// but otherwise default on (CAM_USE_ALT_SET_ZOOM_POINT for digic >= 4
+#ifdef CAM_ILC
+#undef CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO
+#undef CAM_USE_ALT_SET_ZOOM_POINT
+#endif
+
+// default CAM_ND_SET_AV_VALUE on for ND only cams
+#if !defined(CAM_ND_SET_AV_VALUE)
+    #if defined(CAM_HAS_ND_FILTER) && !defined(CAM_HAS_IRIS_DIAPHRAGM)
+        #define CAM_ND_SET_AV_VALUE 1
+    #else
+        #define CAM_ND_SET_AV_VALUE 0
+    #endif
+#endif
 
 // DryOS r31 and later cameras use 32bit subject distance values
 // set a default limit that's high enough
@@ -341,6 +385,25 @@
 #endif
 #endif
 
+#if defined(CAM_VIDEO_CONTROL) && defined(CAM_SIMPLE_MOVIE_STATUS)
+    #error "CAM_VIDEO_CONTROL and CAM_SIMPLE_MOVIE_STATUS are mutually exclusive"
+#endif
+
+// video quality/bitrate defaults, moved here from conf.h
+#ifdef CAM_MOVIEREC_NEWSTYLE
+    // video defaults.for D6
+    #define VIDEO_DEFAULT_QUALITY   9   // VBR relative min bitrate, 9 = CBR
+    #define VIDEO_MAX_QUALITY       9   // 0..9
+    #define VIDEO_DEFAULT_BITRATE   3   // 3 = fw default
+
+    #undef  CAM_VIDEO_QUALITY_ONLY
+#else
+    // video quality defaults. Ideally, these should match the camera default settings
+    #define VIDEO_DEFAULT_QUALITY   84  // ? where does 84 come from
+    #define VIDEO_MAX_QUALITY       99
+    #define VIDEO_DEFAULT_BITRATE   3   // should be 1 for all cams
+#endif
+
 // sanity check platform_camera.h defined values for some common errors
 #if (CAM_ACTIVE_AREA_X1&1) || (CAM_ACTIVE_AREA_Y1&1) || (CAM_ACTIVE_AREA_X2&1) || (CAM_ACTIVE_AREA_Y2&1)
     #error "CAM_ACTIVE_AREA values must be even"
@@ -353,6 +416,39 @@
 #if (CAM_ACTIVE_AREA_Y2 - CAM_ACTIVE_AREA_Y1) < CAM_JPEG_HEIGHT
     #error "CAM_JPEG_HEIGHT larger than active area"
 #endif
+
+// default PTP buffer id
+#ifndef CAM_PTP_FILE_BUFFER_ID
+#if defined(CAM_DRYOS) && CAM_DRYOS_REL >= 43 && CAM_DRYOS_REL <= 52
+    #define CAM_PTP_FILE_BUFFER_ID 5
+#else
+    #define CAM_PTP_FILE_BUFFER_ID 4
+#endif
+#endif // ifndef CAM_PTP_FILE_BUFFER_ID
+
+// set default refocus behavior if not set by port
+#ifndef CAM_REFOCUS_AFTER_ZOOM
+#ifdef CAM_USE_ALT_SET_ZOOM_POINT
+    #define CAM_REFOCUS_AFTER_ZOOM 0
+#else
+    #define CAM_REFOCUS_AFTER_ZOOM 1
+#endif
+#endif // CAM_REFOCUS_AFTER_ZOOM
+
+#if defined(CAM_USE_OPTICAL_MAX_ZOOM_STATUS) && !defined(CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO)
+    #error "CAM_USE_OPTICAL_MAX_ZOOM_STATUS requires CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO"
+#endif
+
+
+#ifdef CAM_PTP_SCREEN_UNLOCK_EVENT
+// set default values based on OS. Could add the ability to override by
+// setting ID in CAM_PTP_SCREEN_UNLOCK_EVENT, but not currently needed
+#ifdef CAM_DRYOS
+#define CAM_PTP_SCREEN_UNLOCK_EVENTID 4482
+#else
+#define CAM_PTP_SCREEN_UNLOCK_EVENTID 4418
+#endif // CAM_DRYOS
+#endif // CAM_PTP_SCREEN_UNLOCK_EVENT
 
 //==========================================================
 // END of Camera-dependent settings
@@ -393,6 +489,10 @@
     #define CAM_DISP_BUTTON_NAME            "DISP"
 #endif
 
+// used for conditional LANG strings and convenience - defined if any non-USB remote input supported
+#if (defined(CAM_REMOTE_AtoD_CHANNEL) || defined(CAM_REMOTE_HDMI_HPD) || defined(CAM_REMOTE_ANALOG_AV))
+#define CAM_REMOTE_MULTICHANNEL 1
+#endif
 //------------------------------------------------------------------- 
 // Keyboard / Button shortcuts - define in platform_camera.h
 // if the default values are not suitable
@@ -473,3 +573,4 @@
 //==========================================================
 
 #endif /* CAMERA_H */
+

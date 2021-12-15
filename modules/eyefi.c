@@ -5,8 +5,9 @@
  * the GNU General Public License ("GPL") version 2 as published by the
  * Free Software Foundation.
  */
-#include <gui.h>
-#include <string.h>
+#include "gui.h"
+#include "string.h"
+#include "ctype.h"
 #include "gui_lang.h"
 #include "gui_mbox.h"
 #include "gui_tbox.h"
@@ -382,7 +383,7 @@ char *eyefi_statusName(int n)
         "success"
     };
 
-    if (n<0 || n>=sizeof(eyefi_status)/sizeof(*eyefi_status))
+    if (n<0 || n>=(int)(sizeof(eyefi_status)/sizeof(*eyefi_status)))
         return "?";
 
     return eyefi_status[n];
@@ -399,7 +400,7 @@ static char eyefi_selectedNetwork[ESSID_LEN+1];
 static char eyefi_password[PWD_LEN+1];
 
 // Exit module
-static void eyefi_exit(unsigned int button)
+static void eyefi_exit(__attribute__ ((unused))unsigned int button)
 {
     running = 0;
     gui_set_need_restore();
@@ -490,7 +491,6 @@ static void eyefi_configured_networks()
 static void confirm_add_network_cb(unsigned int btn)
 {
     int n,i;
-    char s[80];
 
     if (btn==MBOX_BTN_YES)
     {
@@ -678,4 +678,6 @@ ModuleInfo _module_info =
     ANY_VERSION,                // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };

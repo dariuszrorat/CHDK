@@ -4,15 +4,24 @@
 	<Project>
 		<Option title="chdk" />
 		<Option pch_mode="2" />
-		<Option compiler="null" />
+		<Option compiler="gcc" />
 		<Build>
 			<Target title="Release">
 				<Option output="bin/Release/chdk" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
-				<Option compiler="null" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
 		<Unit filename="core/action_stack.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -34,6 +43,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="core/entry.S" />
+		<Unit filename="core/firmware_crc_data.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="core/gps.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -148,7 +160,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="include/asmsafe.h" />
-		<Unit filename="include/assert.h" />
 		<Unit filename="include/backlight.h" />
 		<Unit filename="include/battery.h" />
 		<Unit filename="include/cache.h" />
@@ -157,17 +168,18 @@
 		<Unit filename="include/camera.h" />
 		<Unit filename="include/camera_info.h" />
 		<Unit filename="include/clock.h" />
+		<Unit filename="include/color.h" />
 		<Unit filename="include/conf.h" />
 		<Unit filename="include/console.h" />
 		<Unit filename="include/core.h" />
-		<Unit filename="include/ctype.h" />
 		<Unit filename="include/debug.h" />
 		<Unit filename="include/debug_led.h" />
 		<Unit filename="include/dryos23.h" />
 		<Unit filename="include/dryos31.h" />
-		<Unit filename="include/errno.h" />
+		<Unit filename="include/exmem.h" />
 		<Unit filename="include/file_counter.h" />
 		<Unit filename="include/fileutil.h" />
+		<Unit filename="include/firmware_crc_types.h" />
 		<Unit filename="include/font.h" />
 		<Unit filename="include/gui.h" />
 		<Unit filename="include/kbd_common.h" />
@@ -175,8 +187,6 @@
 		<Unit filename="include/lang.h" />
 		<Unit filename="include/lens.h" />
 		<Unit filename="include/levent.h" />
-		<Unit filename="include/limits.h" />
-		<Unit filename="include/locale.h" />
 		<Unit filename="include/lolevel.h" />
 		<Unit filename="include/math.h" />
 		<Unit filename="include/meminfo.h" />
@@ -186,25 +196,40 @@
 		<Unit filename="include/platform.h" />
 		<Unit filename="include/properties.h" />
 		<Unit filename="include/propset1.h" />
+		<Unit filename="include/propset10.h" />
+		<Unit filename="include/propset11.h" />
+		<Unit filename="include/propset12.h" />
+		<Unit filename="include/propset13.h" />
 		<Unit filename="include/propset2.h" />
 		<Unit filename="include/propset3.h" />
 		<Unit filename="include/propset4.h" />
 		<Unit filename="include/propset5.h" />
 		<Unit filename="include/propset6.h" />
+		<Unit filename="include/propset7.h" />
+		<Unit filename="include/propset8.h" />
+		<Unit filename="include/propset9.h" />
 		<Unit filename="include/raw_buffer.h" />
 		<Unit filename="include/remotecap.h" />
 		<Unit filename="include/remotecap_core.h" />
 		<Unit filename="include/script.h" />
 		<Unit filename="include/sd_card.h" />
-		<Unit filename="include/setjmp.h" />
+		<Unit filename="include/semaphore.h" />
 		<Unit filename="include/shooting.h" />
 		<Unit filename="include/shutdown.h" />
 		<Unit filename="include/sound.h" />
-		<Unit filename="include/stdarg.h" />
-		<Unit filename="include/stddef.h" />
-		<Unit filename="include/stdio.h" />
-		<Unit filename="include/stdlib.h" />
-		<Unit filename="include/string.h" />
+		<Unit filename="include/std/assert.h" />
+		<Unit filename="include/std/ctype.h" />
+		<Unit filename="include/std/dirent.h" />
+		<Unit filename="include/std/errno.h" />
+		<Unit filename="include/std/limits.h" />
+		<Unit filename="include/std/locale.h" />
+		<Unit filename="include/std/setjmp.h" />
+		<Unit filename="include/std/stdarg.h" />
+		<Unit filename="include/std/stddef.h" />
+		<Unit filename="include/std/stdio.h" />
+		<Unit filename="include/std/stdlib.h" />
+		<Unit filename="include/std/string.h" />
+		<Unit filename="include/std/time.h" />
 		<Unit filename="include/stubs_asm.h" />
 		<Unit filename="include/task.h" />
 		<Unit filename="include/temperature.h" />
@@ -241,48 +266,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="lib/lang/lang_str.h" />
-		<Unit filename="lib/libc/issmth.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/memchr.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/memcmp.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/memcpy.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/memmove.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/mempcpy.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/memset.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strchr.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strcmp.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strlen.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strncmp.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strrchr.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strstr.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/libc/strtol.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="lib/libc/thumb1_case.S" />
 		<Unit filename="lib/lua/lapi.c">
 			<Option compilerVar="CC" />
@@ -311,6 +294,9 @@
 		</Unit>
 		<Unit filename="lib/lua/ldo.h" />
 		<Unit filename="lib/lua/ldump.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="lib/lua/lfmathlib.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="lib/lua/lfunc.c">
@@ -407,41 +393,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="lib/lua/setjmp.S" />
-		<Unit filename="lib/math/d2d.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/ef_log.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/ef_pow.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/ef_sqrt.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/fdlibm.h" />
-		<Unit filename="lib/math/rnd.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/s_copysignf.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/s_scalbnf.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/sf_fabs.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/math/wrapper.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/ubasic/camera_functions.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="lib/ubasic/camera_functions.h" />
-		<Unit filename="lib/ubasic/run-ubasic.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="lib/ubasic/tokenizer.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -449,545 +400,495 @@
 		<Unit filename="lib/ubasic/ubasic.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a1000/blobs.S" />
 		<Unit filename="loader/a1000/entry.S" />
 		<Unit filename="loader/a1000/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a1100/blobs.S" />
 		<Unit filename="loader/a1100/entry.S" />
 		<Unit filename="loader/a1100/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a1200/blobs.S" />
 		<Unit filename="loader/a1200/entry.S" />
 		<Unit filename="loader/a1200/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a1300/blobs.S" />
 		<Unit filename="loader/a1300/entry.S" />
 		<Unit filename="loader/a1300/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a1400/blobs.S" />
 		<Unit filename="loader/a1400/entry.S" />
 		<Unit filename="loader/a1400/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2000/blobs.S" />
 		<Unit filename="loader/a2000/entry.S" />
 		<Unit filename="loader/a2000/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2100/blobs.S" />
 		<Unit filename="loader/a2100/entry.S" />
 		<Unit filename="loader/a2100/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2200/blobs.S" />
 		<Unit filename="loader/a2200/entry.S" />
 		<Unit filename="loader/a2200/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2300/blobs.S" />
 		<Unit filename="loader/a2300/entry.S" />
 		<Unit filename="loader/a2300/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2400/blobs.S" />
 		<Unit filename="loader/a2400/entry.S" />
 		<Unit filename="loader/a2400/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2500/blobs.S" />
 		<Unit filename="loader/a2500/entry.S" />
 		<Unit filename="loader/a2500/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a2600/blobs.S" />
 		<Unit filename="loader/a2600/entry.S" />
 		<Unit filename="loader/a2600/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a3000/blobs.S" />
 		<Unit filename="loader/a3000/entry.S" />
 		<Unit filename="loader/a3000/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a3000/resetcode/entry.S" />
-		<Unit filename="loader/a3000/resetcode/main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="loader/a3100/blobs.S" />
 		<Unit filename="loader/a3100/entry.S" />
 		<Unit filename="loader/a3100/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a3200/blobs.S" />
 		<Unit filename="loader/a3200/entry.S" />
 		<Unit filename="loader/a3200/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a3300/blobs.S" />
 		<Unit filename="loader/a3300/entry.S" />
 		<Unit filename="loader/a3300/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a3400/blobs.S" />
 		<Unit filename="loader/a3400/entry.S" />
 		<Unit filename="loader/a3400/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a4000/blobs.S" />
 		<Unit filename="loader/a4000/entry.S" />
 		<Unit filename="loader/a4000/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a410/blobs.S" />
 		<Unit filename="loader/a410/entry.S" />
 		<Unit filename="loader/a410/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a420/blobs.S" />
 		<Unit filename="loader/a420/entry.S" />
 		<Unit filename="loader/a420/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a430/blobs.S" />
 		<Unit filename="loader/a430/entry.S" />
 		<Unit filename="loader/a430/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a450/blobs.S" />
 		<Unit filename="loader/a450/entry.S" />
 		<Unit filename="loader/a450/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a460/blobs.S" />
 		<Unit filename="loader/a460/entry.S" />
 		<Unit filename="loader/a460/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a470/blobs.S" />
 		<Unit filename="loader/a470/entry.S" />
 		<Unit filename="loader/a470/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a480/blobs.S" />
 		<Unit filename="loader/a480/entry.S" />
 		<Unit filename="loader/a480/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a490/blobs.S" />
 		<Unit filename="loader/a490/entry.S" />
 		<Unit filename="loader/a490/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a495/blobs.S" />
 		<Unit filename="loader/a495/entry.S" />
 		<Unit filename="loader/a495/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a530/blobs.S" />
 		<Unit filename="loader/a530/entry.S" />
 		<Unit filename="loader/a530/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a540/blobs.S" />
 		<Unit filename="loader/a540/entry.S" />
 		<Unit filename="loader/a540/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a550/blobs.S" />
 		<Unit filename="loader/a550/entry.S" />
 		<Unit filename="loader/a550/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a560/blobs.S" />
 		<Unit filename="loader/a560/entry.S" />
 		<Unit filename="loader/a560/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a570/blobs.S" />
 		<Unit filename="loader/a570/entry.S" />
 		<Unit filename="loader/a570/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a580/blobs.S" />
 		<Unit filename="loader/a580/entry.S" />
 		<Unit filename="loader/a580/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a590/blobs.S" />
 		<Unit filename="loader/a590/entry.S" />
 		<Unit filename="loader/a590/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a610/blobs.S" />
 		<Unit filename="loader/a610/entry.S" />
 		<Unit filename="loader/a610/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a620/blobs.S" />
 		<Unit filename="loader/a620/entry.S" />
 		<Unit filename="loader/a620/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a630/blobs.S" />
 		<Unit filename="loader/a630/entry.S" />
 		<Unit filename="loader/a630/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a640/blobs.S" />
 		<Unit filename="loader/a640/entry.S" />
 		<Unit filename="loader/a640/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a650/blobs.S" />
 		<Unit filename="loader/a650/entry.S" />
 		<Unit filename="loader/a650/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a700/blobs.S" />
 		<Unit filename="loader/a700/entry.S" />
 		<Unit filename="loader/a700/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a710/blobs.S" />
 		<Unit filename="loader/a710/entry.S" />
 		<Unit filename="loader/a710/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a720/blobs.S" />
 		<Unit filename="loader/a720/entry.S" />
 		<Unit filename="loader/a720/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a800/blobs.S" />
 		<Unit filename="loader/a800/entry.S" />
 		<Unit filename="loader/a800/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/a810/blobs.S" />
 		<Unit filename="loader/a810/entry.S" />
 		<Unit filename="loader/a810/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/d10/blobs.S" />
 		<Unit filename="loader/d10/entry.S" />
 		<Unit filename="loader/d10/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/d20/blobs.S" />
 		<Unit filename="loader/d20/entry.S" />
 		<Unit filename="loader/d20/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/d30/blobs.S" />
 		<Unit filename="loader/d30/entry.S" />
 		<Unit filename="loader/d30/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g10/blobs.S" />
 		<Unit filename="loader/g10/entry.S" />
 		<Unit filename="loader/g10/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g11/blobs.S" />
 		<Unit filename="loader/g11/entry.S" />
 		<Unit filename="loader/g11/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g11/resetcode/entry.S" />
-		<Unit filename="loader/g11/resetcode/main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="loader/g12/blobs.S" />
 		<Unit filename="loader/g12/entry.S" />
 		<Unit filename="loader/g12/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g15/blobs.S" />
 		<Unit filename="loader/g15/entry.S" />
 		<Unit filename="loader/g15/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g1x/blobs.S" />
+		<Unit filename="loader/g16/entry.S" />
+		<Unit filename="loader/g16/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/g1x/entry.S" />
 		<Unit filename="loader/g1x/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g7/blobs.S" />
+		<Unit filename="loader/g5x/entry.S" />
+		<Unit filename="loader/g5x/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/g7/entry.S" />
 		<Unit filename="loader/g7/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/g9/blobs.S" />
+		<Unit filename="loader/g7x2/entry.S" />
+		<Unit filename="loader/g7x2/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/g7x/entry.S" />
+		<Unit filename="loader/g7x/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/g9/entry.S" />
 		<Unit filename="loader/g9/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus1000_sd4500/blobs.S" />
+		<Unit filename="loader/generic/blobs.S" />
+		<Unit filename="loader/generic/check_compat.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/generic/compat_table.h" />
 		<Unit filename="loader/ixus1000_sd4500/entry.S" />
 		<Unit filename="loader/ixus1000_sd4500/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus100_sd780/blobs.S" />
 		<Unit filename="loader/ixus100_sd780/entry.S" />
 		<Unit filename="loader/ixus100_sd780/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus105_sd1300/blobs.S" />
 		<Unit filename="loader/ixus105_sd1300/entry.S" />
 		<Unit filename="loader/ixus105_sd1300/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus110_sd960/blobs.S" />
 		<Unit filename="loader/ixus110_sd960/entry.S" />
 		<Unit filename="loader/ixus110_sd960/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus115_elph100hs/blobs.S" />
 		<Unit filename="loader/ixus115_elph100hs/entry.S" />
 		<Unit filename="loader/ixus115_elph100hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus120_sd940/blobs.S" />
 		<Unit filename="loader/ixus120_sd940/entry.S" />
 		<Unit filename="loader/ixus120_sd940/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus125_elph110hs/blobs.S" />
 		<Unit filename="loader/ixus125_elph110hs/entry.S" />
 		<Unit filename="loader/ixus125_elph110hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus130_sd1400/blobs.S" />
 		<Unit filename="loader/ixus130_sd1400/entry.S" />
 		<Unit filename="loader/ixus130_sd1400/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus132_elph115/blobs.S" />
 		<Unit filename="loader/ixus132_elph115/entry.S" />
 		<Unit filename="loader/ixus132_elph115/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus135_elph120/blobs.S" />
 		<Unit filename="loader/ixus135_elph120/entry.S" />
 		<Unit filename="loader/ixus135_elph120/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus140_elph130/blobs.S" />
 		<Unit filename="loader/ixus140_elph130/entry.S" />
 		<Unit filename="loader/ixus140_elph130/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus150_elph140/blobs.S" />
+		<Unit filename="loader/ixus145_elph135/entry.S" />
+		<Unit filename="loader/ixus145_elph135/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/ixus150_elph140/entry.S" />
 		<Unit filename="loader/ixus150_elph140/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus160_elph160/blobs.S" />
+		<Unit filename="loader/ixus155_elph150/entry.S" />
+		<Unit filename="loader/ixus155_elph150/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/ixus160_elph160/entry.S" />
 		<Unit filename="loader/ixus160_elph160/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus200_sd980/blobs.S" />
+		<Unit filename="loader/ixus170_elph170/entry.S" />
+		<Unit filename="loader/ixus170_elph170/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/ixus175_elph180/entry.S" />
+		<Unit filename="loader/ixus175_elph180/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/ixus185_elph185/entry.S" />
+		<Unit filename="loader/ixus185_elph185/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/ixus200_sd980/entry.S" />
 		<Unit filename="loader/ixus200_sd980/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus220_elph300hs/blobs.S" />
 		<Unit filename="loader/ixus220_elph300hs/entry.S" />
 		<Unit filename="loader/ixus220_elph300hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus230_elph310hs/blobs.S" />
 		<Unit filename="loader/ixus230_elph310hs/entry.S" />
 		<Unit filename="loader/ixus230_elph310hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus240_elph320hs/blobs.S" />
 		<Unit filename="loader/ixus240_elph320hs/entry.S" />
 		<Unit filename="loader/ixus240_elph320hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus255_elph330hs/blobs.S" />
 		<Unit filename="loader/ixus255_elph330hs/entry.S" />
 		<Unit filename="loader/ixus255_elph330hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus300_sd4000/blobs.S" />
+		<Unit filename="loader/ixus265_elph340hs/entry.S" />
+		<Unit filename="loader/ixus265_elph340hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/ixus275_elph350hs/entry.S" />
+		<Unit filename="loader/ixus275_elph350hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/ixus285_elph360hs/entry.S" />
+		<Unit filename="loader/ixus285_elph360hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/ixus300_sd4000/entry.S" />
 		<Unit filename="loader/ixus300_sd4000/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus30_sd200/blobs.S" />
 		<Unit filename="loader/ixus30_sd200/entry.S" />
 		<Unit filename="loader/ixus30_sd200/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus310_elph500hs/blobs.S" />
 		<Unit filename="loader/ixus310_elph500hs/entry.S" />
 		<Unit filename="loader/ixus310_elph500hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus40_sd300/blobs.S" />
 		<Unit filename="loader/ixus40_sd300/entry.S" />
 		<Unit filename="loader/ixus40_sd300/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus50_sd400/blobs.S" />
 		<Unit filename="loader/ixus50_sd400/entry.S" />
 		<Unit filename="loader/ixus50_sd400/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus55_sd450/blobs.S" />
 		<Unit filename="loader/ixus55_sd450/entry.S" />
 		<Unit filename="loader/ixus55_sd450/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus60_sd600/blobs.S" />
 		<Unit filename="loader/ixus60_sd600/entry.S" />
 		<Unit filename="loader/ixus60_sd600/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus65_sd630/blobs.S" />
 		<Unit filename="loader/ixus65_sd630/entry.S" />
 		<Unit filename="loader/ixus65_sd630/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus700_sd500/blobs.S" />
 		<Unit filename="loader/ixus700_sd500/entry.S" />
 		<Unit filename="loader/ixus700_sd500/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus70_sd1000/blobs.S" />
 		<Unit filename="loader/ixus70_sd1000/entry.S" />
 		<Unit filename="loader/ixus70_sd1000/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus750_sd550/blobs.S" />
 		<Unit filename="loader/ixus750_sd550/entry.S" />
 		<Unit filename="loader/ixus750_sd550/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus75_sd750/blobs.S" />
 		<Unit filename="loader/ixus75_sd750/entry.S" />
 		<Unit filename="loader/ixus75_sd750/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus800_sd700/blobs.S" />
 		<Unit filename="loader/ixus800_sd700/entry.S" />
 		<Unit filename="loader/ixus800_sd700/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus80_sd1100/blobs.S" />
 		<Unit filename="loader/ixus80_sd1100/entry.S" />
 		<Unit filename="loader/ixus80_sd1100/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus850_sd800/blobs.S" />
 		<Unit filename="loader/ixus850_sd800/entry.S" />
 		<Unit filename="loader/ixus850_sd800/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus85_sd770/blobs.S" />
 		<Unit filename="loader/ixus85_sd770/entry.S" />
 		<Unit filename="loader/ixus85_sd770/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus860_sd870/blobs.S" />
 		<Unit filename="loader/ixus860_sd870/entry.S" />
 		<Unit filename="loader/ixus860_sd870/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus870_sd880/blobs.S" />
 		<Unit filename="loader/ixus870_sd880/entry.S" />
 		<Unit filename="loader/ixus870_sd880/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus900_sd900/blobs.S" />
 		<Unit filename="loader/ixus900_sd900/entry.S" />
 		<Unit filename="loader/ixus900_sd900/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus90_sd790/blobs.S" />
 		<Unit filename="loader/ixus90_sd790/entry.S" />
 		<Unit filename="loader/ixus90_sd790/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus950_sd850/blobs.S" />
 		<Unit filename="loader/ixus950_sd850/entry.S" />
 		<Unit filename="loader/ixus950_sd850/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus95_sd1200/blobs.S" />
 		<Unit filename="loader/ixus95_sd1200/entry.S" />
 		<Unit filename="loader/ixus95_sd1200/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus960_sd950/blobs.S" />
 		<Unit filename="loader/ixus960_sd950/entry.S" />
 		<Unit filename="loader/ixus960_sd950/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus970_sd890/blobs.S" />
 		<Unit filename="loader/ixus970_sd890/entry.S" />
 		<Unit filename="loader/ixus970_sd890/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixus980_sd990/blobs.S" />
 		<Unit filename="loader/ixus980_sd990/entry.S" />
 		<Unit filename="loader/ixus980_sd990/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixusizoom_sd30/blobs.S" />
+		<Unit filename="loader/ixus990_sd970/entry.S" />
+		<Unit filename="loader/ixus990_sd970/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/ixusizoom_sd30/entry.S" />
 		<Unit filename="loader/ixusizoom_sd30/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/ixusw_sd430/blobs.S" />
 		<Unit filename="loader/ixusw_sd430/entry.S" />
 		<Unit filename="loader/ixusw_sd430/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/n/blobs.S" />
+		<Unit filename="loader/m10/entry.S" />
+		<Unit filename="loader/m10/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/m3/entry.S" />
+		<Unit filename="loader/m3/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/n/entry.S" />
 		<Unit filename="loader/n/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/n_facebook/blobs.S" />
 		<Unit filename="loader/n_facebook/entry.S" />
 		<Unit filename="loader/n_facebook/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s100/blobs.S" />
 		<Unit filename="loader/s100/entry.S" />
 		<Unit filename="loader/s100/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s110/blobs.S" />
 		<Unit filename="loader/s110/entry.S" />
 		<Unit filename="loader/s110/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s2is/blobs.S" />
 		<Unit filename="loader/s2is/entry.S" />
 		<Unit filename="loader/s2is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s3is/blobs.S" />
 		<Unit filename="loader/s3is/entry.S" />
 		<Unit filename="loader/s3is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s5is/blobs.S" />
 		<Unit filename="loader/s5is/entry.S" />
 		<Unit filename="loader/s5is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s80/blobs.S" />
 		<Unit filename="loader/s80/entry.S" />
 		<Unit filename="loader/s80/main.c">
 			<Option compilerVar="CC" />
@@ -1001,27 +902,22 @@
 		<Unit filename="loader/s90/resetcode/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/s95/blobs.S" />
 		<Unit filename="loader/s95/entry.S" />
 		<Unit filename="loader/s95/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx100is/blobs.S" />
 		<Unit filename="loader/sx100is/entry.S" />
 		<Unit filename="loader/sx100is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx10/blobs.S" />
 		<Unit filename="loader/sx10/entry.S" />
 		<Unit filename="loader/sx10/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx110is/blobs.S" />
 		<Unit filename="loader/sx110is/entry.S" />
 		<Unit filename="loader/sx110is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx120is/blobs.S" />
 		<Unit filename="loader/sx120is/entry.S" />
 		<Unit filename="loader/sx120is/main.c">
 			<Option compilerVar="CC" />
@@ -1035,17 +931,14 @@
 		<Unit filename="loader/sx130is/resetcode/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx150is/blobs.S" />
 		<Unit filename="loader/sx150is/entry.S" />
 		<Unit filename="loader/sx150is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx160is/blobs.S" />
 		<Unit filename="loader/sx160is/entry.S" />
 		<Unit filename="loader/sx160is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx170is/blobs.S" />
 		<Unit filename="loader/sx170is/entry.S" />
 		<Unit filename="loader/sx170is/main.c">
 			<Option compilerVar="CC" />
@@ -1059,84 +952,106 @@
 		<Unit filename="loader/sx1/resetcode/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx200is/blobs.S" />
 		<Unit filename="loader/sx200is/entry.S" />
 		<Unit filename="loader/sx200is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx20/blobs.S" />
 		<Unit filename="loader/sx20/entry.S" />
 		<Unit filename="loader/sx20/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx210is/blobs.S" />
 		<Unit filename="loader/sx210is/entry.S" />
 		<Unit filename="loader/sx210is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx210is/resetcode/entry.S" />
-		<Unit filename="loader/sx210is/resetcode/main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="loader/sx220hs/blobs.S" />
 		<Unit filename="loader/sx220hs/entry.S" />
 		<Unit filename="loader/sx220hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx230hs/blobs.S" />
 		<Unit filename="loader/sx230hs/entry.S" />
 		<Unit filename="loader/sx230hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx240hs/blobs.S" />
 		<Unit filename="loader/sx240hs/entry.S" />
 		<Unit filename="loader/sx240hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx260hs/blobs.S" />
 		<Unit filename="loader/sx260hs/entry.S" />
 		<Unit filename="loader/sx260hs/main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="loader/sx280hs/blobs.S" />
-		<Unit filename="loader/sx280hs/check_compat.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="loader/sx280hs/entry.S" />
 		<Unit filename="loader/sx280hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx30/blobs.S" />
 		<Unit filename="loader/sx30/entry.S" />
 		<Unit filename="loader/sx30/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx40hs/blobs.S" />
+		<Unit filename="loader/sx400is/entry.S" />
+		<Unit filename="loader/sx400is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/sx40hs/entry.S" />
 		<Unit filename="loader/sx40hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx500is/blobs.S" />
+		<Unit filename="loader/sx410is/entry.S" />
+		<Unit filename="loader/sx410is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx420is/entry.S" />
+		<Unit filename="loader/sx420is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx430is/entry.S" />
+		<Unit filename="loader/sx430is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/sx500is/entry.S" />
 		<Unit filename="loader/sx500is/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx50hs/blobs.S" />
 		<Unit filename="loader/sx50hs/entry.S" />
 		<Unit filename="loader/sx50hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx510hs/blobs.S" />
 		<Unit filename="loader/sx510hs/entry.S" />
 		<Unit filename="loader/sx510hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/sx530hs/blobs.S" />
+		<Unit filename="loader/sx520hs/entry.S" />
+		<Unit filename="loader/sx520hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/sx530hs/entry.S" />
 		<Unit filename="loader/sx530hs/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="loader/tx1/blobs.S" />
+		<Unit filename="loader/sx60hs/entry.S" />
+		<Unit filename="loader/sx60hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx610hs/entry.S" />
+		<Unit filename="loader/sx610hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx620hs/entry.S" />
+		<Unit filename="loader/sx620hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx700hs/entry.S" />
+		<Unit filename="loader/sx700hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx710hs/entry.S" />
+		<Unit filename="loader/sx710hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="loader/sx730hs/entry.S" />
+		<Unit filename="loader/sx730hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="loader/tx1/entry.S" />
 		<Unit filename="loader/tx1/main.c">
 			<Option compilerVar="CC" />
@@ -1173,10 +1088,19 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="modules/edgeoverlay.h" />
+		<Unit filename="modules/exmem_inspector.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="modules/eyefi.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="modules/eyefi.h" />
+		<Unit filename="modules/file_shelter.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="modules/firmware_crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="modules/flt.h" />
 		<Unit filename="modules/games/gui_4wins.c">
 			<Option compilerVar="CC" />
@@ -1285,6 +1209,9 @@
 		</Unit>
 		<Unit filename="modules/rawhookops.h" />
 		<Unit filename="modules/reversebytes.S" />
+		<Unit filename="modules/scrdump.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="modules/script_api.h" />
 		<Unit filename="modules/script_key_funcs.c">
 			<Option compilerVar="CC" />
@@ -1343,6 +1270,7 @@
 		<Unit filename="platform/a1000/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1000/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a1000/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1362,6 +1290,7 @@
 		<Unit filename="platform/a1000/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1000/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a1000/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1415,6 +1344,7 @@
 		<Unit filename="platform/a1100/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1100/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a1100/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1464,6 +1394,7 @@
 		<Unit filename="platform/a1200/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1200/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a1200/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1483,6 +1414,7 @@
 		<Unit filename="platform/a1200/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1200/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a1200/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1526,6 +1458,7 @@
 		<Unit filename="platform/a1300/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1300/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a1300/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1545,6 +1478,7 @@
 		<Unit filename="platform/a1300/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1300/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a1300/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1564,6 +1498,7 @@
 		<Unit filename="platform/a1300/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1300/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a1300/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1604,6 +1539,7 @@
 		<Unit filename="platform/a1400/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a1400/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a1400/sub/100b/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1654,6 +1590,7 @@
 		<Unit filename="platform/a2000/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2000/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a2000/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1700,6 +1637,7 @@
 		<Unit filename="platform/a2100/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2100/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a2100/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1753,6 +1691,7 @@
 		<Unit filename="platform/a2200/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2200/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a2200/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1772,6 +1711,7 @@
 		<Unit filename="platform/a2200/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2200/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a2200/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1824,6 +1764,7 @@
 		<Unit filename="platform/a2300/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2300/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a2300/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1843,6 +1784,7 @@
 		<Unit filename="platform/a2300/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2300/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a2300/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1862,6 +1804,7 @@
 		<Unit filename="platform/a2300/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2300/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a2300/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1905,6 +1848,7 @@
 		<Unit filename="platform/a2400/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2400/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a2400/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1924,6 +1868,7 @@
 		<Unit filename="platform/a2400/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2400/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a2400/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1943,6 +1888,7 @@
 		<Unit filename="platform/a2400/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2400/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a2400/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -1986,6 +1932,7 @@
 		<Unit filename="platform/a2500/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2500/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a2500/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2036,6 +1983,7 @@
 		<Unit filename="platform/a2600/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a2600/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a2600/sub/100c/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2083,6 +2031,7 @@
 		<Unit filename="platform/a3000/sub/100b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3000/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a3000/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2099,6 +2048,7 @@
 		<Unit filename="platform/a3000/sub/100c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3000/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a3000/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2115,6 +2065,7 @@
 		<Unit filename="platform/a3000/sub/100d/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3000/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a3000/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2155,6 +2106,7 @@
 		<Unit filename="platform/a3100/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3100/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a3100/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2174,6 +2126,7 @@
 		<Unit filename="platform/a3100/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3100/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a3100/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2193,6 +2146,7 @@
 		<Unit filename="platform/a3100/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3100/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a3100/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2246,6 +2200,7 @@
 		<Unit filename="platform/a3200/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3200/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a3200/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2265,6 +2220,7 @@
 		<Unit filename="platform/a3200/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3200/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a3200/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2314,6 +2270,7 @@
 		<Unit filename="platform/a3300/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3300/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a3300/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2333,6 +2290,7 @@
 		<Unit filename="platform/a3300/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3300/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a3300/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2382,6 +2340,7 @@
 		<Unit filename="platform/a3400/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3400/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a3400/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2401,6 +2360,7 @@
 		<Unit filename="platform/a3400/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3400/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/a3400/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2420,6 +2380,7 @@
 		<Unit filename="platform/a3400/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a3400/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/a3400/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2463,6 +2424,7 @@
 		<Unit filename="platform/a4000/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a4000/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a4000/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2482,6 +2444,7 @@
 		<Unit filename="platform/a4000/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a4000/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/a4000/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2501,6 +2464,7 @@
 		<Unit filename="platform/a4000/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a4000/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/a4000/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2541,6 +2505,7 @@
 		<Unit filename="platform/a410/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a410/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a410/sub/100f/focushack.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2584,6 +2549,7 @@
 		<Unit filename="platform/a420/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a420/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a420/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2627,6 +2593,7 @@
 		<Unit filename="platform/a430/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a430/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a430/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2670,6 +2637,7 @@
 		<Unit filename="platform/a450/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a450/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a450/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2716,6 +2684,7 @@
 		<Unit filename="platform/a460/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a460/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a460/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2762,6 +2731,7 @@
 		<Unit filename="platform/a470/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a470/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a470/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2782,6 +2752,7 @@
 		<Unit filename="platform/a470/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a470/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/a470/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2802,6 +2773,7 @@
 		<Unit filename="platform/a470/sub/102c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a470/sub/102c/firmware_crc_data.h" />
 		<Unit filename="platform/a470/sub/102c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2856,6 +2828,7 @@
 		<Unit filename="platform/a480/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a480/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a480/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2899,6 +2872,7 @@
 		<Unit filename="platform/a490/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a490/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a490/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2918,6 +2892,7 @@
 		<Unit filename="platform/a490/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a490/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a490/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2937,6 +2912,7 @@
 		<Unit filename="platform/a490/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a490/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a490/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2990,6 +2966,7 @@
 		<Unit filename="platform/a495/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a495/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a495/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3009,6 +2986,7 @@
 		<Unit filename="platform/a495/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a495/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a495/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3028,6 +3006,7 @@
 		<Unit filename="platform/a495/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a495/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a495/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3081,6 +3060,7 @@
 		<Unit filename="platform/a530/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a530/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a530/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3127,6 +3107,7 @@
 		<Unit filename="platform/a540/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a540/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a540/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3167,6 +3148,7 @@
 		<Unit filename="platform/a550/sub/100c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a550/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a550/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3207,6 +3189,7 @@
 		<Unit filename="platform/a560/sub/100a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a560/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a560/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3250,6 +3233,7 @@
 		<Unit filename="platform/a570/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a570/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a570/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3272,6 +3256,7 @@
 		<Unit filename="platform/a570/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a570/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/a570/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3318,6 +3303,7 @@
 		<Unit filename="platform/a580/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a580/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a580/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3337,6 +3323,7 @@
 		<Unit filename="platform/a580/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a580/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/a580/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3380,6 +3367,7 @@
 		<Unit filename="platform/a590/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a590/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a590/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3399,6 +3387,7 @@
 		<Unit filename="platform/a590/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a590/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/a590/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3452,6 +3441,7 @@
 		<Unit filename="platform/a610/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a610/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a610/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3474,6 +3464,7 @@
 		<Unit filename="platform/a610/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a610/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a610/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3520,6 +3511,7 @@
 		<Unit filename="platform/a620/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a620/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/a620/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3566,6 +3558,7 @@
 		<Unit filename="platform/a630/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a630/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a630/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3612,6 +3605,7 @@
 		<Unit filename="platform/a640/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a640/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a640/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3661,6 +3655,7 @@
 		<Unit filename="platform/a650/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a650/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a650/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3714,6 +3709,7 @@
 		<Unit filename="platform/a700/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a700/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a700/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3760,6 +3756,7 @@
 		<Unit filename="platform/a710/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a710/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/a710/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3806,6 +3803,7 @@
 		<Unit filename="platform/a720/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a720/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a720/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3859,6 +3857,7 @@
 		<Unit filename="platform/a800/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a800/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a800/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3878,6 +3877,7 @@
 		<Unit filename="platform/a800/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a800/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/a800/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3930,6 +3930,7 @@
 		<Unit filename="platform/a810/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a810/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/a810/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3949,6 +3950,7 @@
 		<Unit filename="platform/a810/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a810/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/a810/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -3968,6 +3970,7 @@
 		<Unit filename="platform/a810/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/a810/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/a810/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4008,6 +4011,7 @@
 		<Unit filename="platform/d10/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/d10/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/d10/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4048,6 +4052,7 @@
 		<Unit filename="platform/d20/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/d20/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/d20/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4091,6 +4096,7 @@
 		<Unit filename="platform/d30/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/d30/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/d30/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4140,6 +4146,7 @@
 		<Unit filename="platform/g10/sub/102a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g10/sub/102a/firmware_crc_data.h" />
 		<Unit filename="platform/g10/sub/102a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4159,6 +4166,7 @@
 		<Unit filename="platform/g10/sub/103b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g10/sub/103b/firmware_crc_data.h" />
 		<Unit filename="platform/g10/sub/103b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4178,6 +4186,7 @@
 		<Unit filename="platform/g10/sub/104a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g10/sub/104a/firmware_crc_data.h" />
 		<Unit filename="platform/g10/sub/104a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4228,6 +4237,10 @@
 		<Unit filename="platform/g11/sub/100f/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g11/sub/100f/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g11/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/g11/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4244,9 +4257,10 @@
 		<Unit filename="platform/g11/sub/100j/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/g11/sub/100j/lib.c">
+		<Unit filename="platform/g11/sub/100j/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g11/sub/100j/firmware_crc_data.h" />
 		<Unit filename="platform/g11/sub/100j/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4260,9 +4274,10 @@
 		<Unit filename="platform/g11/sub/100l/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/g11/sub/100l/lib.c">
+		<Unit filename="platform/g11/sub/100l/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g11/sub/100l/firmware_crc_data.h" />
 		<Unit filename="platform/g11/sub/100l/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4270,6 +4285,13 @@
 		<Unit filename="platform/g11/sub/100l/stubs_entry.S" />
 		<Unit filename="platform/g11/sub/100l/stubs_entry_2.S" />
 		<Unit filename="platform/g11/sub/100l/stubs_min.S" />
+		<Unit filename="platform/g11/sub/FAT32_detect.S" />
+		<Unit filename="platform/g11/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g11/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/g11/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4300,6 +4322,7 @@
 		<Unit filename="platform/g12/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g12/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/g12/sub/100c/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4316,6 +4339,7 @@
 		<Unit filename="platform/g12/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g12/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/g12/sub/100e/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4332,6 +4356,7 @@
 		<Unit filename="platform/g12/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g12/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/g12/sub/100f/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4348,6 +4373,7 @@
 		<Unit filename="platform/g12/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g12/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/g12/sub/100g/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4398,6 +4424,7 @@
 		<Unit filename="platform/g15/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g15/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/g15/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4417,6 +4444,7 @@
 		<Unit filename="platform/g15/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g15/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/g15/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4441,6 +4469,79 @@
 		</Unit>
 		<Unit filename="platform/g15/sub/taskhook.S" />
 		<Unit filename="platform/g15/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/platform_camera.h" />
+		<Unit filename="platform/g16/platform_kbd.h" />
+		<Unit filename="platform/g16/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/100h/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/100h/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/100h/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/100h/firmware_crc_data.h" />
+		<Unit filename="platform/g16/sub/100h/stubs_auto.S" />
+		<Unit filename="platform/g16/sub/100h/stubs_entry.S" />
+		<Unit filename="platform/g16/sub/100h/stubs_entry_2.S" />
+		<Unit filename="platform/g16/sub/100h/stubs_min.S" />
+		<Unit filename="platform/g16/sub/101a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101a/firmware_crc_data.h" />
+		<Unit filename="platform/g16/sub/101a/stubs_auto.S" />
+		<Unit filename="platform/g16/sub/101a/stubs_entry.S" />
+		<Unit filename="platform/g16/sub/101a/stubs_entry_2.S" />
+		<Unit filename="platform/g16/sub/101a/stubs_min.S" />
+		<Unit filename="platform/g16/sub/101b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101b/firmware_crc_data.h" />
+		<Unit filename="platform/g16/sub/101b/stubs_auto.S" />
+		<Unit filename="platform/g16/sub/101b/stubs_entry.S" />
+		<Unit filename="platform/g16/sub/101b/stubs_entry_2.S" />
+		<Unit filename="platform/g16/sub/101b/stubs_min.S" />
+		<Unit filename="platform/g16/sub/101c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g16/sub/101c/firmware_crc_data.h" />
+		<Unit filename="platform/g16/sub/101c/stubs_auto.S" />
+		<Unit filename="platform/g16/sub/101c/stubs_entry.S" />
+		<Unit filename="platform/g16/sub/101c/stubs_entry_2.S" />
+		<Unit filename="platform/g16/sub/101c/stubs_min.S" />
+		<Unit filename="platform/g16/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/g1x/kbd.c">
@@ -4470,6 +4571,7 @@
 		<Unit filename="platform/g1x/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g1x/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/g1x/sub/100e/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4486,6 +4588,7 @@
 		<Unit filename="platform/g1x/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g1x/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/g1x/sub/100f/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4502,6 +4605,7 @@
 		<Unit filename="platform/g1x/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g1x/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/g1x/sub/100g/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4518,6 +4622,7 @@
 		<Unit filename="platform/g1x/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g1x/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/g1x/sub/101a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4538,6 +4643,91 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/g1x/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/platform_camera.h" />
+		<Unit filename="platform/g5x/platform_kbd.h" />
+		<Unit filename="platform/g5x/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/g5x/sub/100c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/g5x/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/g5x/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/g5x/sub/100c/stubs_min.S" />
+		<Unit filename="platform/g5x/sub/101a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101a/firmware_crc_data.h" />
+		<Unit filename="platform/g5x/sub/101a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101a/stubs_auto.S" />
+		<Unit filename="platform/g5x/sub/101a/stubs_entry.S" />
+		<Unit filename="platform/g5x/sub/101a/stubs_entry_2.S" />
+		<Unit filename="platform/g5x/sub/101a/stubs_min.S" />
+		<Unit filename="platform/g5x/sub/101b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101b/firmware_crc_data.h" />
+		<Unit filename="platform/g5x/sub/101b/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101b/stubs_auto.S" />
+		<Unit filename="platform/g5x/sub/101b/stubs_entry.S" />
+		<Unit filename="platform/g5x/sub/101b/stubs_entry_2.S" />
+		<Unit filename="platform/g5x/sub/101b/stubs_min.S" />
+		<Unit filename="platform/g5x/sub/101d/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101d/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101d/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101d/firmware_crc_data.h" />
+		<Unit filename="platform/g5x/sub/101d/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g5x/sub/101d/stubs_auto.S" />
+		<Unit filename="platform/g5x/sub/101d/stubs_entry.S" />
+		<Unit filename="platform/g5x/sub/101d/stubs_entry_2.S" />
+		<Unit filename="platform/g5x/sub/101d/stubs_min.S" />
+		<Unit filename="platform/g5x/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/g7/kbd.c">
@@ -4567,6 +4757,7 @@
 		<Unit filename="platform/g7/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g7/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/g7/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4589,6 +4780,7 @@
 		<Unit filename="platform/g7/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g7/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/g7/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4611,6 +4803,7 @@
 		<Unit filename="platform/g7/sub/100i/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g7/sub/100i/firmware_crc_data.h" />
 		<Unit filename="platform/g7/sub/100i/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4633,6 +4826,7 @@
 		<Unit filename="platform/g7/sub/100j/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g7/sub/100j/firmware_crc_data.h" />
 		<Unit filename="platform/g7/sub/100j/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4653,6 +4847,118 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/g7/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/platform_camera.h" />
+		<Unit filename="platform/g7x2/platform_kbd.h" />
+		<Unit filename="platform/g7x2/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/101a/bin_comp_fix.h" />
+		<Unit filename="platform/g7x2/sub/101a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/101a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/101a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/101a/firmware_crc_data.h" />
+		<Unit filename="platform/g7x2/sub/101a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/101a/stubs_auto.S" />
+		<Unit filename="platform/g7x2/sub/101a/stubs_entry.S" />
+		<Unit filename="platform/g7x2/sub/101a/stubs_entry_2.S" />
+		<Unit filename="platform/g7x2/sub/101a/stubs_min.S" />
+		<Unit filename="platform/g7x2/sub/110b/bin_comp_fix.h" />
+		<Unit filename="platform/g7x2/sub/110b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/110b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/110b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/110b/firmware_crc_data.h" />
+		<Unit filename="platform/g7x2/sub/110b/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x2/sub/110b/stubs_auto.S" />
+		<Unit filename="platform/g7x2/sub/110b/stubs_entry.S" />
+		<Unit filename="platform/g7x2/sub/110b/stubs_entry_2.S" />
+		<Unit filename="platform/g7x2/sub/110b/stubs_min.S" />
+		<Unit filename="platform/g7x2/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/platform_camera.h" />
+		<Unit filename="platform/g7x/platform_kbd.h" />
+		<Unit filename="platform/g7x/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/g7x/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/g7x/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/g7x/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/g7x/sub/100b/stubs_min.S" />
+		<Unit filename="platform/g7x/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/g7x/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/g7x/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/g7x/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/g7x/sub/100c/stubs_min.S" />
+		<Unit filename="platform/g7x/sub/100d/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100d/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100d/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/g7x/sub/100d/firmware_crc_data.h" />
+		<Unit filename="platform/g7x/sub/100d/stubs_auto.S" />
+		<Unit filename="platform/g7x/sub/100d/stubs_entry.S" />
+		<Unit filename="platform/g7x/sub/100d/stubs_entry_2.S" />
+		<Unit filename="platform/g7x/sub/100d/stubs_min.S" />
+		<Unit filename="platform/g7x/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/g9/kbd.c">
@@ -4682,6 +4988,7 @@
 		<Unit filename="platform/g9/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g9/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/g9/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4701,6 +5008,7 @@
 		<Unit filename="platform/g9/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g9/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/g9/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4720,6 +5028,7 @@
 		<Unit filename="platform/g9/sub/100i/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/g9/sub/100i/firmware_crc_data.h" />
 		<Unit filename="platform/g9/sub/100i/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4755,6 +5064,12 @@
 		<Unit filename="platform/generic/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/generic/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/generic/palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/generic/shooting.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4788,6 +5103,7 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus1000_sd4500/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4807,6 +5123,7 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/ixus1000_sd4500/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4826,6 +5143,7 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus1000_sd4500/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4845,6 +5163,7 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/102b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4855,6 +5174,26 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/102b/stubs_entry.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102b/stubs_entry_2.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102b/stubs_min.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/firmware_crc_data.h" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/stubs_auto.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/stubs_entry.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/stubs_entry_2.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102c/stubs_min.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102d/boot.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4864,6 +5203,7 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/102d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4874,6 +5214,26 @@
 		<Unit filename="platform/ixus1000_sd4500/sub/102d/stubs_entry.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102d/stubs_entry_2.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/102d/stubs_min.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/firmware_crc_data.h" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/stubs_auto.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/stubs_entry.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/stubs_entry_2.S" />
+		<Unit filename="platform/ixus1000_sd4500/sub/102e/stubs_min.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/FAT32_detect.S" />
 		<Unit filename="platform/ixus1000_sd4500/sub/boot_hdr.c">
 			<Option compilerVar="CC" />
@@ -4917,6 +5277,7 @@
 		<Unit filename="platform/ixus100_sd780/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus100_sd780/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus100_sd780/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4936,6 +5297,7 @@
 		<Unit filename="platform/ixus100_sd780/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus100_sd780/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus100_sd780/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -4989,6 +5351,7 @@
 		<Unit filename="platform/ixus105_sd1300/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus105_sd1300/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus105_sd1300/sub/100b/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5005,6 +5368,7 @@
 		<Unit filename="platform/ixus105_sd1300/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus105_sd1300/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus105_sd1300/sub/100c/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5021,6 +5385,7 @@
 		<Unit filename="platform/ixus105_sd1300/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus105_sd1300/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus105_sd1300/sub/100d/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5061,6 +5426,7 @@
 		<Unit filename="platform/ixus110_sd960/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus110_sd960/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus110_sd960/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5080,6 +5446,7 @@
 		<Unit filename="platform/ixus110_sd960/sub/101d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus110_sd960/sub/101d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus110_sd960/sub/101d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5099,6 +5466,7 @@
 		<Unit filename="platform/ixus110_sd960/sub/101f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus110_sd960/sub/101f/firmware_crc_data.h" />
 		<Unit filename="platform/ixus110_sd960/sub/101f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5139,6 +5507,7 @@
 		<Unit filename="platform/ixus115_elph100hs/sub/100c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus115_elph100hs/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus115_elph100hs/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5155,6 +5524,7 @@
 		<Unit filename="platform/ixus115_elph100hs/sub/101a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus115_elph100hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus115_elph100hs/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5171,6 +5541,7 @@
 		<Unit filename="platform/ixus115_elph100hs/sub/101b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus115_elph100hs/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus115_elph100hs/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5214,6 +5585,7 @@
 		<Unit filename="platform/ixus120_sd940/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus120_sd940/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/ixus120_sd940/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5233,6 +5605,7 @@
 		<Unit filename="platform/ixus120_sd940/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus120_sd940/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus120_sd940/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5252,6 +5625,7 @@
 		<Unit filename="platform/ixus120_sd940/sub/102c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus120_sd940/sub/102c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus120_sd940/sub/102c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5271,6 +5645,7 @@
 		<Unit filename="platform/ixus120_sd940/sub/103b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus120_sd940/sub/103b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus120_sd940/sub/103b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5290,6 +5665,7 @@
 		<Unit filename="platform/ixus120_sd940/sub/103c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus120_sd940/sub/103c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus120_sd940/sub/103c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5337,6 +5713,7 @@
 		<Unit filename="platform/ixus125_elph110hs/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus125_elph110hs/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus125_elph110hs/sub/100d/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5353,6 +5730,7 @@
 		<Unit filename="platform/ixus125_elph110hs/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus125_elph110hs/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/ixus125_elph110hs/sub/100e/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5369,6 +5747,7 @@
 		<Unit filename="platform/ixus125_elph110hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus125_elph110hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus125_elph110hs/sub/101a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5418,6 +5797,7 @@
 		<Unit filename="platform/ixus130_sd1400/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus130_sd1400/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus130_sd1400/sub/100a/led.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5441,6 +5821,7 @@
 		<Unit filename="platform/ixus130_sd1400/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus130_sd1400/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus130_sd1400/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5484,6 +5865,7 @@
 		<Unit filename="platform/ixus132_elph115/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus132_elph115/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus132_elph115/sub/100b/stubs_auto.S" />
 		<Unit filename="platform/ixus132_elph115/sub/100b/stubs_entry.S" />
 		<Unit filename="platform/ixus132_elph115/sub/100b/stubs_entry_2.S" />
@@ -5531,6 +5913,7 @@
 		<Unit filename="platform/ixus135_elph120/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus135_elph120/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus135_elph120/sub/100b/stubs_auto.S" />
 		<Unit filename="platform/ixus135_elph120/sub/100b/stubs_entry.S" />
 		<Unit filename="platform/ixus135_elph120/sub/100b/stubs_entry_2.S" />
@@ -5578,6 +5961,7 @@
 		<Unit filename="platform/ixus140_elph130/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus140_elph130/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus140_elph130/sub/100a/stubs_auto.S" />
 		<Unit filename="platform/ixus140_elph130/sub/100a/stubs_entry.S" />
 		<Unit filename="platform/ixus140_elph130/sub/100a/stubs_entry_2.S" />
@@ -5596,6 +5980,60 @@
 		</Unit>
 		<Unit filename="platform/ixus140_elph130/sub/taskhook.S" />
 		<Unit filename="platform/ixus140_elph130/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/platform_camera.h" />
+		<Unit filename="platform/ixus145_elph135/platform_kbd.h" />
+		<Unit filename="platform/ixus145_elph135/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/platform_palette.h" />
+		<Unit filename="platform/ixus145_elph135/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/ixus145_elph135/sub/100c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/ixus145_elph135/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/ixus145_elph135/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/ixus145_elph135/sub/100c/stubs_min.S" />
+		<Unit filename="platform/ixus145_elph135/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus145_elph135/sub/taskhook.S" />
+		<Unit filename="platform/ixus145_elph135/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixus150_elph140/kbd.c">
@@ -5625,6 +6063,7 @@
 		<Unit filename="platform/ixus150_elph140/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus150_elph140/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus150_elph140/sub/100c/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5649,6 +6088,60 @@
 		</Unit>
 		<Unit filename="platform/ixus150_elph140/sub/taskhook.S" />
 		<Unit filename="platform/ixus150_elph140/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/platform_camera.h" />
+		<Unit filename="platform/ixus155_elph150/platform_kbd.h" />
+		<Unit filename="platform/ixus155_elph150/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/platform_palette.h" />
+		<Unit filename="platform/ixus155_elph150/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/100b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/ixus155_elph150/sub/100b/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/ixus155_elph150/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/ixus155_elph150/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/ixus155_elph150/sub/100b/stubs_min.S" />
+		<Unit filename="platform/ixus155_elph150/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus155_elph150/sub/taskhook.S" />
+		<Unit filename="platform/ixus155_elph150/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixus160_elph160/kbd.c">
@@ -5678,6 +6171,7 @@
 		<Unit filename="platform/ixus160_elph160/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus160_elph160/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus160_elph160/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5702,6 +6196,162 @@
 		</Unit>
 		<Unit filename="platform/ixus160_elph160/sub/taskhook.S" />
 		<Unit filename="platform/ixus160_elph160/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/platform_camera.h" />
+		<Unit filename="platform/ixus170_elph170/platform_kbd.h" />
+		<Unit filename="platform/ixus170_elph170/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/platform_palette.h" />
+		<Unit filename="platform/ixus170_elph170/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/100a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/ixus170_elph170/sub/100a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/ixus170_elph170/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/ixus170_elph170/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/ixus170_elph170/sub/100a/stubs_min.S" />
+		<Unit filename="platform/ixus170_elph170/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus170_elph170/sub/taskhook.S" />
+		<Unit filename="platform/ixus170_elph170/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/platform_camera.h" />
+		<Unit filename="platform/ixus175_elph180/platform_kbd.h" />
+		<Unit filename="platform/ixus175_elph180/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/platform_palette.h" />
+		<Unit filename="platform/ixus175_elph180/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/ixus175_elph180/sub/100c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/ixus175_elph180/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/ixus175_elph180/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/ixus175_elph180/sub/100c/stubs_min.S" />
+		<Unit filename="platform/ixus175_elph180/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus175_elph180/sub/taskhook.S" />
+		<Unit filename="platform/ixus175_elph180/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/platform_camera.h" />
+		<Unit filename="platform/ixus185_elph185/platform_kbd.h" />
+		<Unit filename="platform/ixus185_elph185/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/platform_palette.h" />
+		<Unit filename="platform/ixus185_elph185/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/100a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/ixus185_elph185/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/ixus185_elph185/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/ixus185_elph185/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/ixus185_elph185/sub/100a/stubs_min.S" />
+		<Unit filename="platform/ixus185_elph185/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus185_elph185/sub/taskhook.S" />
+		<Unit filename="platform/ixus185_elph185/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixus200_sd980/kbd.c">
@@ -5731,6 +6381,7 @@
 		<Unit filename="platform/ixus200_sd980/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus200_sd980/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus200_sd980/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5753,6 +6404,7 @@
 		<Unit filename="platform/ixus200_sd980/sub/101c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus200_sd980/sub/101c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus200_sd980/sub/101c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5772,6 +6424,7 @@
 		<Unit filename="platform/ixus200_sd980/sub/101d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus200_sd980/sub/101d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus200_sd980/sub/101d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5816,6 +6469,7 @@
 		<Unit filename="platform/ixus220_elph300hs/sub/100c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus220_elph300hs/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus220_elph300hs/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5832,6 +6486,7 @@
 		<Unit filename="platform/ixus220_elph300hs/sub/101a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus220_elph300hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus220_elph300hs/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5848,6 +6503,7 @@
 		<Unit filename="platform/ixus220_elph300hs/sub/101c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus220_elph300hs/sub/101c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus220_elph300hs/sub/101c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5864,6 +6520,7 @@
 		<Unit filename="platform/ixus220_elph300hs/sub/101g/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus220_elph300hs/sub/101g/firmware_crc_data.h" />
 		<Unit filename="platform/ixus220_elph300hs/sub/101g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5874,6 +6531,12 @@
 		<Unit filename="platform/ixus220_elph300hs/sub/101g/stubs_entry.S" />
 		<Unit filename="platform/ixus220_elph300hs/sub/101g/stubs_entry_2.S" />
 		<Unit filename="platform/ixus220_elph300hs/sub/101g/stubs_min.S" />
+		<Unit filename="platform/ixus220_elph300hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus220_elph300hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/ixus220_elph300hs/sub/movie_rec_hdr.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5907,6 +6570,7 @@
 		<Unit filename="platform/ixus230_elph310hs/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus230_elph310hs/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus230_elph310hs/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5926,6 +6590,7 @@
 		<Unit filename="platform/ixus230_elph310hs/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus230_elph310hs/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus230_elph310hs/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5945,6 +6610,7 @@
 		<Unit filename="platform/ixus230_elph310hs/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus230_elph310hs/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/ixus230_elph310hs/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5955,6 +6621,9 @@
 		<Unit filename="platform/ixus230_elph310hs/sub/100e/stubs_entry.S" />
 		<Unit filename="platform/ixus230_elph310hs/sub/100e/stubs_entry_2.S" />
 		<Unit filename="platform/ixus230_elph310hs/sub/100e/stubs_min.S" />
+		<Unit filename="platform/ixus230_elph310hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/ixus230_elph310hs/sub/filewrite_hdr.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -5988,6 +6657,7 @@
 		<Unit filename="platform/ixus240_elph320hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus240_elph320hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus240_elph320hs/sub/101a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6004,6 +6674,7 @@
 		<Unit filename="platform/ixus240_elph320hs/sub/102a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus240_elph320hs/sub/102a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus240_elph320hs/sub/102a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6053,6 +6724,7 @@
 		<Unit filename="platform/ixus255_elph330hs/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus255_elph330hs/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/ixus255_elph330hs/sub/100f/stubs_auto.S" />
 		<Unit filename="platform/ixus255_elph330hs/sub/100f/stubs_entry.S" />
 		<Unit filename="platform/ixus255_elph330hs/sub/100f/stubs_entry_2.S" />
@@ -6071,6 +6743,132 @@
 		</Unit>
 		<Unit filename="platform/ixus255_elph330hs/sub/taskhook.S" />
 		<Unit filename="platform/ixus255_elph330hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/platform_camera.h" />
+		<Unit filename="platform/ixus265_elph340hs/platform_kbd.h" />
+		<Unit filename="platform/ixus265_elph340hs/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/platform_palette.h" />
+		<Unit filename="platform/ixus265_elph340hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/ixus265_elph340hs/sub/100c/stubs_min.S" />
+		<Unit filename="platform/ixus265_elph340hs/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus265_elph340hs/sub/taskhook.S" />
+		<Unit filename="platform/ixus265_elph340hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/platform_camera.h" />
+		<Unit filename="platform/ixus275_elph350hs/platform_kbd.h" />
+		<Unit filename="platform/ixus275_elph350hs/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/platform_palette.h" />
+		<Unit filename="platform/ixus275_elph350hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/ixus275_elph350hs/sub/100a/stubs_min.S" />
+		<Unit filename="platform/ixus275_elph350hs/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus275_elph350hs/sub/taskhook.S" />
+		<Unit filename="platform/ixus275_elph350hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/platform_camera.h" />
+		<Unit filename="platform/ixus285_elph360hs/platform_kbd.h" />
+		<Unit filename="platform/ixus285_elph360hs/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/platform_palette.h" />
+		<Unit filename="platform/ixus285_elph360hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/ixus285_elph360hs/sub/100b/stubs_min.S" />
+		<Unit filename="platform/ixus285_elph360hs/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus285_elph360hs/sub/taskhook.S" />
+		<Unit filename="platform/ixus285_elph360hs/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixus300_sd4000/kbd.c">
@@ -6097,6 +6895,10 @@
 		<Unit filename="platform/ixus300_sd4000/sub/100d/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus300_sd4000/sub/100d/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus300_sd4000/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus300_sd4000/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6108,6 +6910,9 @@
 		<Unit filename="platform/ixus300_sd4000/sub/100d/stubs_entry_2.S" />
 		<Unit filename="platform/ixus300_sd4000/sub/100d/stubs_entry_ida.S" />
 		<Unit filename="platform/ixus300_sd4000/sub/100d/stubs_min.S" />
+		<Unit filename="platform/ixus300_sd4000/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/ixus300_sd4000/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6136,6 +6941,7 @@
 		<Unit filename="platform/ixus30_sd200/sub/100k/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus30_sd200/sub/100k/firmware_crc_data.h" />
 		<Unit filename="platform/ixus30_sd200/sub/100k/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6176,6 +6982,7 @@
 		<Unit filename="platform/ixus310_elph500hs/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus310_elph500hs/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus310_elph500hs/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6192,6 +6999,7 @@
 		<Unit filename="platform/ixus310_elph500hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus310_elph500hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus310_elph500hs/sub/101a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6208,6 +7016,7 @@
 		<Unit filename="platform/ixus310_elph500hs/sub/101c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus310_elph500hs/sub/101c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus310_elph500hs/sub/101c/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6255,6 +7064,7 @@
 		<Unit filename="platform/ixus40_sd300/sub/100j/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus40_sd300/sub/100j/firmware_crc_data.h" />
 		<Unit filename="platform/ixus40_sd300/sub/100j/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6272,6 +7082,7 @@
 		<Unit filename="platform/ixus40_sd300/sub/100k/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus40_sd300/sub/100k/firmware_crc_data.h" />
 		<Unit filename="platform/ixus40_sd300/sub/100k/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6309,6 +7120,7 @@
 		<Unit filename="platform/ixus50_sd400/sub/101a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus50_sd400/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus50_sd400/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6325,6 +7137,7 @@
 		<Unit filename="platform/ixus50_sd400/sub/101b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus50_sd400/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus50_sd400/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6365,6 +7178,7 @@
 		<Unit filename="platform/ixus55_sd450/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus55_sd450/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus55_sd450/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6384,6 +7198,7 @@
 		<Unit filename="platform/ixus55_sd450/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus55_sd450/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus55_sd450/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6403,6 +7218,7 @@
 		<Unit filename="platform/ixus55_sd450/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus55_sd450/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus55_sd450/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6449,6 +7265,7 @@
 		<Unit filename="platform/ixus60_sd600/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus60_sd600/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus60_sd600/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6469,6 +7286,7 @@
 		<Unit filename="platform/ixus60_sd600/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus60_sd600/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus60_sd600/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6516,6 +7334,7 @@
 		<Unit filename="platform/ixus65_sd630/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus65_sd630/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus65_sd630/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6557,6 +7376,7 @@
 		<Unit filename="platform/ixus700_sd500/sub/101a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus700_sd500/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus700_sd500/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6576,6 +7396,7 @@
 		<Unit filename="platform/ixus700_sd500/sub/101b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus700_sd500/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus700_sd500/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6622,6 +7443,7 @@
 		<Unit filename="platform/ixus70_sd1000/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus70_sd1000/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus70_sd1000/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6644,6 +7466,7 @@
 		<Unit filename="platform/ixus70_sd1000/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus70_sd1000/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus70_sd1000/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6666,6 +7489,7 @@
 		<Unit filename="platform/ixus70_sd1000/sub/102a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus70_sd1000/sub/102a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus70_sd1000/sub/102a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6712,6 +7536,7 @@
 		<Unit filename="platform/ixus750_sd550/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus750_sd550/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/ixus750_sd550/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6734,6 +7559,7 @@
 		<Unit filename="platform/ixus750_sd550/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus750_sd550/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/ixus750_sd550/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6756,6 +7582,7 @@
 		<Unit filename="platform/ixus750_sd550/sub/100h/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus750_sd550/sub/100h/firmware_crc_data.h" />
 		<Unit filename="platform/ixus750_sd550/sub/100h/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6802,6 +7629,7 @@
 		<Unit filename="platform/ixus75_sd750/sub/100b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus75_sd750/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus75_sd750/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6824,6 +7652,7 @@
 		<Unit filename="platform/ixus75_sd750/sub/101a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus75_sd750/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus75_sd750/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6846,6 +7675,7 @@
 		<Unit filename="platform/ixus75_sd750/sub/102a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus75_sd750/sub/102a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus75_sd750/sub/102a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6895,6 +7725,7 @@
 		<Unit filename="platform/ixus800_sd700/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus800_sd700/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus800_sd700/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6914,6 +7745,7 @@
 		<Unit filename="platform/ixus800_sd700/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus800_sd700/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus800_sd700/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6967,6 +7799,7 @@
 		<Unit filename="platform/ixus80_sd1100/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus80_sd1100/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus80_sd1100/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -6991,6 +7824,7 @@
 		<Unit filename="platform/ixus80_sd1100/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus80_sd1100/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus80_sd1100/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7044,6 +7878,7 @@
 		<Unit filename="platform/ixus850_sd800/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus850_sd800/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/ixus850_sd800/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7091,6 +7926,7 @@
 		<Unit filename="platform/ixus85_sd770/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus85_sd770/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus85_sd770/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7134,6 +7970,7 @@
 		<Unit filename="platform/ixus860_sd870/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus860_sd870/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus860_sd870/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7187,6 +8024,7 @@
 		<Unit filename="platform/ixus870_sd880/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus870_sd880/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/ixus870_sd880/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7206,6 +8044,7 @@
 		<Unit filename="platform/ixus870_sd880/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus870_sd880/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/ixus870_sd880/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7225,6 +8064,7 @@
 		<Unit filename="platform/ixus870_sd880/sub/102b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus870_sd880/sub/102b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus870_sd880/sub/102b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7268,6 +8108,7 @@
 		<Unit filename="platform/ixus900_sd900/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus900_sd900/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus900_sd900/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7319,6 +8160,7 @@
 		<Unit filename="platform/ixus90_sd790/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus90_sd790/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus90_sd790/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7338,6 +8180,7 @@
 		<Unit filename="platform/ixus90_sd790/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus90_sd790/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus90_sd790/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7381,6 +8224,7 @@
 		<Unit filename="platform/ixus950_sd850/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus950_sd850/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus950_sd850/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7428,6 +8272,7 @@
 		<Unit filename="platform/ixus95_sd1200/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus95_sd1200/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus95_sd1200/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7447,6 +8292,7 @@
 		<Unit filename="platform/ixus95_sd1200/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus95_sd1200/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus95_sd1200/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7501,6 +8347,7 @@
 		<Unit filename="platform/ixus960_sd950/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus960_sd950/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/ixus960_sd950/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7555,6 +8402,7 @@
 		<Unit filename="platform/ixus970_sd890/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus970_sd890/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus970_sd890/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7574,6 +8422,7 @@
 		<Unit filename="platform/ixus970_sd890/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus970_sd890/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/ixus970_sd890/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7593,6 +8442,7 @@
 		<Unit filename="platform/ixus970_sd890/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus970_sd890/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/ixus970_sd890/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7643,6 +8493,7 @@
 		<Unit filename="platform/ixus980_sd990/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus980_sd990/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/ixus980_sd990/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7662,6 +8513,7 @@
 		<Unit filename="platform/ixus980_sd990/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixus980_sd990/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/ixus980_sd990/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7676,6 +8528,60 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixus980_sd990/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/platform_camera.h" />
+		<Unit filename="platform/ixus990_sd970/platform_kbd.h" />
+		<Unit filename="platform/ixus990_sd970/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/platform_palette.h" />
+		<Unit filename="platform/ixus990_sd970/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/100a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/ixus990_sd970/sub/100a/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/100a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/ixus990_sd970/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/ixus990_sd970/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/ixus990_sd970/sub/100a/stubs_min.S" />
+		<Unit filename="platform/ixus990_sd970/sub/FAT32_detect.S" />
+		<Unit filename="platform/ixus990_sd970/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/ixus990_sd970/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixusizoom_sd30/kbd.c">
@@ -7705,6 +8611,7 @@
 		<Unit filename="platform/ixusizoom_sd30/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixusizoom_sd30/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/ixusizoom_sd30/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7724,6 +8631,7 @@
 		<Unit filename="platform/ixusizoom_sd30/sub/100h/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixusizoom_sd30/sub/100h/firmware_crc_data.h" />
 		<Unit filename="platform/ixusizoom_sd30/sub/100h/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7770,6 +8678,7 @@
 		<Unit filename="platform/ixusw_sd430/sub/110a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/ixusw_sd430/sub/110a/firmware_crc_data.h" />
 		<Unit filename="platform/ixusw_sd430/sub/110a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7796,6 +8705,142 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/ixusw_sd430/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/platform_camera.h" />
+		<Unit filename="platform/m10/platform_kbd.h" />
+		<Unit filename="platform/m10/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110d/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110d/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110d/firmware_crc_data.h" />
+		<Unit filename="platform/m10/sub/110d/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110d/stubs_auto.S" />
+		<Unit filename="platform/m10/sub/110d/stubs_entry.S" />
+		<Unit filename="platform/m10/sub/110d/stubs_entry_2.S" />
+		<Unit filename="platform/m10/sub/110d/stubs_min.S" />
+		<Unit filename="platform/m10/sub/110f/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110f/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110f/firmware_crc_data.h" />
+		<Unit filename="platform/m10/sub/110f/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/110f/stubs_auto.S" />
+		<Unit filename="platform/m10/sub/110f/stubs_entry.S" />
+		<Unit filename="platform/m10/sub/110f/stubs_entry_2.S" />
+		<Unit filename="platform/m10/sub/110f/stubs_min.S" />
+		<Unit filename="platform/m10/sub/111a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/111a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/111a/firmware_crc_data.h" />
+		<Unit filename="platform/m10/sub/111a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m10/sub/111a/stubs_auto.S" />
+		<Unit filename="platform/m10/sub/111a/stubs_entry.S" />
+		<Unit filename="platform/m10/sub/111a/stubs_entry_2.S" />
+		<Unit filename="platform/m10/sub/111a/stubs_min.S" />
+		<Unit filename="platform/m10/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/platform_camera.h" />
+		<Unit filename="platform/m3/platform_kbd.h" />
+		<Unit filename="platform/m3/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/101a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/101a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/101a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/101a/firmware_crc_data.h" />
+		<Unit filename="platform/m3/sub/101a/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/101a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/101a/stubs_auto.S" />
+		<Unit filename="platform/m3/sub/101a/stubs_entry.S" />
+		<Unit filename="platform/m3/sub/101a/stubs_entry_2.S" />
+		<Unit filename="platform/m3/sub/101a/stubs_min.S" />
+		<Unit filename="platform/m3/sub/120f/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/120f/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/120f/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/120f/firmware_crc_data.h" />
+		<Unit filename="platform/m3/sub/120f/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/120f/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/120f/stubs_auto.S" />
+		<Unit filename="platform/m3/sub/120f/stubs_entry.S" />
+		<Unit filename="platform/m3/sub/120f/stubs_entry_2.S" />
+		<Unit filename="platform/m3/sub/120f/stubs_min.S" />
+		<Unit filename="platform/m3/sub/121a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/121a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/121a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/121a/firmware_crc_data.h" />
+		<Unit filename="platform/m3/sub/121a/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/121a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/m3/sub/121a/stubs_auto.S" />
+		<Unit filename="platform/m3/sub/121a/stubs_entry.S" />
+		<Unit filename="platform/m3/sub/121a/stubs_entry_2.S" />
+		<Unit filename="platform/m3/sub/121a/stubs_min.S" />
+		<Unit filename="platform/m3/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/n/kbd.c">
@@ -7825,6 +8870,7 @@
 		<Unit filename="platform/n/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/n/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/n/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7875,6 +8921,7 @@
 		<Unit filename="platform/n_facebook/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/n_facebook/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/n_facebook/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7922,6 +8969,7 @@
 		<Unit filename="platform/s100/sub/100d/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s100/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/s100/sub/100d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7938,6 +8986,7 @@
 		<Unit filename="platform/s100/sub/100e/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s100/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/s100/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7954,6 +9003,7 @@
 		<Unit filename="platform/s100/sub/101a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s100/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/s100/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7970,6 +9020,7 @@
 		<Unit filename="platform/s100/sub/101b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s100/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/s100/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -7986,6 +9037,7 @@
 		<Unit filename="platform/s100/sub/102a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s100/sub/102a/firmware_crc_data.h" />
 		<Unit filename="platform/s100/sub/102a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8029,6 +9081,7 @@
 		<Unit filename="platform/s110/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s110/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/s110/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8048,6 +9101,7 @@
 		<Unit filename="platform/s110/sub/102b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s110/sub/102b/firmware_crc_data.h" />
 		<Unit filename="platform/s110/sub/102b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8067,6 +9121,7 @@
 		<Unit filename="platform/s110/sub/103a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s110/sub/103a/firmware_crc_data.h" />
 		<Unit filename="platform/s110/sub/103a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8117,6 +9172,7 @@
 		<Unit filename="platform/s2is/sub/100e/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s2is/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/s2is/sub/100e/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8133,6 +9189,7 @@
 		<Unit filename="platform/s2is/sub/100f/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s2is/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/s2is/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8149,6 +9206,7 @@
 		<Unit filename="platform/s2is/sub/100g/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s2is/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/s2is/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8192,6 +9250,7 @@
 		<Unit filename="platform/s3is/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s3is/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/s3is/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8238,6 +9297,7 @@
 		<Unit filename="platform/s5is/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s5is/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/s5is/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8258,6 +9318,7 @@
 		<Unit filename="platform/s5is/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s5is/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/s5is/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8309,6 +9370,7 @@
 		<Unit filename="platform/s80/sub/100g/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s80/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/s80/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8325,6 +9387,7 @@
 		<Unit filename="platform/s80/sub/101b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s80/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/s80/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8365,6 +9428,7 @@
 		<Unit filename="platform/s90/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s90/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/s90/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8384,6 +9448,7 @@
 		<Unit filename="platform/s90/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s90/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/s90/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8403,6 +9468,7 @@
 		<Unit filename="platform/s90/sub/101c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/s90/sub/101c/firmware_crc_data.h" />
 		<Unit filename="platform/s90/sub/101c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8440,9 +9506,7 @@
 		<Unit filename="platform/s95/sub/100e/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/s95/sub/100e/lib.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="platform/s95/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/s95/sub/100e/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8456,9 +9520,7 @@
 		<Unit filename="platform/s95/sub/100h/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/s95/sub/100h/lib.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="platform/s95/sub/100h/firmware_crc_data.h" />
 		<Unit filename="platform/s95/sub/100h/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8472,9 +9534,7 @@
 		<Unit filename="platform/s95/sub/100i/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/s95/sub/100i/lib.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="platform/s95/sub/100i/firmware_crc_data.h" />
 		<Unit filename="platform/s95/sub/100i/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8488,9 +9548,7 @@
 		<Unit filename="platform/s95/sub/100k/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/s95/sub/100k/lib.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="platform/s95/sub/100k/firmware_crc_data.h" />
 		<Unit filename="platform/s95/sub/100k/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8531,6 +9589,7 @@
 		<Unit filename="platform/sx100is/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx100is/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/sx100is/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8541,7 +9600,6 @@
 		<Unit filename="platform/sx100is/sub/100b/stubs_entry.S" />
 		<Unit filename="platform/sx100is/sub/100b/stubs_entry_2.S" />
 		<Unit filename="platform/sx100is/sub/100b/stubs_min.S" />
-		<Unit filename="platform/sx100is/sub/100c/bin_compat.h" />
 		<Unit filename="platform/sx100is/sub/100c/boot.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8551,6 +9609,7 @@
 		<Unit filename="platform/sx100is/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx100is/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx100is/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8604,6 +9663,7 @@
 		<Unit filename="platform/sx10/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx10/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx10/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8623,6 +9683,7 @@
 		<Unit filename="platform/sx10/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx10/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx10/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8642,6 +9703,7 @@
 		<Unit filename="platform/sx10/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx10/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/sx10/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8661,6 +9723,7 @@
 		<Unit filename="platform/sx10/sub/102b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx10/sub/102b/firmware_crc_data.h" />
 		<Unit filename="platform/sx10/sub/102b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8671,6 +9734,7 @@
 		<Unit filename="platform/sx10/sub/102b/stubs_entry.S" />
 		<Unit filename="platform/sx10/sub/102b/stubs_entry_2.S" />
 		<Unit filename="platform/sx10/sub/102b/stubs_min.S" />
+		<Unit filename="platform/sx10/sub/103a/bin_compat.h" />
 		<Unit filename="platform/sx10/sub/103a/boot.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8680,6 +9744,7 @@
 		<Unit filename="platform/sx10/sub/103a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx10/sub/103a/firmware_crc_data.h" />
 		<Unit filename="platform/sx10/sub/103a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8731,6 +9796,7 @@
 		<Unit filename="platform/sx110is/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx110is/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/sx110is/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8775,6 +9841,7 @@
 		<Unit filename="platform/sx120is/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx120is/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/sx120is/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8816,6 +9883,10 @@
 		<Unit filename="platform/sx130is/sub/101c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx130is/sub/101c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx130is/sub/101c/firmware_crc_data.h" />
 		<Unit filename="platform/sx130is/sub/101c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8832,6 +9903,10 @@
 		<Unit filename="platform/sx130is/sub/101d/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx130is/sub/101d/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx130is/sub/101d/firmware_crc_data.h" />
 		<Unit filename="platform/sx130is/sub/101d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8848,6 +9923,10 @@
 		<Unit filename="platform/sx130is/sub/101f/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx130is/sub/101f/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx130is/sub/101f/firmware_crc_data.h" />
 		<Unit filename="platform/sx130is/sub/101f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8858,6 +9937,9 @@
 		<Unit filename="platform/sx130is/sub/101f/stubs_entry.S" />
 		<Unit filename="platform/sx130is/sub/101f/stubs_entry_2.S" />
 		<Unit filename="platform/sx130is/sub/101f/stubs_min.S" />
+		<Unit filename="platform/sx130is/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/sx130is/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8885,6 +9967,7 @@
 		<Unit filename="platform/sx150is/sub/100a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx150is/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/sx150is/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8928,6 +10011,7 @@
 		<Unit filename="platform/sx160is/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx160is/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/sx160is/sub/100a/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -8978,6 +10062,7 @@
 		<Unit filename="platform/sx170is/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx170is/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/sx170is/sub/100a/stubs_auto.S" />
 		<Unit filename="platform/sx170is/sub/100a/stubs_entry.S" />
 		<Unit filename="platform/sx170is/sub/100a/stubs_entry_2.S" />
@@ -8991,6 +10076,7 @@
 		<Unit filename="platform/sx170is/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx170is/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx170is/sub/101a/stubs_auto.S" />
 		<Unit filename="platform/sx170is/sub/101a/stubs_entry.S" />
 		<Unit filename="platform/sx170is/sub/101a/stubs_entry_2.S" />
@@ -9035,6 +10121,7 @@
 		<Unit filename="platform/sx1/sub/200h/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx1/sub/200h/firmware_crc_data.h" />
 		<Unit filename="platform/sx1/sub/200h/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9052,6 +10139,7 @@
 		<Unit filename="platform/sx1/sub/201a/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx1/sub/201a/firmware_crc_data.h" />
 		<Unit filename="platform/sx1/sub/201a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9092,6 +10180,7 @@
 		<Unit filename="platform/sx200is/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx200is/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx200is/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9146,6 +10235,7 @@
 		<Unit filename="platform/sx20/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx20/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/sx20/sub/100f/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9165,6 +10255,7 @@
 		<Unit filename="platform/sx20/sub/102b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx20/sub/102b/firmware_crc_data.h" />
 		<Unit filename="platform/sx20/sub/102b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9185,6 +10276,7 @@
 		<Unit filename="platform/sx20/sub/102d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx20/sub/102d/firmware_crc_data.h" />
 		<Unit filename="platform/sx20/sub/102d/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9230,6 +10322,7 @@
 		<Unit filename="platform/sx210is/sub/100c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx210is/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx210is/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9270,6 +10363,7 @@
 		<Unit filename="platform/sx220hs/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx220hs/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/sx220hs/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9289,6 +10383,7 @@
 		<Unit filename="platform/sx220hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx220hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx220hs/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9308,6 +10403,7 @@
 		<Unit filename="platform/sx220hs/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx220hs/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/sx220hs/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9360,6 +10456,7 @@
 		<Unit filename="platform/sx230hs/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx230hs/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx230hs/sub/100c/kbd.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9382,6 +10479,7 @@
 		<Unit filename="platform/sx230hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx230hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx230hs/sub/101a/kbd.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9404,6 +10502,7 @@
 		<Unit filename="platform/sx230hs/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx230hs/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/sx230hs/sub/101b/kbd.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9417,6 +10516,12 @@
 		<Unit filename="platform/sx230hs/sub/101b/stubs_entry.S" />
 		<Unit filename="platform/sx230hs/sub/101b/stubs_entry_2.S" />
 		<Unit filename="platform/sx230hs/sub/101b/stubs_min.S" />
+		<Unit filename="platform/sx230hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx230hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/sx230hs/sub/filewrite_hdr.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9453,6 +10558,7 @@
 		<Unit filename="platform/sx240hs/sub/100a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx240hs/sub/100a/firmware_crc_data.h" />
 		<Unit filename="platform/sx240hs/sub/100a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9472,6 +10578,7 @@
 		<Unit filename="platform/sx240hs/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx240hs/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx240hs/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9491,6 +10598,7 @@
 		<Unit filename="platform/sx240hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx240hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx240hs/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9543,6 +10651,7 @@
 		<Unit filename="platform/sx260hs/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx260hs/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/sx260hs/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9562,6 +10671,7 @@
 		<Unit filename="platform/sx260hs/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx260hs/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx260hs/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9581,6 +10691,7 @@
 		<Unit filename="platform/sx260hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx260hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx260hs/sub/101a/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9617,10 +10728,6 @@
 		</Unit>
 		<Unit filename="platform/sx280hs/platform_camera.h" />
 		<Unit filename="platform/sx280hs/platform_kbd.h" />
-		<Unit filename="platform/sx280hs/platform_palette.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="platform/sx280hs/platform_palette.h" />
 		<Unit filename="platform/sx280hs/shooting.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9631,6 +10738,10 @@
 		<Unit filename="platform/sx280hs/sub/102b/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx280hs/sub/102b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx280hs/sub/102b/firmware_crc_data.h" />
 		<Unit filename="platform/sx280hs/sub/102b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9648,6 +10759,10 @@
 		<Unit filename="platform/sx280hs/sub/102c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx280hs/sub/102c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx280hs/sub/102c/firmware_crc_data.h" />
 		<Unit filename="platform/sx280hs/sub/102c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9688,6 +10803,7 @@
 		<Unit filename="platform/sx30/sub/100e/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx30/sub/100e/firmware_crc_data.h" />
 		<Unit filename="platform/sx30/sub/100e/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9704,6 +10820,7 @@
 		<Unit filename="platform/sx30/sub/100h/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx30/sub/100h/firmware_crc_data.h" />
 		<Unit filename="platform/sx30/sub/100h/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9720,6 +10837,7 @@
 		<Unit filename="platform/sx30/sub/100l/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx30/sub/100l/firmware_crc_data.h" />
 		<Unit filename="platform/sx30/sub/100l/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9736,6 +10854,7 @@
 		<Unit filename="platform/sx30/sub/100n/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx30/sub/100n/firmware_crc_data.h" />
 		<Unit filename="platform/sx30/sub/100n/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9753,6 +10872,7 @@
 		<Unit filename="platform/sx30/sub/100p/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx30/sub/100p/firmware_crc_data.h" />
 		<Unit filename="platform/sx30/sub/100p/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9774,6 +10894,60 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/sx30/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/platform_camera.h" />
+		<Unit filename="platform/sx400is/platform_kbd.h" />
+		<Unit filename="platform/sx400is/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/platform_palette.h" />
+		<Unit filename="platform/sx400is/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/100b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/sx400is/sub/100b/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/sx400is/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/sx400is/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/sx400is/sub/100b/stubs_min.S" />
+		<Unit filename="platform/sx400is/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx400is/sub/taskhook.S" />
+		<Unit filename="platform/sx400is/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/sx40hs/kbd.c">
@@ -9803,6 +10977,7 @@
 		<Unit filename="platform/sx40hs/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx40hs/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/sx40hs/sub/100d/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9819,6 +10994,7 @@
 		<Unit filename="platform/sx40hs/sub/100f/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx40hs/sub/100f/firmware_crc_data.h" />
 		<Unit filename="platform/sx40hs/sub/100f/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9835,6 +11011,7 @@
 		<Unit filename="platform/sx40hs/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx40hs/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/sx40hs/sub/100g/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9851,6 +11028,7 @@
 		<Unit filename="platform/sx40hs/sub/100i/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx40hs/sub/100i/firmware_crc_data.h" />
 		<Unit filename="platform/sx40hs/sub/100i/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9871,6 +11049,144 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/sx40hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/platform_camera.h" />
+		<Unit filename="platform/sx410is/platform_kbd.h" />
+		<Unit filename="platform/sx410is/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/platform_palette.h" />
+		<Unit filename="platform/sx410is/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/sx410is/sub/100c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/sx410is/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/sx410is/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/sx410is/sub/100c/stubs_min.S" />
+		<Unit filename="platform/sx410is/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx410is/sub/taskhook.S" />
+		<Unit filename="platform/sx410is/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/platform_camera.h" />
+		<Unit filename="platform/sx420is/platform_kbd.h" />
+		<Unit filename="platform/sx420is/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/platform_palette.h" />
+		<Unit filename="platform/sx420is/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/sx420is/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/sx420is/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/sx420is/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/sx420is/sub/100a/stubs_min.S" />
+		<Unit filename="platform/sx420is/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx420is/sub/taskhook.S" />
+		<Unit filename="platform/sx420is/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/platform_camera.h" />
+		<Unit filename="platform/sx430is/platform_kbd.h" />
+		<Unit filename="platform/sx430is/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/platform_palette.h" />
+		<Unit filename="platform/sx430is/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/sx430is/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/sx430is/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/sx430is/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/sx430is/sub/100b/stubs_min.S" />
+		<Unit filename="platform/sx430is/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx430is/sub/taskhook.S" />
+		<Unit filename="platform/sx430is/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/sx500is/kbd.c">
@@ -9900,6 +11216,7 @@
 		<Unit filename="platform/sx500is/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx500is/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx500is/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9953,6 +11270,7 @@
 		<Unit filename="platform/sx50hs/sub/100b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx50hs/sub/100b/firmware_crc_data.h" />
 		<Unit filename="platform/sx50hs/sub/100b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -9972,6 +11290,7 @@
 		<Unit filename="platform/sx50hs/sub/100c/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx50hs/sub/100c/firmware_crc_data.h" />
 		<Unit filename="platform/sx50hs/sub/100c/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10025,6 +11344,7 @@
 		<Unit filename="platform/sx510hs/sub/100d/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx510hs/sub/100d/firmware_crc_data.h" />
 		<Unit filename="platform/sx510hs/sub/100d/stubs_auto.S" />
 		<Unit filename="platform/sx510hs/sub/100d/stubs_entry.S" />
 		<Unit filename="platform/sx510hs/sub/100d/stubs_entry_2.S" />
@@ -10038,6 +11358,7 @@
 		<Unit filename="platform/sx510hs/sub/101a/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx510hs/sub/101a/firmware_crc_data.h" />
 		<Unit filename="platform/sx510hs/sub/101a/stubs_auto.S" />
 		<Unit filename="platform/sx510hs/sub/101a/stubs_entry.S" />
 		<Unit filename="platform/sx510hs/sub/101a/stubs_entry_2.S" />
@@ -10058,6 +11379,68 @@
 		<Unit filename="platform/sx510hs/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx520hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/platform_camera.h" />
+		<Unit filename="platform/sx520hs/platform_kbd.h" />
+		<Unit filename="platform/sx520hs/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/platform_palette.h" />
+		<Unit filename="platform/sx520hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/sx520hs/sub/100b/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/sx520hs/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/sx520hs/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/sx520hs/sub/100b/stubs_min.S" />
+		<Unit filename="platform/sx520hs/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/sx520hs/sub/100c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/sx520hs/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/sx520hs/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/sx520hs/sub/100c/stubs_min.S" />
+		<Unit filename="platform/sx520hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/movie_rec_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx520hs/sub/taskhook.S" />
+		<Unit filename="platform/sx520hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="platform/sx530hs/kbd.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10076,13 +11459,28 @@
 		<Unit filename="platform/sx530hs/shooting.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/sx530hs/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx530hs/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx530hs/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/sx530hs/sub/100a/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx530hs/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/sx530hs/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/sx530hs/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/sx530hs/sub/100a/stubs_min.S" />
 		<Unit filename="platform/sx530hs/sub/100c/boot.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/sx530hs/sub/100c/capt_seq.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="platform/sx530hs/sub/100c/filewrite.c">
+		<Unit filename="platform/sx530hs/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/sx530hs/sub/100c/movie_rec.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/sx530hs/sub/100c/stubs_auto.S" />
@@ -10103,6 +11501,330 @@
 		</Unit>
 		<Unit filename="platform/sx530hs/sub/taskhook.S" />
 		<Unit filename="platform/sx530hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/platform_camera.h" />
+		<Unit filename="platform/sx60hs/platform_kbd.h" />
+		<Unit filename="platform/sx60hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/sx60hs/sub/100b/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/sx60hs/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/sx60hs/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/sx60hs/sub/100b/stubs_min.S" />
+		<Unit filename="platform/sx60hs/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/sx60hs/sub/100c/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/sx60hs/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/sx60hs/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/sx60hs/sub/100c/stubs_min.S" />
+		<Unit filename="platform/sx60hs/sub/100f/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100f/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100f/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100f/firmware_crc_data.h" />
+		<Unit filename="platform/sx60hs/sub/100f/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100f/stubs_auto.S" />
+		<Unit filename="platform/sx60hs/sub/100f/stubs_entry.S" />
+		<Unit filename="platform/sx60hs/sub/100f/stubs_entry_2.S" />
+		<Unit filename="platform/sx60hs/sub/100f/stubs_min.S" />
+		<Unit filename="platform/sx60hs/sub/100h/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100h/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100h/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100h/firmware_crc_data.h" />
+		<Unit filename="platform/sx60hs/sub/100h/movie_rec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx60hs/sub/100h/stubs_auto.S" />
+		<Unit filename="platform/sx60hs/sub/100h/stubs_entry.S" />
+		<Unit filename="platform/sx60hs/sub/100h/stubs_entry_2.S" />
+		<Unit filename="platform/sx60hs/sub/100h/stubs_min.S" />
+		<Unit filename="platform/sx60hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/platform_camera.h" />
+		<Unit filename="platform/sx610hs/platform_kbd.h" />
+		<Unit filename="platform/sx610hs/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/platform_palette.h" />
+		<Unit filename="platform/sx610hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/100a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/sx610hs/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/sx610hs/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/sx610hs/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/sx610hs/sub/100a/stubs_min.S" />
+		<Unit filename="platform/sx610hs/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx610hs/sub/taskhook.S" />
+		<Unit filename="platform/sx610hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/platform_camera.h" />
+		<Unit filename="platform/sx620hs/platform_kbd.h" />
+		<Unit filename="platform/sx620hs/platform_palette.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/platform_palette.h" />
+		<Unit filename="platform/sx620hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100b/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100b/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100b/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100b/firmware_crc_data.h" />
+		<Unit filename="platform/sx620hs/sub/100b/stubs_auto.S" />
+		<Unit filename="platform/sx620hs/sub/100b/stubs_entry.S" />
+		<Unit filename="platform/sx620hs/sub/100b/stubs_entry_2.S" />
+		<Unit filename="platform/sx620hs/sub/100b/stubs_min.S" />
+		<Unit filename="platform/sx620hs/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100c/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/sx620hs/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/sx620hs/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/sx620hs/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/sx620hs/sub/100c/stubs_min.S" />
+		<Unit filename="platform/sx620hs/sub/boot_extras.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/boot_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/capt_seq_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/filewrite_hdr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx620hs/sub/taskhook.S" />
+		<Unit filename="platform/sx620hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/platform_camera.h" />
+		<Unit filename="platform/sx700hs/platform_kbd.h" />
+		<Unit filename="platform/sx700hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100d/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100d/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100d/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100d/firmware_crc_data.h" />
+		<Unit filename="platform/sx700hs/sub/100d/stubs_auto.S" />
+		<Unit filename="platform/sx700hs/sub/100d/stubs_entry.S" />
+		<Unit filename="platform/sx700hs/sub/100d/stubs_entry_2.S" />
+		<Unit filename="platform/sx700hs/sub/100d/stubs_min.S" />
+		<Unit filename="platform/sx700hs/sub/100e/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100e/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100e/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx700hs/sub/100e/firmware_crc_data.h" />
+		<Unit filename="platform/sx700hs/sub/100e/stubs_auto.S" />
+		<Unit filename="platform/sx700hs/sub/100e/stubs_entry.S" />
+		<Unit filename="platform/sx700hs/sub/100e/stubs_entry_2.S" />
+		<Unit filename="platform/sx700hs/sub/100e/stubs_min.S" />
+		<Unit filename="platform/sx700hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/platform_camera.h" />
+		<Unit filename="platform/sx710hs/platform_kbd.h" />
+		<Unit filename="platform/sx710hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/100a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/100a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/100a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/100a/firmware_crc_data.h" />
+		<Unit filename="platform/sx710hs/sub/100a/stubs_auto.S" />
+		<Unit filename="platform/sx710hs/sub/100a/stubs_entry.S" />
+		<Unit filename="platform/sx710hs/sub/100a/stubs_entry_2.S" />
+		<Unit filename="platform/sx710hs/sub/100a/stubs_min.S" />
+		<Unit filename="platform/sx710hs/sub/101a/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/101a/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/101a/filewrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx710hs/sub/101a/firmware_crc_data.h" />
+		<Unit filename="platform/sx710hs/sub/101a/stubs_auto.S" />
+		<Unit filename="platform/sx710hs/sub/101a/stubs_entry.S" />
+		<Unit filename="platform/sx710hs/sub/101a/stubs_entry_2.S" />
+		<Unit filename="platform/sx710hs/sub/101a/stubs_min.S" />
+		<Unit filename="platform/sx710hs/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/kbd.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/lib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/platform_camera.h" />
+		<Unit filename="platform/sx730hs/platform_kbd.h" />
+		<Unit filename="platform/sx730hs/shooting.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/sub/100c/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/sub/100c/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/sub/100c/firmware_crc_data.h" />
+		<Unit filename="platform/sx730hs/sub/100c/stubs_auto.S" />
+		<Unit filename="platform/sx730hs/sub/100c/stubs_entry.S" />
+		<Unit filename="platform/sx730hs/sub/100c/stubs_entry_2.S" />
+		<Unit filename="platform/sx730hs/sub/100c/stubs_min.S" />
+		<Unit filename="platform/sx730hs/sub/100d/boot.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/sub/100d/capt_seq.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="platform/sx730hs/sub/100d/firmware_crc_data.h" />
+		<Unit filename="platform/sx730hs/sub/100d/stubs_auto.S" />
+		<Unit filename="platform/sx730hs/sub/100d/stubs_entry.S" />
+		<Unit filename="platform/sx730hs/sub/100d/stubs_entry_2.S" />
+		<Unit filename="platform/sx730hs/sub/100d/stubs_min.S" />
+		<Unit filename="platform/sx730hs/wrappers.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/tx1/kbd.c">
@@ -10132,6 +11854,7 @@
 		<Unit filename="platform/tx1/sub/100g/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/tx1/sub/100g/firmware_crc_data.h" />
 		<Unit filename="platform/tx1/sub/100g/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10154,6 +11877,7 @@
 		<Unit filename="platform/tx1/sub/101b/filewrite.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="platform/tx1/sub/101b/firmware_crc_data.h" />
 		<Unit filename="platform/tx1/sub/101b/lib.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10174,6 +11898,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="platform/tx1/wrappers.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="tools/capdis.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="tools/chdk_dasm.c">
@@ -10212,6 +11939,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="tools/elf2flt/myio.h" />
+		<Unit filename="tools/extract_error_table.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="tools/extract_event_procedures.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10224,6 +11954,9 @@
 		<Unit filename="tools/finsig_dryos.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="tools/finsig_thumb2.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="tools/finsig_vxworks.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10231,6 +11964,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="tools/firmware_load.h" />
+		<Unit filename="tools/firmware_load_ng.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="tools/firmware_load_ng.h" />
 		<Unit filename="tools/font_8x16_pack.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10243,10 +11980,9 @@
 		<Unit filename="tools/gensig_vxworks.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="tools/hostlua/include/lauxlib.h" />
-		<Unit filename="tools/hostlua/include/lua.h" />
-		<Unit filename="tools/hostlua/include/luaconf.h" />
-		<Unit filename="tools/hostlua/include/lualib.h" />
+		<Unit filename="tools/ghidra_scripts/datatypes/fw_functions.h" />
+		<Unit filename="tools/ghidra_scripts/datatypes/fw_types.h" />
+		<Unit filename="tools/ghidra_scripts/datatypes/ptp_handlers.h" />
 		<Unit filename="tools/makeexport.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10287,6 +12023,10 @@
 		<Unit filename="tools/pakwif.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="tools/ptp_op_names.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="tools/ptp_op_names.h" />
 		<Unit filename="tools/rawconvert.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -10296,6 +12036,13 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="tools/stubs_load.h" />
+		<Unit filename="tools/ubasic_test/camera_functions.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="tools/ubasic_test/camera_functions.h" />
+		<Unit filename="tools/ubasic_test/run-ubasic.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="tools/yuvconvert.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -1,44 +1,11 @@
 #include "platform.h"
 #include "lolevel.h"
-
-static char* frame_buffer[2];
+#include "live_view.h"
 
 void vid_bitmap_refresh() {
-    extern int full_screen_refresh;
-    extern void _ScreenUnlock();
-    extern void _ScreenLock();
-    extern void _displaybusyonscreen();
-    extern void _undisplaybusyonscreen();
-
-    
-    // clears perfectly but blinks and is asynchronous
-    _displaybusyonscreen();
-    _undisplaybusyonscreen();
-    
-    /*
-    // completely ineffective
-    extern void _refresh_bitmap_buf_from(int, int);
-    _refresh_bitmap_buf_from(0,0);
-    */
-
-    /*
-    // flips the active buffer but doesn't erase areas not occupied by the canon osd
-    _ScreenLock();
-    full_screen_refresh |= 3;
-    _ScreenUnlock();
-    */
-
-    /*
-    //ineffective, like screenlock/unlock, crashed movie rec once
-    extern void _RefreshPhysicalScreen();
-    int saved_abdcplus4c = *(int*)(0xabdc+0x4c);
-    *(int*)(0xabdc+0x4c) = 0;
-    _RefreshPhysicalScreen(0);
-    *(int*)(0xabdc+0x4c) = saved_abdcplus4c;
-    */
-
-    //DisplayPhysicalScreenCBR NG
-    //Window_EmergencyRefresh NG crash
+    extern void _transfer_src_overlay(int);
+    _transfer_src_overlay(0);
+    _transfer_src_overlay(1);
 }
 
 void shutdown() {
@@ -68,7 +35,7 @@ void debug_led(int state) {
 
 // Power Led = first entry in table (led 0)
 // AF Assist Lamp = second entry in table (led 1)
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
     static char led_table[2]={0,4};
     _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -102,17 +69,50 @@ char *hook_alt_raw_image_addr()
     return raw_buffers[((active_raw_buffer&1)^1)];
 }
 
-extern char active_viewport_buffer;
+/*
+    Playback mode framebuffers (uyvy_d6)
+    resolution according to output device (HDMI case unknown, there's space for full HD)
+    0x4eb68000, 0x4ef68000, 0x4f368000
+    @ 0xfc937e04 (0080364F 01000000 00000000 0080F64E 01000000 00000000 0080B64E 01000000 00000000)
+    aka 0xd990 in RAM (102b)
+*/
+void *vid_get_viewport_fb_d() {
+    extern void *current_fb_d;
+    return current_fb_d;    // method from the sx60 and g7x ports
+}
+
 extern void* viewport_buffers[];
+extern void *current_viewport_buffer;
 
 void *vid_get_viewport_fb() {
     // Return first viewport buffer - for case when vid_get_viewport_live_fb not defined
-    //return (void*)0x43115100; // uyvy buffers with signed(?) chroma components
-    return (void*)0x4b25fc00; // uyvy buffers (more than 4), pixel format compatible with earlier DIGIC uyvy
+    return viewport_buffers[0]; // 1st of 4 uyvy_d6 buffers
+    //return (void*)0x4b25fc00; // uyvy buffers (more than 4), pixel format compatible with earlier DIGIC uyvy
 }
 
 void *vid_get_viewport_live_fb() {
-    return 0; //TODO
+    /*
+    1)  4 live buffers starting @ 0x43115100, change dimensions when changing output device, uyvy_d6
+        size of 1 buffer is 0xae800 bytes (not enough for HDMI 960x540, but there's no live view through HDMI anyway)
+        address list @ 0xfc4d3568 (102b)
+    2)  8 live buffers starting @ 0x4B25FC00, fixed 640x480, old uyvy
+        size of 1 buffer is 0x96000 bytes (640*480*2)
+        address list @ 0xfc4d3578, listed in reverse order (102b)
+    3)  3 live buffers (probably only active when half shooting) starting @ 0x4B70FC00, 1280x960, old uyvy
+        size of 1 buffer is 0x26ac00 bytes (1280x990)
+        address list @ 0xfc4d35d8, listed in reverse order (102b)
+    */
+
+    // implementation is from the g7x port, including the comment
+
+    // current_viewport_buffer doesn't seem to be most recent
+    int i;
+    for(i=0;i<4;i++) {
+        if(current_viewport_buffer == viewport_buffers[i]) {
+            return viewport_buffers[(i+1)&3];
+        }
+    }
+    return 0;
 }
 
 int vid_get_viewport_width() {
@@ -124,6 +124,8 @@ fc134986:   4770        bx  lr
 */
     extern int _GetVRAMHPixelsSize();
 // TODO: this is the actual width, pixel format is uyvy (16bpp)
+    if (camera_info.state.mode_play)
+        return camera_screen.physical_width;
     return _GetVRAMHPixelsSize();
 }
 
@@ -136,12 +138,9 @@ fc13498e:   4770        bx  lr
 */
     extern int _GetVRAMVPixelsSize();
 // return half height
+    if (camera_info.state.mode_play)
+        return camera_screen.buffer_height;
     return _GetVRAMVPixelsSize();
-}
-
-// Y multiplier for cameras with 480 pixel high viewports (CHDK code assumes 240)
-int vid_get_viewport_yscale() {
-    return 2;
 }
 
 int vid_get_viewport_yoffset() {
@@ -166,23 +165,30 @@ void *vid_get_bitmap_fb() {
 }
 
 // Functions for PTP Live View system
-int vid_get_viewport_display_xoffset_proper()   { return vid_get_viewport_display_xoffset() * 2; }
-int vid_get_viewport_display_yoffset_proper()   { return vid_get_viewport_display_yoffset() * 2; }
-int vid_get_viewport_width_proper()             { return vid_get_viewport_width(); }
-int vid_get_viewport_height_proper()            { return vid_get_viewport_height() * 2; }
-int vid_get_viewport_fullscreen_height()        { return 480; }
-int vid_get_palette_type()                      { return 3; }
-int vid_get_palette_size()                      { return 256 * 4; }
+int vid_get_viewport_display_xoffset_proper()   { return vid_get_viewport_display_xoffset(); }
+int vid_get_viewport_display_yoffset_proper()   { return vid_get_viewport_display_yoffset(); }
+int vid_get_viewport_fullscreen_height()        { return camera_screen.height; } // may not be always ok
+int vid_get_viewport_buffer_width_proper()      { return camera_screen.buffer_width; } // may not be always ok
+int vid_get_viewport_byte_width()               { return camera_screen.buffer_width * 2; } // may not be always ok
+
+int vid_get_viewport_type() {
+    /*
+    // no longer needed, other viewports are used instead
+    if (camera_info.state.mode_play)
+        return LV_FB_YUV8B;
+    */
+    return LV_FB_YUV8B;
+}
 
 void *vid_get_bitmap_active_buffer() {
     return bitmap_buffer[active_bitmap_buffer&1];
 }
 
 // the opacity buffer defines opacity for the bitmap overlay's pixels
-volatile char *opacity_buffer[2] = {(char*)0x41718600, (void*)0x41796f00};
+volatile char *opacity_buffer[2] = {(char*)0x41718600, (char*)0x41796f00};
 
-void *vid_get_bitmap_active_palette() {
-    return (void*)0x8000; // just to return something valid, no palette needed on this cam
+void *vid_get_opacity_active_buffer() {
+    return (void *)opacity_buffer[active_bitmap_buffer&1];
 }
 
 #ifdef CAM_SUPPORT_BITMAP_RES_CHANGE

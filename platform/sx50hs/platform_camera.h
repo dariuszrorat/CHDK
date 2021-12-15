@@ -29,7 +29,6 @@
     #undef  CAM_UNCACHED_BIT
     #define CAM_UNCACHED_BIT  0x40000000 // Found @0xff020984
 
-    #define CAM_HAS_ND_FILTER                   1
     #define CAM_SWIVEL_SCREEN                   1
     #define CAM_ADJUSTABLE_ALT_BUTTON           1
     #define CAM_ALT_BUTTON_NAMES                { "Shrtcut", "Flash", "Video" }
@@ -127,8 +126,6 @@
     #define CAM_AV_OVERRIDE_IRIS_FIX            1       // for cameras that require _MoveIrisWithAv function to override Av in bracketing.
 
     #define CAM_DISABLE_RAW_IN_LOW_LIGHT_MODE   1       // For cameras with 'low light' mode that does not work with raw define this
-    #define CAM_DISABLE_RAW_IN_HQ_BURST         1       // For cameras with 'HQ Burst' mode that does not work with raw define this
-    #define CAM_DISABLE_RAW_IN_HANDHELD_NIGHT_SCN 1     // For cameras with 'HandHeld Night Scene' mode that does not work with raw define this
     #define CAM_ISO_LIMIT_IN_HQ_BURST           1420    // Defines max market ISO override value for HQ Burst mode (higher values crash camera)
     #define CAM_HAS_MOVIE_DIGEST_MODE           1       // Changes the values in the 'movie_status' variable if the camera has this mode
 
@@ -149,8 +146,6 @@
     #define CAM_ZOOM_ASSIST_BUTTON_CONTROL      1       // Activate the menu option to allow disabling the zoom assist button
     #define MKDIR_RETURN_ONE_ON_SUCCESS         1       // mkdir() return 1 on success, 0 on fail.
 
-    #define CAM_USE_ALT_SET_ZOOM_POINT          1      // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt    1      // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
 
     #undef  CAM_AF_LED                                  // AF Lamp index for camera_set_led()
     #define CAM_AF_LED                          1       //
@@ -164,5 +159,7 @@
     #define CAM_SD_OVER_IN_MF                   1
 
     #define CAM_IS_VID_REC_WORKS                1   // is_video_recording() function works
+
+    #define CAM_HAS_CANON_RAW                   1   // has native Canon raw
 
 //--------------------------------------------------

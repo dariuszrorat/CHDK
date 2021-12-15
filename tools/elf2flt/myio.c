@@ -19,7 +19,7 @@ static int   filecuridx=0;
 /*---------------------------------------------------------------------------*/
 int b_file_preload(char* filename)
 {
-	int fd;
+    int fd;
 
     filesize=0;
     filecuridx=0;
@@ -27,8 +27,8 @@ int b_file_preload(char* filename)
     fd=open(filename, O_RDONLY|O_BINARY);
     if ( fd <=0 ) return 0;
     filesize = lseek(fd,0,SEEK_END);
-	if ( FLAG_VERBOSE )
-	    printf("File size=%d\n",filesize);
+    if ( FLAG_VERBOSE )
+        printf("File size=%d\n",filesize);
     filebuf=malloc(filesize);    
     if (!filebuf) return 0;
 
@@ -36,17 +36,17 @@ int b_file_preload(char* filename)
     if (lseek(fd, 0, SEEK_SET) != 0) return 0;
     do
     {
-       now = read(fd, filebuf+loaded, filesize-loaded);
-	   loaded+=now;
-	} while (loaded<filesize && now);
+        now = read(fd, filebuf+loaded, filesize-loaded);
+        loaded+=now;
+    } while (loaded<filesize && now);
          
     if ( loaded == filesize )
-    	return loaded;
-	return -loaded;
+        return loaded;
+    return -loaded;
 }
 
 /*---------------------------------------------------------------------------*/
-int b_read (int fd, void* buf, unsigned int count)
+int b_read (void* buf, int count)
 {
     if ( (filecuridx+count)> filesize)
         count = filesize - filecuridx;
@@ -56,7 +56,7 @@ int b_read (int fd, void* buf, unsigned int count)
 }
 
 /*---------------------------------------------------------------------------*/
-int b_seek(int fd, long offset, int whence)
+int b_seek(long offset)
 {
     filecuridx = offset;
     if ( offset < 0 )
@@ -67,10 +67,10 @@ int b_seek(int fd, long offset, int whence)
 }
 
 /*---------------------------------------------------------------------------*/
-int b_seek_read(unsigned int offset, char *buf, int len)
+int b_seek_read(long offset, char *buf, int len)
 {
-  if (b_seek(1, offset, SEEK_SET) != offset) return -1;
-  return b_read(1, buf, len);
+  if (b_seek(offset) != offset) return -1;
+  return b_read(buf, len);
 }
 
 char* b_get_buf()
@@ -187,7 +187,7 @@ int find_import_symbol(char* sym)
 // Return symbol name by its hash value
 char* get_import_symbol( unsigned symidx )
 {
-	int idx=0;
+	unsigned idx=0;
 
 	for(;idx<symidx;idx++) {
       if (import_hash[idx] == symidx)

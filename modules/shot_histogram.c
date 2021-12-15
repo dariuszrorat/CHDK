@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "shot_histogram.h"
 #include "raw.h"
@@ -167,4 +166,6 @@ ModuleInfo _module_info =
     ANY_VERSION,                // CAM SCREEN version
     CAM_SENSOR_VERSION,         // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };

@@ -1,7 +1,6 @@
 #include "lolevel.h"
 #include "platform.h"
 #include "core.h"
-//#include "stdlib.h"
 #include "dryos31.h"
 
 #define offsetof(TYPE, MEMBER) ((int) &((TYPE *)0)->MEMBER)
@@ -389,6 +388,7 @@ void __attribute__((naked,noinline)) task_Startup_my() {
 -----------------------------------------------------------------------*/
 void spytask(long ua, long ub, long uc, long ud, long ue, long uf)
 {
+    (void)ua; (void)ub; (void)uc; (void)ud; (void)ue; (void)uf;
     core_spytask();
 }
 

@@ -83,7 +83,7 @@ void shutdown()
 7 = green indicator
 9 = AF
 */
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[]={7,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -116,5 +116,8 @@ void *vid_get_bitmap_active_palette()
 {
     extern int active_palette_buffer;
     extern char* palette_buffer[];
-    return (palette_buffer[active_palette_buffer]+8);
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 8;
+    return p;
 }

@@ -34,37 +34,21 @@
 #define DEBUG_PRINTF(...)
 #endif
 
-#ifdef UBASIC_TEST
-#include "../../include/ubasic.h"
-#include "../../include/platform.h"
-#include "../../include/script.h"
-#include "../../include/shot_histogram.h"
-#include "../../include/levent.h"
-#include "../../include/console.h"
-#include <string.h>
-#include <time.h>
-#include <fcntl.h>
-#include <io.h>
-#include <stdlib.h> /* rand,srand */
-#include "camera_functions.h"
-#else
 #include "camera_info.h"
-#include "conf.h"
-#include "ubasic.h"
-#include "script.h"
-#include "script_key_funcs.h"
 #include "shot_histogram.h"
-#include "stdlib.h"
 #include "levent.h"
+#include "script.h"
 #include "console.h"
-#include "modes.h"
+#include "conf.h"
+#include "lang.h"
+#include "gui_lang.h"
+#include "action_stack.h"
 #include "shooting.h"
 #include "sd_card.h"
 #include "backlight.h"
 #include "battery.h"
 #include "temperature.h"
 #include "clock.h"
-#include "properties.h"
 #include "file_counter.h"
 #include "lens.h"
 #include "debug_led.h"
@@ -73,11 +57,21 @@
 #include "shutdown.h"
 #include "sound.h"
 #include "motion_detector.h"
+
+#include "string.h"
+#include "time.h"
+
+#ifdef UBASIC_TEST
+#include "camera_functions.h"
+Conf conf;                      // TODO: initialisation
+_cam_info camera_info;          // TOTO: initialisation
+#else
+#include "script_key_funcs.h"
+#include "properties.h"
 #endif
-#include "action_stack.h"
+
+#include "ubasic.h"
 #include "tokenizer.h"
-#include "lang.h"
-#include "gui_lang.h"
 
 // Forward references
 int ubasic_get_variable(int varnum);
@@ -183,7 +177,7 @@ ubasic_linenumber()
 
 /*---------------------------------------------------------------------------*/
 int
-ubasic_init(const char *program, int is_ptp)
+ubasic_init(const char *program, __attribute__ ((unused))int is_ptp)
 {
   program_ptr = program;
   flag_yield = 0;
@@ -368,7 +362,7 @@ static int factor(void)
   break;
   case TOKENIZER_GET_MOVIE_STATUS:
     accept(TOKENIZER_GET_MOVIE_STATUS);
-    r = movie_status;
+    r = get_movie_status();
     break;
   case TOKENIZER_GET_PLATFORM_ID:
     accept(TOKENIZER_GET_PLATFORM_ID);
@@ -557,7 +551,12 @@ static int factor(void)
     accept(TOKENIZER_GET_HISTO_RANGE);
     int from = expr();
     int to = expr();
+#ifdef UBASIC_TEST
+    (void)from; (void)to;
+    r = 0;
+#else
     r = (unsigned short)libshothisto->shot_histogram_get_range(from, to);
+#endif
     break;
   case TOKENIZER_GET_TEMPERATURE:
     accept(TOKENIZER_GET_TEMPERATURE);
@@ -596,6 +595,16 @@ static int factor(void)
 #else
     r = conf.save_raw;
 #endif    
+    break;
+  // get canon raw / jpeg setting
+  case TOKENIZER_GET_CANON_IMAGE_FORMAT:
+    accept(TOKENIZER_GET_CANON_IMAGE_FORMAT);
+    r = shooting_get_canon_image_format();
+    break;
+  // get whether canon firmware supports raw
+  case TOKENIZER_GET_CANON_RAW_SUPPORT:
+    accept(TOKENIZER_GET_CANON_RAW_SUPPORT);
+    r = camera_info.cam_canon_raw;
     break;
   // get CHDK capture mode value, or 0 if in playback or unknown (broken modemap)
   // NOTE: different from get_mode, since this returns the actual value
@@ -690,6 +699,10 @@ static int factor(void)
     accept(TOKENIZER_FORCE_USB_PRESENT);
     r=force_usb_state(expr()) ;
     break;
+  case TOKENIZER_FORCE_ANALOG_AV:
+    accept(TOKENIZER_FORCE_ANALOG_AV);
+    r=kbd_force_analog_av(expr()) ;
+    break;
   case TOKENIZER_GET_ALT_MODE:
     accept(TOKENIZER_GET_ALT_MODE);
     r = (camera_info.state.gui_mode != 0);
@@ -698,7 +711,46 @@ static int factor(void)
     accept(TOKENIZER_GET_RAW_SUPPORT);
     r = (is_raw_possible() && !camera_info.state.mode_play);
     break;    
-
+  case TOKENIZER_GET_CURRENT_AV96:
+    accept(TOKENIZER_GET_CURRENT_AV96);
+    r = shooting_get_current_av96();
+    break;
+  case TOKENIZER_GET_CURRENT_TV96:
+    accept(TOKENIZER_GET_CURRENT_TV96);
+    r = shooting_get_current_tv96();
+    break;
+  case TOKENIZER_GET_CURRENT_DELTA_SV96:
+    accept(TOKENIZER_GET_CURRENT_DELTA_SV96);
+    r = shooting_get_current_delta_sv96();
+    break;
+  case TOKENIZER_GET_CURRENT_BASE_SV96:
+    accept(TOKENIZER_GET_CURRENT_BASE_SV96);
+    r = shooting_get_current_base_sv96();
+    break;
+  case TOKENIZER_GET_IMAGER_ACTIVE:
+    accept(TOKENIZER_GET_IMAGER_ACTIVE);
+    r = shooting_get_imager_active();
+    break;
+  case TOKENIZER_GET_MAX_AV96:
+    accept(TOKENIZER_GET_MAX_AV96);
+    r = shooting_get_max_av96(); // NOTE -1 if not available, i.e. playback
+    break;
+  case TOKENIZER_GET_MIN_AV96:
+    accept(TOKENIZER_GET_MIN_AV96);
+    r = shooting_get_min_av96(); // NOTE -1 if not available, i.e. playback
+    break;
+  case TOKENIZER_GET_ND_VALUE_EV96:
+    accept(TOKENIZER_GET_ND_VALUE_EV96);
+    r = shooting_get_nd_value_ev96();
+    break;
+  case TOKENIZER_GET_ND_CURRENT_EV96:
+    accept(TOKENIZER_GET_ND_CURRENT_EV96);
+    r = shooting_get_nd_current_ev96();
+    break;
+  case TOKENIZER_GET_DIGIC:
+    accept(TOKENIZER_GET_DIGIC);
+    r = camera_info.cam_digic;
+    break;
   //ARM Begin
       
   default:
@@ -1757,20 +1809,20 @@ static void one_short_param_function(int token, void (*func)(short))
 }
 
 // Call CHDK function 'func' with one int parameter plus a second value 'p2'
-static void one_int_param_plus_const_function(int token, void (*func)(int,short), short p2)
-{
-    accept(token);
-    func(expr(),p2);
-    accept_cr();
-}
+// static void one_int_param_plus_const_function(int token, void (*func)(int,short), short p2)
+// {
+//     accept(token);
+//     func(expr(),p2);
+//     accept_cr();
+// }
 
 // Call CHDK function 'func' with one short parameter plus a second value 'p2'
-static void one_short_param_plus_const_function(int token, void (*func)(short,short), short p2)
-{
-    accept(token);
-    func(expr(),p2);
-    accept_cr();
-}
+// static void one_short_param_plus_const_function(int token, void (*func)(short,short), short p2)
+// {
+//     accept(token);
+//     func(expr(),p2);
+//     accept_cr();
+// }
 
 /*---------------------------------------------------------------------------*/
 
@@ -1787,24 +1839,8 @@ static void set_ev_statement()
 
 static void set_movie_status_statement()
 {
-    int to;
     accept(TOKENIZER_SET_MOVIE_STATUS);
-    to = expr();
-    if (to==1) {
-        if (movie_status == 4) {
-            movie_status = 1;
-        }
-    }
-    if (to==2) {
-        if (movie_status == 1) {
-            movie_status = 4;
-        }
-    }
-    if (to==3) {
-        if (movie_status == 1 || 4) {
-            movie_status = 5;
-        }
-    }
+    set_movie_status(expr());
     accept_cr();
 }
 
@@ -1913,7 +1949,7 @@ static void reboot_statement() {
 static void set_config_value_statement()
 {
     int id, value;
-    tConfigVal configVal = {0,0,0,0};
+    tConfigVal configVal = {0};
     
     accept(TOKENIZER_SET_CONFIG_VALUE);
     id = expr();
@@ -2098,7 +2134,11 @@ static void md_get_cell_diff_statement()
     accept(TOKENIZER_VARIABLE);
     accept_cr();
 
+#ifdef UBASIC_TEST
+    // TODO: add something here for ubasic_test
+#else
     ubasic_set_variable(var, libmotiondetect->md_get_cell_diff(col,row));
+#endif
 }
 
 static void md_get_cell_val_statement()
@@ -2114,7 +2154,11 @@ static void md_get_cell_val_statement()
     accept(TOKENIZER_VARIABLE);
     accept_cr();
 
+#ifdef UBASIC_TEST
+    // TODO: add something here for ubasic_test
+#else
     ubasic_set_variable(var, libmotiondetect->md_get_cell_val(col,row));
+#endif
 }
 
 static void md_detect_motion_statement()
@@ -2196,6 +2240,9 @@ static void md_detect_motion_statement()
 
     accept_cr();
 
+#ifdef UBASIC_TEST
+    // TODO: add something here for ubasic_test
+#else
     libmotiondetect->md_init_motion_detector(
         columns, rows, pixel_measure_mode, detection_timeout, 
         measure_interval, threshold, draw_grid,
@@ -2203,6 +2250,7 @@ static void md_detect_motion_statement()
         clipping_region_column1, clipping_region_row1,
         clipping_region_column2, clipping_region_row2,
         parameters, pixels_step, msecs_before_trigger);
+#endif
 
     flag_yield=1;
 }
@@ -2210,7 +2258,11 @@ static void md_detect_motion_statement()
 /*---------------------------------------------------------------------------*/
 static int _shot_histogram_set(int enable)
 {
+#ifdef UBASIC_TEST
+    return 0;
+#else
     return libshothisto->shot_histogram_set(enable);
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2526,10 +2578,14 @@ statement(void)
       set_autostart_statement();
       break;
   case TOKENIZER_EXIT_ALT:
-      one_int_param_function(token, exit_alt);
+      accept(token);
+      exit_alt();
+      accept_cr();
       break;
   case TOKENIZER_ENTER_ALT:
-      one_int_param_function(token, enter_alt);
+      accept(token);
+      enter_alt(1);
+      accept_cr();
       break;      
   case TOKENIZER_SHUT_DOWN:
       shutdown_statement();
@@ -2580,6 +2636,10 @@ statement(void)
       one_int_param_function(token, shooting_set_playrec_mode);
       break;
 
+  case TOKENIZER_SET_CANON_IMAGE_FORMAT:
+      one_int_param_function(token, (void (*)(int))shooting_set_canon_image_format);
+      break;
+
   case TOKENIZER_SET_CAPTURE_MODE:
       one_int_param_function(token, (void (*)(int))shooting_set_mode_chdk);
       break;
@@ -2605,16 +2665,24 @@ statement(void)
 
   case TOKENIZER_USB_SYNC_WAIT:
     accept(TOKENIZER_USB_SYNC_WAIT);
+#ifdef UBASIC_TEST
+    // TODO: add something here for ubasic_test
+#else
     if (expr()) usb_sync_wait_flag = 1;
     else        usb_sync_wait_flag = 0;
+#endif
     accept_cr();
     break;
 
   case TOKENIZER_SET_REMOTE_TIMING:
     accept(TOKENIZER_SET_REMOTE_TIMING);
+#ifdef UBASIC_TEST
+    // TODO: add something here for ubasic_test
+#else
     int hpenable= expr();
     if ( hpenable > 0) start_usb_HPtimer(hpenable);
     else stop_usb_HPtimer();
+#endif
     accept_cr();
     break;
 

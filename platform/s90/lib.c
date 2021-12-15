@@ -29,9 +29,17 @@ void debug_led(int state)
 	p[0]=0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
 	static char led_table[4]={0,1,9,10};
     _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
+}
+
+void JogDial_CW(void){
+ _PostLogicalEventForNotPowerType(0x876, 1);  // RotateJogDialRight
+}
+
+void JogDial_CCW(void){
+ _PostLogicalEventForNotPowerType(0x877, 1);  // RotateJogDialLeft
 }
 
 int get_flash_params_count(void){

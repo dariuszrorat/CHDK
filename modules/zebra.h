@@ -15,9 +15,6 @@
 #define ZEBRA_MODE_ZEBRA_2          5
 #define ZEBRA_MODE_ZONES            6
 
-#define LT_FALSE_COLORS             0
-#define LT_ZONES                    1
-
 // Update version if changes are made to the module interface
 #define ZEBRA_VERSION           {2,0}
 

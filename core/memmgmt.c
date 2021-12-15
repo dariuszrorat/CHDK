@@ -1,13 +1,15 @@
 #include "platform.h"
-#include "stdlib.h"
 #include "core.h"
 #include "conf.h"
 #include "gui_draw.h"
+#include "exmem.h"
+#include "semaphore.h"
+#include "ctype.h"
 
 //----------------------------------------------------------------------------
 // Memory wrappers
 
-extern void *suba_init(void *heap, unsigned size, unsigned rst, unsigned mincell);
+extern void *suba_init(void *heap, unsigned size, unsigned mincell, char *name);
 extern void *suba_alloc(void *heap, unsigned size, unsigned zero);
 extern int suba_free(void *heap, void *p);
 
@@ -29,7 +31,8 @@ static void chdk_heap_init(chdk_heap *h)
     h->size = 0;
 }
 
-static void chdk_heap_create(chdk_heap *h, void *mem, int size, int chdk_in_heap, int heap_testing)
+#if defined(OPT_EXMEM_MALLOC) || defined(OPT_ARAM_MALLOC)
+static void chdk_heap_create(chdk_heap *h, void *mem, int size, int chdk_in_heap, int heap_testing, char *name)
 {
     if (h)
     {
@@ -64,10 +67,11 @@ static void chdk_heap_create(chdk_heap *h, void *mem, int size, int chdk_in_heap
         else
         {
     		// Normal operation, use the suba allocation system to manage the memory block
-	    	h->heap = suba_init(h->start,h->size,1,8);
+	    	h->heap = suba_init(h->start,h->size,8,name);
         }
     }
 }
+#endif
 
 static void* chdk_malloc(chdk_heap *h, unsigned size)
 {
@@ -178,11 +182,11 @@ void exmem_malloc_init()
 #define OPT_EXMEM_TESTING 0
 #endif
 	// pool zero is EXMEM_RAMDISK on d10
-    extern void *exmem_alloc(int pool_id,int size,int unk,int unk2); 
-	void *mem = exmem_alloc(0,EXMEM_HEAP_SIZE,0,0);
+	extern void *exmem_alloc_cached(unsigned int pool_id,unsigned int size,int unk,int unk2);
+	void *mem = exmem_alloc_cached(0,EXMEM_HEAP_SIZE,0,0);
 	if (mem)
     {
-        chdk_heap_create(&exmem_heap, mem, EXMEM_BUFFER_SIZE, OPT_CHDK_IN_EXMEM, OPT_EXMEM_TESTING);
+        chdk_heap_create(&exmem_heap, mem, EXMEM_BUFFER_SIZE, OPT_CHDK_IN_EXMEM, OPT_EXMEM_TESTING, "exmem_suba");
 	}
 #endif
 }
@@ -214,7 +218,7 @@ void aram_malloc_init()
 #ifndef OPT_ARAM_TESTING
 #define OPT_ARAM_TESTING 0
 #endif
-    chdk_heap_create(&aram_heap, (void*)ARAM_HEAP_START, ARAM_HEAP_SIZE, OPT_CHDK_IN_ARAM, OPT_ARAM_TESTING);
+    chdk_heap_create(&aram_heap, (void*)ARAM_HEAP_START, ARAM_HEAP_SIZE, OPT_CHDK_IN_ARAM, OPT_ARAM_TESTING, "aram_suba");
 #endif
 }
 
@@ -223,6 +227,16 @@ int GetARamInfo(cam_meminfo *camera_meminfo)
 {
     return chdk_meminfo(&aram_heap, camera_meminfo);
 }
+
+// --------------------------------------------------------------------------
+// semaphore for canon heap on vxworks
+#if !defined(CAM_DRYOS)
+int canon_heap_sem;
+
+void canon_malloc_init(void) {
+    canon_heap_sem=CreateBinarySemaphore("canonheap", 1);
+}
+#endif
 
 //----------------------------------------------------------------------------
 static void combine_meminfo(cam_meminfo *combined,cam_meminfo *m)
@@ -295,3 +309,30 @@ void free(void *p)
             canon_free(p);
 }
 
+// --------------------------------------------------------------------------
+// exmem related functions
+
+// returns name of exmem type
+// NULL is returned for invalid types
+char *get_exmem_type_name(unsigned int type)
+{
+    extern char* exmem_types_table[];
+    
+    if (type<exmem_type_count) {
+        return exmem_types_table[type];
+    }
+    return 0;
+}
+
+// allocation status for type is returned in struct pointed to by allocinf
+// returns 1 for success, 0 otherwise
+int get_exmem_type_status(unsigned int type, exmem_alloc_info *allocinf)
+{
+    extern exmem_alloc_info exmem_alloc_table[];
+    if (type<exmem_type_count && allocinf) {
+        allocinf->addr = exmem_alloc_table[type].addr;
+        allocinf->len = exmem_alloc_table[type].len;
+        return 1;
+    }
+    return 0;
+}

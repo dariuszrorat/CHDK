@@ -1,10 +1,10 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "gui.h"
 #include "gui_lang.h"
 #include "gui_menu.h"
 #include "fileutil.h"
+#include "ctype.h"
 
 #include "script_api.h"
 #include "gui_fselect.h"
@@ -149,7 +149,7 @@ static void process_title(const char *ptr)
 {
     ptr = skip_whitespace(ptr);
     int l = skip_toeol(ptr) - ptr;
-    if (l >= sizeof(script_title)) l = sizeof(script_title) - 1;
+    if (l >= (int)sizeof(script_title)) l = sizeof(script_title) - 1;
     strncpy(script_title, ptr, l);
     script_title[l] = 0;
 }
@@ -158,7 +158,7 @@ static void process_subtitle(const char *ptr)
 {
     ptr = skip_whitespace(ptr);
     int l = skip_toeol(ptr) - ptr;
-    if (l >= sizeof(script_title)) l = sizeof(script_title) - 1;
+    if (l >= (int)sizeof(script_title)) l = sizeof(script_title) - 1;
     sc_param *p = new_param(0);
     p->desc = malloc(l+1);
     strncpy(p->desc, ptr, l);
@@ -686,7 +686,7 @@ void save_params_values( int enforce )
             last_script_param_set = conf.script_param_set;
         }
 
-        int i, changed=0;
+        int changed=0;
 
         // Check is anything changed since last time
         sc_param *p = script_params;
@@ -733,8 +733,6 @@ void script_reset_to_default_params_values()
 //-------------------------------------------------------------------
 void script_load(const char *fn)
 {
-    char* buf;
-
     // if filename is empty, try to load default named script.
     // if no such one, no script will be used
     if ((fn == 0) || (fn[0] == 0))
@@ -751,7 +749,7 @@ void script_load(const char *fn)
 
 //-------------------------------------------------------------------
 
-static const char* gui_script_param_set_enum(int change, int arg)
+static const char* gui_script_param_set_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[]={ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Default" };
 
@@ -784,11 +782,12 @@ static void gui_load_script_selected(const char *fn)
     }
 }
 
-static void gui_load_script(int arg)
+static void gui_load_script(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_SCRIPT_FILE, conf.script_file, "A/CHDK/SCRIPTS", gui_load_script_selected);
 }
 
+#if 0
 static void gui_reset_script_default(int arg)
 {
     gui_menu_cancel_redraw();       // Stop menu redraw until after menu rebuilt from script params
@@ -797,8 +796,9 @@ static void gui_reset_script_default(int arg)
     script_load(conf.script_file);
     gui_set_need_restore();
 }
+#endif
 
-static void gui_load_script_default(int arg)
+static void gui_load_script_default(__attribute__ ((unused))int arg)
 {
     script_reset_to_default_params_values();
     gui_update_script_submenu();

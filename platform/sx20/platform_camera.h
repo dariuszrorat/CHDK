@@ -27,13 +27,6 @@
     #define CAM_RAW_ROWPIX                  4080
     #define CAM_RAW_ROWS                    3048
 
-    #undef CAM_SENSOR_WIDTH
-    #undef CAM_SENSOR_HEIGHT
-    #undef CAM_SENSOR_DIAGONAL
-    #define CAM_SENSOR_WIDTH                6.17f
-    #define CAM_SENSOR_HEIGHT               4.55f
-    #define CAM_SENSOR_DIAGONAL             7.67f
-
     #define CAM_SWIVEL_SCREEN               1
     #define CAM_ADJUSTABLE_ALT_BUTTON       1
     #define CAM_ALT_BUTTON_NAMES            { "Shrtcut", "Flash", "Video" }

@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "keyboard.h"
 #include "font.h"
@@ -13,6 +12,7 @@
 #include "gui_mbox.h"
 #include "gui_mpopup.h"
 #include "gui_fselect.h"
+#include "ctype.h"
 
 #include "module_load.h"
 #include "module_def.h"
@@ -75,7 +75,7 @@ static int gui_menu_rows()
 
 //-------------------------------------------------------------------
 // Full screen erase and redraw of menu
-static void gui_menu_erase_and_redraw()
+void gui_menu_erase_and_redraw()
 {
     gui_menu_redraw = 2;
     gui_set_need_restore();
@@ -481,8 +481,6 @@ static void gui_draw_text(char *str, int num_symbols)
 // Common code extracted from gui_draw for displaying an int or enum that can be enabled/disabled
 static void gui_draw_state_value(CMenuItem *c)
 {
-    const char *ch = "";
-
     int text = curr_menu->menu[imenu].text;
     if (c[0].text != 0)
         text = c[0].text;
@@ -497,7 +495,6 @@ static void gui_draw_state_value(CMenuItem *c)
 static void gui_draw(int enforce_redraw)
 {
     int i, j;
-    const char *ch = "";
 
 	if ( enforce_redraw )
 		gui_menu_redraw = 2;
@@ -649,7 +646,7 @@ static void gui_uedit_script_selected(const char *fn)
                             register int i=0;
 
                             ptr = skip_whitespace(ptr);
-                            while (i<(sizeof(script_title)-1) && ptr[i] && ptr[i]!='\r' && ptr[i]!='\n')
+                            while (i<(int)(sizeof(script_title)-1) && ptr[i] && ptr[i]!='\r' && ptr[i]!='\n')
                             {
                                 script_title[i]=ptr[i];
                                 ++i;
@@ -677,7 +674,7 @@ static void gui_uedit_module_selected(const char *fn)
         {
             _version_t v = ANY_VERSION;
             flat_hdr* mod = module_preload(fn, fn, v);  // Pass fn as both path and name (file browser sends us full path to module)
-            if (mod > 0)
+            if (mod != 0)
             {
                 if (mod->_module_info->lib->run != 0)   // Simple Module?
                 {
@@ -851,4 +848,6 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };

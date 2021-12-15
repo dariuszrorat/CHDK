@@ -10,7 +10,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 
 #define PROPCASE_AE_LOCK                         3          // 0 = AE not locked, 1 = AE locked
 #define PROPCASE_AF_ASSIST_BEAM                  5          // 0=disabled,  1=enabled
-#define PROPCASE_REAL_FOCUS_MODE                 6          //??? WIKI|Propcase focus_mode
+#define PROPCASE_REAL_FOCUS_MODE                 6          // 0 = AF, 1 = Macro, 3 = INF, 4
 #define PROPCASE_AF_FRAME                        8          // 1 = FlexiZone, 2 = Face AiAF / Tracking AF
 #define PROPCASE_AF_LOCK                         11         // 0 = AF not locked, 1 = AF locked
 #define PROPCASE_CONTINUOUS_AF                   12         // 0 = Continuous AF off, 1 = Continuous AF on
@@ -25,6 +25,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_CUSTOM_SATURATION               55         // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_QUALITY                         57
 #define PROPCASE_CUSTOM_CONTRAST                 59         // Canon Menu slide bar values: 255, 254, 0, 1, 2
+#define PROPCASE_LANGUAGE                        61         // Upper byte = language (see default.lua for known values) lowest bit: 0 = NTSC, 1 = PAL
 #define PROPCASE_FLASH_SYNC_CURTAIN              64
 #define PROPCASE_SUBJECT_DIST2                   65
 #define PROPCASE_DATE_STAMP                      66         // 0 = Off, 1 = Date, 2 = Date & Time
@@ -46,18 +47,18 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_ISO_MODE                        149
 #define PROPCASE_METERING_MODE                   157        // 0 = Evaluative, 1 = Spot, 2 = Center weighted avg
 #define PROPCASE_VIDEO_FRAMERATE                 167        // 1=25, 0=30 (elph130), may crash if doesn't match what canon uses for current resolution
-#define PROPCASE_VIDEO_RESOLUTION                170        // 4=1280x720, 2=640x480 (elph130)
+#define PROPCASE_VIDEO_RESOLUTION                170        // 4=1280x720, 2=640x480 (elph130) 5=1920x1080 (elph340)
 #define PROPCASE_CUSTOM_BLUE                     176        // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_CUSTOM_GREEN                    177        // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_CUSTOM_RED                      178        // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_CUSTOM_SKIN_TONE                179        // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_MY_COLORS                       187        // 0 = Off, 1 = Vivid, 2 = Neutral, 3 = B/W, 4 = Sepia, 5 = Positive Film, 6 = Lighter Skin Tone, 7 = Darker Skin Tone, 8 = Vivid Red, 9 = Vivid Green, 10 = Vivid Blue, 11 = Custom Color
 #define PROPCASE_ND_FILTER_STATE                 195        // 0 = out, 1 = in
-#define PROPCASE_OPTICAL_ZOOM_POSITION           198 
+#define PROPCASE_OPTICAL_ZOOM_POSITION           198
 #define PROPCASE_EXPOSURE_LOCK                   209     // Old PROPCASE_SHOOTING value - gets set when set_aelock called or AEL button pressed
-#define PROPCASE_SHOOTING                        302     // This value appears to work better - gets set to 1 when camera has focused and set exposure, returns to 0 after shot
 #define PROPCASE_EV_CORRECTION_2                 210
 #define PROPCASE_IS_FLASH_READY                  211
+#define PROPCASE_IMAGE_FORMAT                    213        // 0 = RAW, 1 = JPEG, 2 = RAW+JPEG (G16)
 #define PROPCASE_RESOLUTION                      221        // 0 = L, 1 = M1, 2 = M2, 4 = S, 7 = Low Light
 #define PROPCASE_ORIENTATION_SENSOR              222
 #define PROPCASE_TIMER_MODE                      226        // 0 = OFF, 1 = 2 sec, 2 = 10 sec, 3 = Custom
@@ -74,8 +75,10 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_WB_ADJ                          272
 #define PROPCASE_SERVO_AF                        298        // 0 = Servo AF off, 1 = Servo AF on
 #define PROPCASE_ASPECT_RATIO                    299        // 0 = 4:3, 1 = 16:9, 2 = 3:2, 3 = 1:1
+#define PROPCASE_SHOOTING                        302        // This value appears to work better - gets set to 1 when camera has focused and set exposure, returns to 0 after shot
 #define PROPCASE_SV                              346        // (philmoz, May 2011) - this value causes overrides to be saved in JPEG and shown on Canon OSD
 #define PROPCASE_GPS                             357        // (CHDKLover, August 2011) - contains a 272 bytes long structure
+#define PROPCASE_REVIEW_TIME                     363        // Review time 0 = off, -1 = hold, 100 = quick, otherwise milliseconds
 #define PROPCASE_TIMER_SHOTS                     376        // Number of shots for TIMER_MODE=Custom
 
 // !not sure

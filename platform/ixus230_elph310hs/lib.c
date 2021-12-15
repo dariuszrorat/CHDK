@@ -35,7 +35,7 @@ void debug_led(int state)
  *(int*)LED_PR=state ? 0x46 : 0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[2]={0,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -60,7 +60,7 @@ void *vid_get_viewport_fb()
 
 void *vid_get_viewport_live_fb()
 {
-    if (MODE_IS_VIDEO(mode_get()) || (movie_status==VIDEO_RECORD_IN_PROGRESS))
+    if (MODE_IS_VIDEO(mode_get()) || (get_movie_status()==VIDEO_RECORD_IN_PROGRESS))
         return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
 
     // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
@@ -122,7 +122,6 @@ int vid_get_viewport_display_xoffset()
 
 // Functions for PTP Live View system
 
-int vid_get_viewport_width_proper()             { return vid_get_viewport_width() * 2; }
 int vid_get_viewport_display_xoffset_proper()   { return vid_get_viewport_display_xoffset() * 2; }
 int vid_get_viewport_height_proper()            { return 480; }
 int vid_get_viewport_buffer_width_proper()      { return 960; }
@@ -144,5 +143,8 @@ void *vid_get_bitmap_active_palette()
 {
     extern int active_palette_buffer;
     extern char* palette_buffer[];
-    return (palette_buffer[active_palette_buffer]+8);
+    void* p = palette_buffer[active_palette_buffer];
+    // Don't add offset if value is 0
+    if (p) p += 8;
+    return p;
 }

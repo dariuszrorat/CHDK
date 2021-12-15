@@ -25,6 +25,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_CUSTOM_SATURATION               55         // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_QUALITY                         57
 #define PROPCASE_CUSTOM_CONTRAST                 59         // Canon Menu slide bar values: 255, 254, 0, 1, 2
+#define PROPCASE_LANGUAGE                        61         // Upper byte = language (see default.lua for known values) lowest bit: 0 = NTSC, 1 = PAL
 #define PROPCASE_FLASH_SYNC_CURTAIN              64
 #define PROPCASE_SUBJECT_DIST2                   65
 #define PROPCASE_DATE_STAMP                      66         // 0 = Off, 1 = Date, 2 = Date & Time
@@ -58,6 +59,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_SHOOTING                        303     // This value appears to work better - gets set to 1 when camera has focused and set exposure, returns to 0 after shot
 #define PROPCASE_EV_CORRECTION_2                 211
 #define PROPCASE_IS_FLASH_READY                  212
+#define PROPCASE_IMAGE_FORMAT                    214     // from UIFS_GetStillShotableNumber, 0 = RAW, 1 = JPEG, 2 = RAW+JPEG
 #define PROPCASE_RESOLUTION                      222        // 0 = L, 1 = M1, 2 = M2, 4 = S, 7 = Low Light
 #define PROPCASE_ORIENTATION_SENSOR              223
 #define PROPCASE_TIMER_MODE                      227        // 0 = OFF, 1 = 2 sec, 2 = 10 sec, 3 = Custom
@@ -76,6 +78,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_ASPECT_RATIO                    300        // 0 = 4:3, 1 = 16:9, 2 = 3:2, 3 = 1:1
 #define PROPCASE_SV                              347        // (philmoz, May 2011) - this value causes overrides to be saved in JPEG and shown on Canon OSD
 #define PROPCASE_GPS                             358        // (CHDKLover, August 2011) - contains a 272 bytes long structure
+#define PROPCASE_REVIEW_TIME                     364        // Review time 0 = off, -1 = hold, 100 = quick, otherwise milliseconds
 #define PROPCASE_TIMER_SHOTS                     377        // Number of shots for TIMER_MODE=Custom
 
 // !not sure

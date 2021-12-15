@@ -3,7 +3,9 @@ topdir=../../
 include $(topdir)makefile_cam.inc
 SUBDIRS=resetcode
 
-LDOPTS=-nostdlib -Wl,--allow-shlib-undefined -Wl,--no-define-common,-EL,-T,$(tools)/link-boot.ld -Wl,-N,-Ttext,$(MEMBASEADDR)
+CFLAGS+=-DRESTARTSTART=$(RESTARTSTART)
+
+LDOPTS=-nostdlib -Wl,--allow-shlib-undefined -Wl,-EL,-T,$(tools)/link-boot.ld -Wl,-N,-Ttext,$(MEMBASEADDR)
 
 CORE_FILE=$(camfw)/main.bin
 RESET_FILE=resetcode/main.bin

@@ -4,16 +4,13 @@
 ** See Copyright Notice in lua.h
 */
 
-#if 0
 #include <errno.h>
 #include <locale.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
-#ifdef HOST_LUA
-#include <errno.h>
 #include <time.h>
 #include <dirent.h>
+#ifdef HOST_LUA
 #include <sys/stat.h>
 #include <utime.h>
 #endif
@@ -279,6 +276,11 @@ static int get_table_optbool(lua_State *L, int narg, const char *fname, int d)
   NOTE except for the root directory, names ending in / will not work
 */
 static int os_listdir (lua_State *L) {
+#ifdef HOST_LUA
+  // TODO: Not implemented for 'hostlua'
+  (void)L;
+  return 0;
+#else
   DIR *dir;
   struct dirent *de;
   const char *dirname = luaL_checkstring(L, 1);
@@ -304,6 +306,7 @@ static int os_listdir (lua_State *L) {
   }
   closedir(dir);
   return 1;
+#endif
 }
 
 #define IDIR_META "chdk_idir_meta"
@@ -351,6 +354,7 @@ static int idir_gc(lua_State *L) {
     }
     return 0;
 }
+
 /*
   syntax
     iteratator, userdata = os.idir("name"[,all])
@@ -381,7 +385,11 @@ static int idir_gc(lua_State *L) {
   idir(ud,false) -- ensure directory handle is closed
 */
 static int os_idir (lua_State *L) {
-  DIR *dir;
+#ifdef HOST_LUA
+  // TODO: Not implemented for 'hostlua'
+  (void)L;
+  return 0;
+#else
   const char *dirname = luaL_checkstring(L, 1);
   int all=0,od_flags=OPENDIR_FL_CHDK_LFN;
   if(lua_istable(L,2)) {
@@ -401,6 +409,7 @@ static int os_idir (lua_State *L) {
   luaL_getmetatable(L, IDIR_META);
   lua_setmetatable(L, -2);
   return 2;
+#endif
 }
 
 static const luaL_Reg idir_meta_methods[] = {

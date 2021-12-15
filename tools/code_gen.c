@@ -897,7 +897,7 @@ void op_FUNC(op *p)
     if ((p->func_len == 0) && (p->func_end > 0))
         p->func_len = (p->func_end - p->func_start) / 4 + 1;
     if (p->func_end < p->func_start) chk_args(-1,"FUNC start > end",p);
-    if (p->func_len != ((p->func_end - p->func_start) / 4 + 1)) chk_args(-1,"FUNC start/end/length mismatch",p);
+    if (p->func_len != (int)((p->func_end - p->func_start) / 4 + 1)) chk_args(-1,"FUNC start/end/length mismatch",p);
 
     if (*func_name == 0)
         sprintf(func_name, "sub_%08X_my", p->func_start);
@@ -1108,7 +1108,7 @@ void usage(char *err)
 
 op* last_op = 0;
 
-void error(char *fmt, int n)
+void error(__attribute__ ((unused))char *fmt, __attribute__ ((unused))int n)
 {
     if (last_op)
         fprintf(stderr,"Line - %d, Source --> %s\n",last_op->lineno,last_op->source);

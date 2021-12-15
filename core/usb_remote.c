@@ -16,7 +16,6 @@
   ===================================================================================================*/
 
 #include "camera_info.h"
-#include "stdlib.h"
 #include "clock.h"
 #include "modes.h"
 #include "shooting.h"
@@ -24,7 +23,7 @@
 #include "action_stack.h"
 #include "gui_draw.h"
 #include "usb_remote.h"
-
+#include "debug_led.h"
 
 /*===================================================================================================
     Variables
@@ -73,7 +72,7 @@ void debug_error(int err_num)
 
 #else
 
-void debug_error(int err_num)
+void debug_error(__attribute__ ((unused))int err_num)
 {
 }
 
@@ -218,7 +217,12 @@ void kbd_calibrate_synch_delay()
 void usb_remote_status_led(int state)
 {
     if (camera_info.cam_remote_sync_status_led)
-        *(int*)camera_info.cam_remote_sync_status_led=state ? 0x46 : 0x44;
+    {
+        if (camera_info.cam_remote_sync_status_led == -1)
+            debug_led(state);
+        else
+            *(int*)camera_info.cam_remote_sync_status_led=state ? 0x46 : 0x44;
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------------
@@ -289,7 +293,7 @@ void usb_remote_key( void )
   ---------------------------------------------------------------------------------------------------------*/
 int usb_HPtimer_error_count;
 
-int usb_HPtimer_good(int time, int interval) 
+int usb_HPtimer_good(__attribute__ ((unused))int time, int interval) 
 {
     usb_HPtimer_handle=0;
     start_usb_HPtimer(interval) ;
@@ -387,7 +391,9 @@ void set_usb_remote_state()
         rmt_state = RMT_DISABLED ;
         usb_remote_active = 0 ;
     }
-    virtual_remote_state = driver_state = logic_module_state = REMOTE_RESET ;
+    virtual_remote_state = REMOTE_RESET;
+    driver_state = SW_RESET;
+    logic_module_state = LM_RESET;
 }
 
 int handle_usb_remote()
@@ -462,22 +468,22 @@ int handle_usb_remote()
                             sprintf(buf,"ERROR    ") ;
                             break;
                     }
-                    draw_string(2,16,buf,MAKE_COLOR(COLOR_YELLOW,COLOR_RED));
+                    draw_string(2,FONT_HEIGHT,buf,MAKE_COLOR(COLOR_YELLOW,COLOR_RED));
                 }
                 else
                 {
                     sprintf(buf,"RMT=%d drv=%d lgc=%d  sync=%d  tmo=%d  ", usb_remote_active, driver_state, logic_module_state, usb_sync_wait_flag, (bracketing_timeout?bracketing_timeout-get_tick_count():0));
-                    draw_string(2,48,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+                    draw_string(2,FONT_HEIGHT*3,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
                 }
 
                 if (((debug_print+25)%100) ==0 )
                 {
                     sprintf(buf,"switch=%d logic=%d sync=%s mode=%d  ", switch_type, control_module, conf.synch_enable?"yes":"no", camera_mode) ;
-                    draw_string(2,32,buf,MAKE_COLOR(COLOR_YELLOW,COLOR_BLACK));
+                    draw_string(2,FONT_HEIGHT*2,buf,MAKE_COLOR(COLOR_YELLOW,COLOR_BLACK));
                     sprintf(buf,"sync count=%d, pulse count=%d width=%d  b=%d  ", sync_counter, usb_count, usb_power,   bracketing.shoot_counter);
-                    draw_string(2,64,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+                    draw_string(2,FONT_HEIGHT*4,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
                     sprintf(buf,"physw=%d err=%d %d %d  ", physw_status[0]&0x03, debug_errors[0],  debug_errors[1],  debug_errors[2] );
-                    draw_string(2,80,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+                    draw_string(2,FONT_HEIGHT*5,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
                 }
 
                 if (((debug_print+75)%100) == 0 )
@@ -496,7 +502,7 @@ int handle_usb_remote()
                         }
                         if ( buff_ptr-- == usb_buffer )  buff_ptr = &usb_buffer[15] ;
                     }
-                    draw_string(2,96,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+                    draw_string(2,FONT_HEIGHT*6,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
                 }
             }
         #endif

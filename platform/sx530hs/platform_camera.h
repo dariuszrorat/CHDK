@@ -1,6 +1,6 @@
-// Camera - sx510hs - platform_camera.h
+// Camera - sx530hs - platform_camera.h
 
-// This file contains the various settings values specific to the sx510hs camera.
+// This file contains the various settings values specific to the sx530hs camera.
 // This file is referenced via the 'include/camera.h' file and should not be loaded directly.
 
 // If adding a new settings value put a suitable default in 'include/camera.h',
@@ -21,8 +21,8 @@
 // don't override them again in here.
 
 
-
-    #define CAM_PROPSET                     6
+// propset 8, new for this camera. See development thread https://chdk.setepontos.com/index.php?topic=12418.msg127109#msg127109
+    #define CAM_PROPSET                     8
     #define CAM_DRYOS                       1
     #define CAM_DRYOS_2_3_R39               1 // Defined for cameras with DryOS version R39 or higher
     #define CAM_DRYOS_2_3_R47               1 // Defined for cameras with DryOS version R47 or higher
@@ -33,13 +33,14 @@
     #define CAM_RAW_ROWPIX                  4768 // Found @0xff196e7c
     #define CAM_RAW_ROWS                    3516 // Found @0xff196e88
 
-    #define CAM_JPEG_WIDTH                  4000 // from canon specs
-    #define CAM_JPEG_HEIGHT                 3000 
+
+    #define CAM_JPEG_WIDTH                  4608 // from canon specs
+    #define CAM_JPEG_HEIGHT                 3456
 
     #define CAM_ACTIVE_AREA_X1              96
-    #define CAM_ACTIVE_AREA_Y1              18 // there are values at 17 but keep even to avoid CFA issues
-    #define CAM_ACTIVE_AREA_X2              4168 // active all the way to the edge
-    #define CAM_ACTIVE_AREA_Y2              3062 // active all the way to the bottom
+    #define CAM_ACTIVE_AREA_Y1              16
+    #define CAM_ACTIVE_AREA_X2              4768 // active all the way to the edge
+    #define CAM_ACTIVE_AREA_Y2              3516 // active all the way to the bottom
 
     #undef CAM_UNCACHED_BIT
     #define CAM_UNCACHED_BIT                0x40000000 // Found @0xff025c5c
@@ -47,7 +48,7 @@
     #undef CAM_SENSOR_BITS_PER_PIXEL
     #define CAM_SENSOR_BITS_PER_PIXEL       12
 
-    #define CAM_DNG_LENS_INFO               { 43,10, 1290, 10, 34,10, 58,10 } // See comments in camera.h
+    #define CAM_DNG_LENS_INFO               { 43,10, 2150, 10, 34,10, 65, 10 } // See comments in camera.h
 
     #define cam_CFAPattern                  0x02010100 // Red Green Green Blue
 
@@ -58,28 +59,34 @@
        -498, 10000,    1957, 10000,    4116, 10000
     #define cam_CalibrationIlluminant1      21      // D65
 
+    #undef  CAM_HAS_CMOS
+    #define CAM_HAS_CMOS                    1
+
     #undef  CAM_USE_ZOOM_FOR_MF
-    #define CAM_HAS_ND_FILTER               1
 
     #define CAM_HAS_VIDEO_BUTTON            1
+
+    #undef  CAM_HAS_DISP_BUTTON
 
     // long shutter is actually user TV, may work ?
     #undef  CAM_HAS_USER_TV_MODES
     #define CAM_SHOW_OSD_IN_SHOOT_MENU      1
 
     #undef  CAM_VIDEO_CONTROL
-// not working
-    #undef CAM_CHDK_HAS_EXT_VIDEO_MENU
+
 //    #define CAM_VIDEO_QUALITY_ONLY            1
-//    #define CAM_CHDK_HAS_EXT_VIDEO_MENU       1
     #define CAM_HAS_MOVIE_DIGEST_MODE       1   //Camera doesn't actually have MOVIE_DIGEST_MOVIE, but this is required by is_video_recording.
                                                 //See http://chdk.setepontos.com/index.php?topic=9986.msg118892#msg118892
-    #define CAM_IS_VID_REC_WORKS            1   // is_video_recording() function works    
+    //#define CAM_IS_VID_REC_WORKS            1   // is_video_recording() function works
+    #undef CAM_IS_VID_REC_WORKS
 
     // TODO
 //    #define CAM_AF_SCAN_DURING_VIDEO_RECORD   1
+    #undef CAM_AF_SCAN_DURING_VIDEO_RECORD
 
     #undef CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO  // unlocked in canon firmware by default
+
+    #define CAM_DRIVE_MODE_FROM_TIMER_MODE  1
 
     // MakeDirectory_Fut not found, using mkdir
     #define MKDIR_RETURN_ONE_ON_SUCCESS
@@ -92,12 +99,11 @@
     #undef  CAM_BITMAP_HEIGHT
     #define CAM_BITMAP_HEIGHT               270 // Actual height of bitmap screen in rows (240 or 270)
 
-    #define CAM_LOAD_CUSTOM_COLORS          1     // Enable loading CHDK colors into the camera palette memory/hardware
 
     #define CAM_HAS_JOGDIAL                 1
     #define CAM_ADJUSTABLE_ALT_BUTTON       1
-    #define CAM_ALT_BUTTON_NAMES            { "Playback", "Disp", "Video" }
-    #define CAM_ALT_BUTTON_OPTIONS          { KEY_PLAYBACK, KEY_DISPLAY, KEY_VIDEO }
+    #define CAM_ALT_BUTTON_NAMES            { "Playback", "Video", "Wifi" }
+    #define CAM_ALT_BUTTON_OPTIONS          { KEY_PLAYBACK, KEY_VIDEO, KEY_WIFI }
 
     // TODO
     #undef  CAM_USB_EVENTID
@@ -110,15 +116,16 @@
     #undef CAM_FILE_COUNTER_IS_VAR
     #define CAM_FILE_COUNTER_IS_VAR         1 // file counter is variable file_counter_var in stubs, not a param
 
-    #define  CAM_HAS_FILEWRITETASK_HOOK     1 // FileWriteTask hook is available (local file write can be prevented)
-    #define  CAM_FILEWRITETASK_SEEKS        1 // Camera's FileWriteTask can do Lseek() - DryOS r50 or higher, the define could also be CAM_DRYOS_2_3_R50
+    //#define  CAM_HAS_FILEWRITETASK_HOOK     1 // FileWriteTask hook is available (local file write can be prevented)
+    #undef CAM_HAS_FILEWRITETASK_HOOK
+    //#define  CAM_FILEWRITETASK_SEEKS        1 // Camera's FileWriteTask can do Lseek() - DryOS r50 or higher, the define could also be CAM_DRYOS_2_3_R50
+    #undef  CAM_FILEWRITETASK_SEEKS
 
-    #define CAM_USE_OPTICAL_MAX_ZOOM_STATUS 1 // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom
-    #define CAM_USE_ALT_SET_ZOOM_POINT      17 // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt 1 // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
+    #define CAM_NEED_SET_ZOOM_DELAY            300
 
 //  only non-AF led available
-    #define REMOTE_SYNC_STATUS_LED          0xC022D1FC  // specifies an LED that turns on while camera waits for USB remote to sync
+//  CHDK doesn't currently (April 2016) support REMOTE_SYNC_STATUS_LED on DIGIC 4+ / 5 / 6 cameras
+//    #define REMOTE_SYNC_STATUS_LED          0xC022D1FC  // specifies an LED that turns on while camera waits for USB remote to sync
 
     #undef CAM_AF_LED
     #define CAM_AF_LED                      1
@@ -126,14 +133,27 @@
     #undef  CAM_KEY_PRESS_DELAY
     #define CAM_KEY_PRESS_DELAY             120  // delay after a press - Required by zoom_in/zoom_out buttons
 
+    #define SHORTCUT_TOGGLE_ZEBRA           KEY_MENU
+
     #define CAM_SD_OVER_IN_AF               1
     #define CAM_SD_OVER_IN_AFL              1
     #define CAM_SD_OVER_IN_MF               1
 
-//    #define DRAW_ON_ACTIVE_BITMAP_BUFFER_ONLY 1
-	#undef DRAW_ON_ACTIVE_BITMAP_BUFFER_ONLY  //jeronymo
-    
+    #define CAM_MIN_ISO_OVERRIDE            100     // https://chdk.setepontos.com/index.php?topic=12314.msg128518#msg128518
+    #define CAM_MAX_ISO_OVERRIDE            3200    // https://chdk.setepontos.com/index.php?topic=12314.msg128683#msg128683
+
+
+    #undef DRAW_ON_ACTIVE_BITMAP_BUFFER_ONLY  //jeronymo
+    #define DRAW_ON_ACTIVE_BITMAP_BUFFER_ONLY 1
 
     #define CAM_3ARG_DebugAssert                1   // DebugAssert takes 3 arguments
 
+    #define CAM_HAS_WIFI                        1   // Camera has wifi support
+
 //----------------------------------------------------------
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_RED      // Override menu cursor colors
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_WHITE    // Override menu cursor colors
+
+

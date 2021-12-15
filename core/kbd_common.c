@@ -17,6 +17,9 @@ KBD_CUSTOM_UPDATE_KEY_STATE
 * non-standard manipulation of other physw bits (SD readonly, USB etc)
 KBD_CUSTOM_UPDATE_PHYSW_BITS
 
+* use a function seperate from normal keyboard bits to overide / track USB state
+* used for ixus 30, 40, 50, 500
+KBD_USB_OVERRIDE_FUNC
 
 * use logical event to simulate "video" button from script
 * for touchscreen cameras without a physical video button
@@ -41,17 +44,18 @@ SD_READONLY_FLAG
 ** physw_status index for readonly bit
 SD_READONLY_IDX
 
-** USB +5v bit
+** USB +5v bit (1 = USB +5v present)
 USB_MASK
 ** physw_status index for USB bit
 USB_IDX
 
-** get_usb_bit should use the following MMIO directly
+** get_usb_bit should use the following MMIO directly.
+** Otherwise, platform must implement get_usb_bit()
 USB_MMIO
 
 ** battery cover override - requires additional supporting code
 BATTCOVER_IDX
-BATTCOVER_FLAG 
+BATTCOVER_FLAG
 
 * override SD card door for cameras micro-sd cams that use it for autoboot
 SD_DOOR_OVERRIDE 1
@@ -60,12 +64,25 @@ SD_DOOR_FLAG
 * physw_status index for SD door
 SD_DOOR_IDX
 
+* HDMI Hot Plug Detect bit (0 = hotplug detected)
+HDMI_HPD_FLAG
+* HDMI Hot Plug Detect index
+HDMI_HPD_IDX
+
+* Analog AV present bit (0 = present)
+ANALOG_AV_FLAG
+* Analog AV present index
+ANALOG_AV_IDX
+
 */
 #include "platform.h"
 #include "core.h"
 #include "keyboard.h"
 #include "kbd_common.h"
 #include "conf.h"
+#include "usb_remote.h"
+// for draw_suspend
+#include "gui_draw.h"
 
 // for KBD_SIMULATE_VIDEO_KEY
 #include "levent.h"
@@ -75,6 +92,77 @@ SD_DOOR_IDX
 #ifndef KBD_CUSTOM_ALL
 extern long physw_status[3];
 extern int forced_usb_port;
+
+// get HDMI hotplug status from as seen by canon firmware (possibly modified by CHDK)
+int get_hdmi_hpd_physw_mod(void)
+{
+#ifdef HDMI_HPD_FLAG
+    if(!(physw_status[HDMI_HPD_IDX] & HDMI_HPD_FLAG)) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+// get analog AV status from as seen by canon firmware (possibly modified by CHDK)
+int get_analog_av_physw_mod(void)
+{
+#ifdef ANALOG_AV_FLAG
+    if(!(physw_status[ANALOG_AV_IDX] & ANALOG_AV_FLAG)) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+#ifdef ANALOG_AV_FLAG
+int forced_analog_av;
+long prev_analog_av_state;
+#endif
+
+int kbd_force_analog_av(int state)
+{
+#ifdef ANALOG_AV_FLAG
+    forced_analog_av = state;
+    return 1;
+#else
+    (void)state;
+    return 0;
+#endif
+}
+
+#ifdef KBD_USB_OVERRIDE_FUNC
+// track status of USB as seen by firmware, for get_usb_bit_physw_mod
+static int usb_status_mod;
+
+int usb_power_status_override(int status){
+    int r;
+    if (forced_usb_port) {
+        r = status | USB_MASK;
+    } else if (conf.remote_enable) {
+        r = status &~USB_MASK;
+    } else {
+        r = status;
+    }
+    usb_status_mod = (r & USB_MASK)?1:0;
+    return r;
+}
+
+// get USB bit from as seen by canon firmware (possibly modified by CHDK)
+int get_usb_bit_physw_mod(void)
+{
+    return usb_status_mod;
+}
+
+#else // KBD_USB_OVERRIDE_FUNC
+int get_usb_bit_physw_mod(void)
+{
+    if(physw_status[USB_IDX] & USB_MASK) {
+        return 1;
+    }
+    return 0;
+}
+#endif
 
 #ifndef KBD_CUSTOM_UPDATE_KEY_STATE
 
@@ -148,14 +236,48 @@ long kbd_update_key_state(void)
 #ifndef KBD_CUSTOM_UPDATE_PHYSW_BITS
 void kbd_update_physw_bits(void)
 {
+    if (conf.remote_enable) {
+#ifdef CAM_REMOTE_MULTICHANNEL
+        switch(conf.remote_input_channel)
+        {
+            case REMOTE_INPUT_USB:
+                physw_status[USB_IDX] = physw_status[USB_IDX] & ~(USB_MASK);
+                break;
+            #ifdef CAM_REMOTE_HDMI_HPD
+            case REMOTE_INPUT_HDMI_HPD:
+                physw_status[HDMI_HPD_IDX] |= HDMI_HPD_FLAG;
+                break;
+            #endif
+            #ifdef CAM_REMOTE_ANALOG_AV
+            case REMOTE_INPUT_ANALOG_AV:
+                physw_status[ANALOG_AV_IDX] |= ANALOG_AV_FLAG;
+                break;
+            #endif
+         }
+#else
+        physw_status[USB_IDX] = physw_status[USB_IDX] & ~(USB_MASK);
+#endif
+    }
     // TODO could save the real USB bit to avoid low level calls in get_usb_bit when immediate update not needed
     if (forced_usb_port) {
         physw_status[USB_IDX] = physw_status[USB_IDX] | USB_MASK;
-    } else if (conf.remote_enable) {
-        // TODO some cameras (e.g. a530, a540) didn't mask USB with remote,
-        // because +5v has no effect on canon firmware in rec mode
-        physw_status[USB_IDX] = physw_status[USB_IDX] & ~(USB_MASK);
     }
+#ifdef ANALOG_AV_FLAG
+    // 1 force on, 2 = force off, other = don't touch
+    if (forced_analog_av == 1) {
+        physw_status[ANALOG_AV_IDX] &= ~(ANALOG_AV_FLAG);
+    } else if(forced_analog_av == 2) {
+        physw_status[ANALOG_AV_IDX] |= ANALOG_AV_FLAG;
+    }
+
+// workaround for crashes switching between analog AV out and native display
+    static long prev_analog_av_state = 0; // default to not present
+    long new_analog_av_state = get_analog_av_physw_mod();
+    if(new_analog_av_state != prev_analog_av_state) {
+        draw_suspend(1000);
+        prev_analog_av_state = new_analog_av_state;
+    }
+#endif
 // microsd cams don't have a read only bit
 #ifndef KBD_SKIP_READONLY_BIT
     physw_status[SD_READONLY_IDX] = physw_status[SD_READONLY_IDX] & ~SD_READONLY_FLAG;
@@ -183,10 +305,10 @@ void kbd_update_physw_bits(void)
 // if the port reads an MMIO directly to get USB +5v status, use generic get_usb_bit
 // others must define in platform kbd.c
 #ifdef USB_MMIO
-int get_usb_bit() 
+int get_usb_bit()
 {
     volatile int *mmio = (void*)USB_MMIO;
-    return(( *mmio & USB_MASK)==USB_MASK); 
+    return(( *mmio & USB_MASK)==USB_MASK);
 }
 #endif
 
@@ -204,7 +326,7 @@ void kbd_key_press(long key)
         is_video_key_pressed = 1;
         // TODO not clear if this should return, or set state too
         return;
-    }    
+    }
 #endif
     int i;
     for (i=0;keymap[i].hackkey;i++){

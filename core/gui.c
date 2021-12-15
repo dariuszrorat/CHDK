@@ -23,6 +23,7 @@
 #include "usb_remote.h"
 #include "module_load.h"
 #include "clock.h"
+#include "dirent.h"
 
 // splash screen time
 #if defined(OPT_EXPIRE_TEST)
@@ -73,7 +74,7 @@ void gui_enum_value_change(int *value, int change, unsigned num_items)
     *value+=change;
     if (*value<0)
         *value = num_items-1;
-    else if (*value>=num_items)
+    else if (*value>=(int)num_items)
         *value = 0;
 }
 
@@ -124,7 +125,7 @@ static CMenuItem bracketing_in_continuous_submenu_items[] =
 static CMenu bracketing_in_continuous_submenu = {0x2c,LANG_MENU_BRACKET_IN_CONTINUOUS_TITLE, bracketing_in_continuous_submenu_items };
 
 //-------------------------------------------------------------------
-static const char* gui_USB_switch_types_enum(int change, int arg)
+static const char* gui_USB_switch_types_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[] = { "None","OnePush", "TwoPush", "CA-1" };    // note : make sure # of entries less than NUM_USB_INPUT_DRV in usb_remote.c
     gui_enum_value_change(&conf.remote_switch_type,change,sizeof(modes)/sizeof(modes[0]));
@@ -134,7 +135,7 @@ static const char* gui_USB_switch_types_enum(int change, int arg)
     return modes[conf.remote_switch_type];
 }
 
-static const char* gui_USB_control_modes_enum(int change, int arg)
+static const char* gui_USB_control_modes_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[] = { "None", "Normal", "Quick", "Burst", "Bracket","Zoom", "Video" }; // note : make sure # of entries less than NUM_USB_MODULES in usb_remote.c
     gui_enum_value_change(&conf.remote_control_mode,change,sizeof(modes)/sizeof(modes[0]));
@@ -144,8 +145,38 @@ static const char* gui_USB_control_modes_enum(int change, int arg)
     return modes[conf.remote_control_mode];
 }
 
+#if CAM_REMOTE_MULTICHANNEL
+static const char* gui_remote_input_types_enum(int change, __attribute__ ((unused))int arg)
+{
+    static remote_input_desc_t remote_inputs[]=
+    {
+        {"USB",    REMOTE_INPUT_USB},
+#ifdef CAM_REMOTE_HDMI_HPD
+        {"HDMI HP",REMOTE_INPUT_HDMI_HPD},
+#endif
+#ifdef CAM_REMOTE_ANALOG_AV
+        {"ANLG AV",REMOTE_INPUT_ANALOG_AV},
+#endif
 #ifdef CAM_REMOTE_AtoD_CHANNEL
-static const char* gui_remote_channels[] = { "USB", "A/D Ch" };
+        {"A/D Ch", REMOTE_INPUT_AD_CHANNEL},
+#endif
+    };
+#define NUM_REMOTE_INPUT_TYPES (int)(sizeof(remote_inputs)/sizeof(remote_inputs[0]))
+    int i;
+    for(i=0; i<NUM_REMOTE_INPUT_TYPES; i++)
+    {
+        if(remote_inputs[i].type == conf.remote_input_channel)
+        {
+            break;
+        }
+    }
+    // will handle out of range if existing was invalid
+    gui_enum_value_change(&i,change,NUM_REMOTE_INPUT_TYPES);
+
+    conf.remote_input_channel=remote_inputs[i].type;
+
+    return remote_inputs[i].name;
+}
 #endif
 
 #ifndef CAM_REMOTE_USES_PRECISION_SYNC
@@ -159,8 +190,8 @@ static CMenuItem synch_delay[2] =
 static CMenuItem remote_submenu_items[] =
 {
     MENU_ITEM   (0x71,LANG_MENU_REMOTE_ENABLE,              MENUITEM_BOOL|MENUITEM_ARG_CALLBACK, &conf.remote_enable, (int)set_usb_remote_state),
-#ifdef CAM_REMOTE_AtoD_CHANNEL
-    MENU_ENUM2  (0x5f,LANG_MENU_REMOTE_INPUT_CHANNEL,       &conf.remote_input_channel,   gui_remote_channels ),
+#if CAM_REMOTE_MULTICHANNEL
+    MENU_ITEM   (0x5f,LANG_MENU_REMOTE_INPUT_CHANNEL,       MENUITEM_ENUM,                gui_remote_input_types_enum, 0),
 #endif
     MENU_ITEM   (0x5f,LANG_MENU_REMOTE_DEVICE,              MENUITEM_ENUM,                gui_USB_switch_types_enum, 0),
     MENU_ITEM   (0x5f,LANG_MENU_REMOTE_LOGIC,  	            MENUITEM_ENUM,                gui_USB_control_modes_enum, 0),
@@ -199,17 +230,13 @@ static CMenuItem autoiso_submenu_items[] =
 
     MENU_ENUM2	(0x5f,LANG_MENU_AUTOISO_MIN_ISO,            &conf.autoiso_min_iso,                         gui_autoiso_iso_values ),
     MENU_ENUM2	(0x5f,LANG_MENU_AUTOISO_MAX_ISO_AUTO,       &conf.autoiso_max_iso_auto,                    gui_autoiso_iso_values ),
-    //MENU_ITEM   (0x5f,LANG_MENU_AUTOISO_MIN_ISO,            MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX, &conf.autoiso_min_iso,          MENU_MINMAX(10, 200) ),
-    //MENU_ITEM	(0x5f,LANG_MENU_AUTOISO_MAX_ISO_AUTO,       MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX, &conf.autoiso_max_iso_auto,     MENU_MINMAX(10, 3200) ),
 
 #if CAM_HAS_HI_ISO_AUTO_MODE
     MENU_ENUM2	(0x5f,LANG_MENU_AUTOISO_MAX_ISO_HI,         &conf.autoiso_max_iso_hi,                      gui_autoiso_iso_values ),
-    //MENU_ITEM   (0x5f,LANG_MENU_AUTOISO_MAX_ISO_HI,         MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX, &conf.autoiso_max_iso_hi,       MENU_MINMAX(200, 3200) ),
 #endif
 
     MENU_ENUM2  (0x5f,LANG_MENU_AUTOISO_MIN_SHUTTER2,       &conf.autoiso2_shutter_enum,                        gui_autoiso2_shutter_modes ),
     MENU_ENUM2	(0x5f,LANG_MENU_AUTOISO_MAX_ISO2,           &conf.autoiso2_max_iso_auto,                        gui_autoiso_iso_values ),
-    //MENU_ITEM	(0x5f,LANG_MENU_AUTOISO_MAX_ISO2,           MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX, &conf.autoiso2_max_iso_auto,	MENU_MINMAX(100, 3200) ),
 
     MENU_ENUM2	(0x5f,LANG_MENU_AUTOISO_OVEREXP_EV,        &conf.overexp_ev_enum, gui_overexp_ev_modes ),
     MENU_ITEM	(0x57,LANG_MENU_ZEBRA_OVER,                MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX, &conf.autoiso2_over,    		MENU_MINMAX(0, 32) ),
@@ -318,21 +345,21 @@ static void gui_compare_props(int arg)
             {
                 ++c;
                 sprintf(buf,"%4d is %8d was %8d",i,p,props[i]);
-                draw_string(16,16*c,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+                draw_string(16,FONT_HEIGHT*c,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
             }
             props[i] = p;
             if( c == 12 )
             {
                 ++c;
                 sprintf(buf,"%s","Waiting 15 Seconds");
-                draw_string(16,16*c,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+                draw_string(16,FONT_HEIGHT*c,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
                 msleep(15000);
                 c = 0;
             }
         }
         ++c;
         sprintf(buf,"%s","Press <ALT> to leave");
-        draw_string(16,16*c,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
+        draw_string(16,FONT_HEIGHT*c,buf,MAKE_COLOR(COLOR_BLACK,COLOR_YELLOW));
     }
     else
     {
@@ -354,7 +381,7 @@ static void gui_compare_props(int arg)
 }
 
 // Save camera romlog to A/ROMLOG.LOG file
-static void save_romlog(int arg)
+static void save_romlog(__attribute__ ((unused))int arg)
 {
     extern unsigned _ExecuteEventProcedure(const char *name,...);
 
@@ -363,10 +390,10 @@ static void save_romlog(int arg)
 
     unsigned args[3];
     args[0] = (unsigned)"SystemEventInit";
-    if (call_func_ptr(_ExecuteEventProcedure,args,1) == -1)
+    if (call_func_ptr(_ExecuteEventProcedure,args,1) == (unsigned)-1)
     {
         args[0] = (unsigned)"System.Create";
-        if (call_func_ptr(_ExecuteEventProcedure,args,1) == -1)
+        if (call_func_ptr(_ExecuteEventProcedure,args,1) == (unsigned)-1)
         {
             gui_mbox_init(LANG_ERROR, LANG_SAVE_ROMLOG_INIT_ERROR, MBOX_BTN_OK|MBOX_TEXT_CENTER, NULL);
             return;
@@ -376,7 +403,7 @@ static void save_romlog(int arg)
     args[0] = (unsigned)"GetLogToFile";
     args[1] = (unsigned)"A/ROMLOG.LOG";
     args[2] = 1;
-    if (call_func_ptr(_ExecuteEventProcedure,args,3) == -1)
+    if (call_func_ptr(_ExecuteEventProcedure,args,3) == (unsigned)-1)
     {
         gui_mbox_init(LANG_ERROR, LANG_SAVE_ROMLOG_FAIL, MBOX_BTN_OK|MBOX_TEXT_CENTER, NULL);
     }
@@ -392,6 +419,8 @@ static const char* gui_debug_display_modes[] =              { "None", "Props", "
 #else
 static const char* gui_debug_display_modes[] =              { "None", "Props", "Params", "Tasks", "UIProps"};
 #endif
+
+static const char* gui_firmware_crc_modes[] =              { "Never", "Next", "Always"};
 
 extern volatile int memdmp_delay; // from core/main.c
 
@@ -429,6 +458,8 @@ static CMenuItem debug_submenu_items[] =
     MENU_ENUM2  (0x5c,LANG_MENU_DEBUG_SHORTCUT_ACTION,      &conf.debug_shortcut_action,    gui_debug_shortcut_modes ),
     MENU_ITEM   (0x2a,LANG_MENU_DEBUG_MEMDMP,               MENUITEM_SUBMENU,               &memdmp_submenu,                    0 ),
     MENU_ITEM   (0x2a,LANG_SAVE_ROMLOG,                     MENUITEM_PROC,                  save_romlog,                        0 ),
+    MENU_ENUM2  (0x5c,LANG_FIRMWARE_CRC_BOOT_MENU,          &conf.check_firmware_crc,       gui_firmware_crc_modes ),
+
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,                    0,                                  0 ),
     {0}
 };
@@ -447,7 +478,7 @@ static CMenu debug_submenu = {0x2a,LANG_MENU_DEBUG_TITLE, debug_submenu_items };
 // forward reference
 static CMenuItem gps_submenu_items[];
 
-static void gpx_start_stop(int arg)
+static void gpx_start_stop(__attribute__ ((unused))int arg)
 {
     int i = 0;
     if( conf.gps_on_off )
@@ -469,7 +500,7 @@ static void gpx_start_stop(int arg)
 static void navigate_to_home(int);
 static void navigate_to_image(int);
 
-static void show_compass(int arg)
+static void show_compass(__attribute__ ((unused))int arg)
 {
     int i = 0;
     if( conf.gps_on_off )
@@ -494,7 +525,7 @@ static void show_compass(int arg)
     }
 }
 
-static void navigate_to_image(int arg)
+static void navigate_to_image(__attribute__ ((unused))int arg)
 {
     int i = 0;
     if( conf.gps_on_off )
@@ -521,7 +552,7 @@ static void navigate_to_image(int arg)
     }
 }
 
-static void navigate_to_home(int arg)
+static void navigate_to_home(__attribute__ ((unused))int arg)
 {
     int i = 0;
     if( conf.gps_on_off )
@@ -548,12 +579,12 @@ static void navigate_to_home(int arg)
     }
 }
 
-static void mark_timezone(int arg)
+static void mark_timezone(__attribute__ ((unused))int arg)
 {
     gps_write_timezone();
 }
 
-static void mark_home(int arg)
+static void mark_home(__attribute__ ((unused))int arg)
 {
     gps_write_home();
 }
@@ -677,7 +708,7 @@ static void gui_draw_read_selected(const char *fn)
     }
 }
 
-static void gui_draw_read(int arg)
+static void gui_draw_read(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_TEXT_FILE, conf.reader_file, "A/CHDK/BOOKS", gui_draw_read_selected);
 }
@@ -698,7 +729,7 @@ static void gui_draw_rbf_selected(const char *fn)
     }
 }
 
-static void gui_draw_load_rbf(int arg)
+static void gui_draw_load_rbf(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_FONT_FILE, conf.reader_rbf_file, "A/CHDK/FONTS", gui_draw_rbf_selected);
 }
@@ -821,19 +852,19 @@ static void gui_module_menu(CMenu *m, int type)
     gui_activate_sub_menu(m);
 }
 
-static void gui_games_menu(int arg)
+static void gui_games_menu(__attribute__ ((unused))int arg)
 {
     gui_module_menu(&games_submenu, MTYPE_GAME);
 }
 
-static void gui_tools_menu(int arg)
+static void gui_tools_menu(__attribute__ ((unused))int arg)
 {
     gui_module_menu(&tools_submenu, MTYPE_TOOL);
 }
 
 //-------------------------------------------------------------------
 
-static void gui_menuproc_mkbootdisk(int arg)
+static void gui_menuproc_mkbootdisk(__attribute__ ((unused))int arg)
 {
     mark_filesystem_bootable();
     gui_mbox_init(LANG_INFORMATION, LANG_CONSOLE_TEXT_FINISHED, MBOX_BTN_OK|MBOX_TEXT_CENTER|MBOX_FUNC_RESTORE, NULL);
@@ -846,14 +877,14 @@ static void card_break_proc(unsigned int btn)
     if (btn==MBOX_BTN_YES) create_partitions();
 }
 
-static void gui_menuproc_break_card(int arg)
+static void gui_menuproc_break_card(__attribute__ ((unused))int arg)
 {
     gui_mbox_init(LANG_WARNING, LANG_PARTITIONS_CREATE_WARNING, MBOX_BTN_YES_NO|MBOX_DEF_BTN2|MBOX_TEXT_CENTER|MBOX_FUNC_RESTORE, card_break_proc);
 }
 
 static char* partitions_enum=NULL;
 
-static const char* gui_menuproc_swap_partitions_enum(int change, int arg)
+static const char* gui_menuproc_swap_partitions_enum(int change, __attribute__ ((unused))int arg)
 {
     int new_partition;
     int partition_count = get_part_count();
@@ -906,7 +937,7 @@ static void gui_delete_module_log_callback(unsigned int btn)
         module_log_clear();
 }
 
-static void gui_delete_module_log(int arg)
+static void gui_delete_module_log(__attribute__ ((unused))int arg)
 {
     gui_mbox_init(LANG_WARNING, LANG_MENU_DELETE_MODULE_LOG, MBOX_BTN_YES_NO|MBOX_DEF_BTN2|MBOX_TEXT_CENTER|MBOX_FUNC_RESTORE, gui_delete_module_log_callback);
 }
@@ -924,7 +955,7 @@ static CMenu module_submenu = {0x28,LANG_MENU_MODULES, module_submenu_items };
 
 //-------------------------------------------------------------------
 
-static void gui_draw_fselect(int arg)
+static void gui_draw_fselect(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_FILE_BROWSER, "A", "A", NULL);
 }
@@ -952,7 +983,7 @@ static const char text_raw[] =
 
 static const char* text[TEXT_COUNT];
 
-static void gui_show_build_info(int arg)
+static void gui_show_build_info(__attribute__ ((unused))int arg)
 {
     int comp_text_index = TEXT_COUNT - 1;
     const char *comp = text[comp_text_index];
@@ -960,7 +991,7 @@ static void gui_show_build_info(int arg)
     gui_mbox_init(LANG_MSG_BUILD_INFO_TITLE, (int)buf, MBOX_FUNC_RESTORE|MBOX_TEXT_LEFT, NULL);
 }
 
-static void gui_show_memory_info(int arg)
+static void gui_show_memory_info(__attribute__ ((unused))int arg)
 {
     sprintf(buf, lang_str(LANG_MSG_MEMORY_INFO_TEXT), core_get_free_memory(), camera_info.memisosize, &_start, &_end);
     gui_mbox_init(LANG_MSG_MEMORY_INFO_TITLE, (int)buf, MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER, NULL);
@@ -997,13 +1028,13 @@ static void gui_unsafe_io_warning()
 //-------------------------------------------------------------------
 static const char* gui_console_show_enum[]= { "ALT", "Always" };
 
-static void gui_console_clear(int arg)
+static void gui_console_clear(__attribute__ ((unused))int arg)
 {
     console_close();
     gui_mbox_init(LANG_MENU_CONSOLE_CLEAR, LANG_MENU_CONSOLE_RESET, MBOX_BTN_OK|MBOX_TEXT_CENTER, NULL);
 }
 
-static void gui_console_show(int arg)
+static void gui_console_show(__attribute__ ((unused))int arg)
 {
     void display_console();
     display_console();
@@ -1203,7 +1234,7 @@ static CMenu clock_submenu = {0x34,LANG_MENU_OSD_CLOCK_PARAMS_TITLE, clock_subme
 //-------------------------------------------------------------------
 
 #if !CAM_VIDEO_QUALITY_ONLY
-const char* gui_video_bitrate_enum(int change, int arg)
+const char* gui_video_bitrate_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char *modes[]= { "0.25x", "0.5x","0.75x", "1x", "1.25x", "1.5x", "1.75x", "2x", "2.5x", "3x"};
     gui_enum_value_change(&conf.video_bitrate,change,sizeof(modes)/sizeof(modes[0]));
@@ -1214,15 +1245,26 @@ const char* gui_video_bitrate_enum(int change, int arg)
     return modes[conf.video_bitrate];
 }
 #endif
+#ifdef CAM_MOVIEREC_NEWSTYLE
+const char* gui_video_min_bitrate_enum(int change, __attribute__ ((unused))int arg)
+{
+    gui_enum_value_change(&conf.video_quality,change,10);
 
+    if (change)
+        shooting_video_minbitrate_change(conf.video_quality);
+
+    sprintf(buf, "%d%%", (conf.video_quality+1)*10);
+    return buf;
+}
+#endif
 #if CAM_AF_SCAN_DURING_VIDEO_RECORD
-static const char* gui_video_af_key_enum(int change, int arg)
+static const char* gui_video_af_key_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* names[] = CAM_VIDEO_AF_BUTTON_NAMES;
     static const int keys[] = CAM_VIDEO_AF_BUTTON_OPTIONS;
     int i;
 
-    for (i=0; i<sizeof(names)/sizeof(names[0]); ++i)
+    for (i=0; i<(int)(sizeof(names)/sizeof(names[0])); ++i)
     {
         if (conf.video_af_key==keys[i])
         {
@@ -1233,7 +1275,7 @@ static const char* gui_video_af_key_enum(int change, int arg)
     i+=change;
     if (i<0)
         i=(sizeof(names)/sizeof(names[0]))-1;
-    else if (i>=(sizeof(names)/sizeof(names[0])))
+    else if (i>=(int)(sizeof(names)/sizeof(names[0])))
         i=0;
 
     conf.video_af_key = keys[i];
@@ -1242,10 +1284,20 @@ static const char* gui_video_af_key_enum(int change, int arg)
 #endif
 
 static const char* gui_show_movie_time_modes[] =            { "Don't", "hh:mm:ss", "KB/s","both"};
+#if CAM_CHDK_HAS_EXT_VIDEO_MENU
 #if !CAM_VIDEO_QUALITY_ONLY
+#ifndef CAM_MOVIEREC_NEWSTYLE
 static const char* gui_video_mode_modes[] =             { "Bitrate", "Quality"};
 #else
+static const char* gui_video_mode_modes[] =             { "Default", "CBR", "VBR HI", "VBR MID", "VBR LOW"};
+#endif
+#else
 static const char* gui_video_mode_modes[] =             { "Default", "Quality"};
+#endif
+#endif // HAS_EXT_VIDEO_MENU
+
+#ifdef CAM_CLEAN_OVERLAY
+static const char* gui_clean_overlay_modes[] =          { "Never", "Rec", "MviRec"};
 #endif
 
 static CMenuItem video_submenu_items[] =
@@ -1255,7 +1307,11 @@ static CMenuItem video_submenu_items[] =
 #if !CAM_VIDEO_QUALITY_ONLY
     MENU_ITEM   (0x5e,LANG_MENU_VIDEO_BITRATE,              MENUITEM_ENUM,          gui_video_bitrate_enum,             0 ),
 #endif
+#ifndef CAM_MOVIEREC_NEWSTYLE
     MENU_ITEM   (0x60,LANG_MENU_VIDEO_QUALITY,              MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX,  &conf.video_quality, MENU_MINMAX(1, 99) ),
+#else
+    MENU_ITEM   (0x60,LANG_MENU_VIDEO_VBR_MIN,              MENUITEM_ENUM,          gui_video_min_bitrate_enum,         0 ),
+#endif
 #if CAM_CHDK_HAS_EXT_VIDEO_TIME
     MENU_ITEM   (0x5c,LANG_MENU_VIDEO_EXT_TIME,             MENUITEM_BOOL,          &conf.ext_video_time,               0 ),
 #endif
@@ -1264,7 +1320,7 @@ static CMenuItem video_submenu_items[] =
 #if CAM_VIDEO_CONTROL
     MENU_ITEM   (0x5c,LANG_MENU_FAST_SWITCH_VIDEO,          MENUITEM_BOOL,          &conf.fast_movie_control,           0 ),
 #endif
-#if CAM_CHDK_HAS_EXT_VIDEO_MENU
+#if CAM_CHDK_HAS_EXT_VIDEO_MENU && !defined(CAM_MOVIEREC_NEWSTYLE)
     MENU_ITEM   (0x5c,LANG_MENU_FAST_SWITCH_QUALITY_VIDEO,  MENUITEM_BOOL,          &conf.fast_movie_quality_control,   0 ),
 #endif
 #if CAM_CAN_UNLOCK_OPTICAL_ZOOM_IN_VIDEO
@@ -1278,6 +1334,12 @@ static CMenuItem video_submenu_items[] =
 #endif
     MENU_ENUM2  (0x5c,LANG_MENU_OSD_SHOW_VIDEO_TIME,        &conf.show_movie_time,  gui_show_movie_time_modes ),
     MENU_ITEM   (0x60,LANG_MENU_OSD_SHOW_VIDEO_REFRESH,     MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX, &conf.show_movie_refresh,   MENU_MINMAX(1, 20) ),
+#ifdef CAM_CLEAN_OVERLAY
+    MENU_ENUM2  (0x7f,LANG_MENU_CLEAN_OVERLAY,              &conf.clean_overlay,    gui_clean_overlay_modes ),
+#endif
+#ifdef CAM_UNLOCK_ANALOG_AV_IN_REC
+    MENU_ITEM   (0x83,LANG_MENU_UNLOCK_AV_OUT_IN_REC,       MENUITEM_BOOL,          &conf.unlock_av_out_in_rec,         0 ),
+#endif
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,            0,                                  0 ),
     {0}
 };
@@ -1301,13 +1363,13 @@ static const char* tv_override[]=
     "1/32000", "1/40000", "1/50000", "1/64000","1/80000", "1/100k"
 };
 
-const char* gui_tv_override_value_enum(int change, int arg)
+const char* gui_tv_override_value_enum(int change,__attribute__ ((unused))int arg)
 {
     gui_enum_value_change(&conf.tv_override_value,change,sizeof(tv_override)/sizeof(tv_override[0]));
     return tv_override[conf.tv_override_value];
 }
 
-static const char* gui_tv_enum_type_enum(int change, int arg)
+static const char* gui_tv_enum_type_enum(int change, __attribute__ ((unused))int arg)
 {
 #ifdef CAM_EXT_TV_RANGE
     static const char* modes[ ]= { "Ev Step", "ShrtExp", "LongExp" };
@@ -1325,7 +1387,7 @@ static const char* gui_tv_enum_type_enum(int change, int arg)
 }
 
 #if CAM_HAS_IRIS_DIAPHRAGM
-const char* gui_av_override_enum(int change, int arg)
+const char* gui_av_override_enum(int change, __attribute__ ((unused))int arg)
 {
     conf.av_override_value+=change;
     if (conf.av_override_value<0) conf.av_override_value=shooting_get_aperture_sizes_table_size()+CAM_EXT_AV_RANGE-1;
@@ -1337,7 +1399,7 @@ const char* gui_av_override_enum(int change, int arg)
 }
 #endif
 
-const char* gui_subj_dist_override_value_enum(int change, int arg)
+const char* gui_subj_dist_override_value_enum(int change, __attribute__ ((unused))int arg)
 {
     static char buf[9];
 
@@ -1360,7 +1422,7 @@ const char* gui_subj_dist_override_value_enum(int change, int arg)
     return buf;
 }
 
-const char* gui_subj_dist_override_koef_enum(int change, int arg)
+const char* gui_subj_dist_override_koef_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[] = { "Off", "On", "Inf" };
     const char *rv = gui_change_simple_enum(&conf.subj_dist_override_koef,change,modes,sizeof(modes)/sizeof(modes[0]));
@@ -1369,7 +1431,7 @@ const char* gui_subj_dist_override_koef_enum(int change, int arg)
 
 #if defined(OPT_CURVES)
 
-static const char* gui_conf_curve_enum(int change, int arg)
+static const char* gui_conf_curve_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[]= { "None", "Custom", "+1EV", "+2EV", "Auto DR" };
 
@@ -1391,7 +1453,7 @@ static void gui_load_curve_selected(const char *fn)
     }
 }
 
-static void gui_load_curve(int arg)
+static void gui_load_curve(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_CURVE_FILE, conf.curve_file, CURVE_DIR, gui_load_curve_selected);
 }
@@ -1474,14 +1536,14 @@ static const char* gui_fast_image_quality_modes[] =         { "Sup.Fine", "Fine"
 static const char* gui_hotshoe_override_modes[] = { (char*)LANG_MENU_HOTSHOE_OVERRIDE_OFF, (char*)LANG_MENU_HOTSHOE_EMPTY, (char*)LANG_MENU_HOTSHOE_USED };
 #endif
 
-const char* gui_flash_power_modes_enum(int change, int arg)
+const char* gui_flash_power_modes_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[] = { "Min", "Med", "Max" };
     const char *rv = gui_change_simple_enum(&conf.flash_video_override_power,change,modes,sizeof(modes)/sizeof(modes[0]));
     return rv;
 }
 
-const char* gui_flash_exp_comp_modes_enum(int change, int arg)
+const char* gui_flash_exp_comp_modes_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[] = { "-3", "-2.6", "-2.3", "-2", "-1.6", "-1.3", "-1", "-2/3", "-1/3", "0", "+1/3", "+2/3", "+1", "+1.3", "+1.6", "+2", "+2.3", "+2.6", "+3" };
     const char *rv = gui_change_simple_enum(&conf.flash_exp_comp,change,modes,sizeof(modes)/sizeof(modes[0]));
@@ -1633,12 +1695,12 @@ static void gui_load_edge_selected( const char* fn )
         libedgeovr->load_edge_overlay(fn);
 }
 
-static void gui_menuproc_edge_save(int arg)
+static void gui_menuproc_edge_save(__attribute__ ((unused))int arg)
 {
     libedgeovr->save_edge_overlay();
 }
 
-static void gui_menuproc_edge_load(int arg)
+static void gui_menuproc_edge_load(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_MENU_EDGE_LOAD, EDGE_SAVE_DIR, EDGE_SAVE_DIR, gui_load_edge_selected);
 }
@@ -1672,7 +1734,7 @@ static void gui_grid_lines_load_selected(const char *fn)
     }
 }
 
-static void gui_grid_lines_load(int arg)
+static void gui_grid_lines_load(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_GRID_FILE, conf.grid_lines_file, "A/CHDK/GRIDS", gui_grid_lines_load_selected);
 }
@@ -1695,7 +1757,7 @@ static CMenu grid_submenu = {0x2f,LANG_MENU_GRID_TITLE, grid_submenu_items };
 
 //-------------------------------------------------------------------
 
-static void gui_menu_run_palette(int arg)
+static void gui_menu_run_palette(__attribute__ ((unused))int arg)
 {
     libpalette->show_palette(PALETTE_MODE_DEFAULT, (chdkColor)
     {
@@ -1703,7 +1765,7 @@ static void gui_menu_run_palette(int arg)
     }, NULL);
 }
 
-static void gui_menu_test_palette(int arg)
+static void gui_menu_test_palette(__attribute__ ((unused))int arg)
 {
     libpalette->show_palette(PALETTE_MODE_TEST, (chdkColor)
     {
@@ -1717,7 +1779,7 @@ static void gui_menu_reset_colors_selected(unsigned int btn)
         resetColors();
 }
 
-static void gui_menu_reset_colors(int arg)
+static void gui_menu_reset_colors(__attribute__ ((unused))int arg)
 {
     gui_mbox_init(LANG_MSG_RESET_COLORS_TITLE,
                   LANG_MSG_RESET_COLORS_TEXT,
@@ -1794,6 +1856,11 @@ static CMenu touchscreen_submenu = {0x28,LANG_MENU_TOUCHSCREEN_VALUES, touchscre
 #endif
 
 //-------------------------------------------------------------------
+static void cb_change_rotate_osd()
+{
+    update_draw_proc();
+    gui_menu_erase_and_redraw();
+}
 
 #ifdef CAM_HAS_CMOS
 static const char* gui_temp_mode_modes[] =              { "Off", "Optical", "CMOS", "Battery", "all" };
@@ -1807,6 +1874,7 @@ static CMenuItem osd_submenu_items[] =
 {
     MENU_ITEM(0x5c,LANG_MENU_OSD_SHOW,              MENUITEM_BOOL,          &conf.show_osd, 0 ),
     MENU_ENUM2(0x5c,LANG_MENU_OSD_HIDE_PLAYBACK,                            &conf.hide_osd, gui_hide_osd_modes ),
+    MENU_ITEM(0x5c,LANG_MENU_OSD_ROTATE,            MENUITEM_BOOL | MENUITEM_ARG_CALLBACK, &conf.rotate_osd, (int)cb_change_rotate_osd ),
     MENU_ITEM(0x5f,LANG_MENU_OSD_SHOW_STATES,       MENUITEM_BOOL,          &conf.show_state, 0 ),
     MENU_ENUM2(0x5f,LANG_MENU_OSD_SHOW_TEMP,                                &conf.show_temp, gui_temp_mode_modes ),
     MENU_ITEM(0x59,LANG_MENU_OSD_TEMP_FAHRENHEIT,   MENUITEM_BOOL,          &conf.temperature_unit, 0 ),
@@ -1818,6 +1886,7 @@ static CMenuItem osd_submenu_items[] =
     MENU_ITEM(0x33,LANG_MENU_OSD_SPACE_PARAMS,      MENUITEM_SUBMENU,       &space_submenu, 0 ),
     MENU_ITEM(0x34,LANG_MENU_OSD_CLOCK_PARAMS,	 	MENUITEM_SUBMENU,       &clock_submenu, 0 ),
     MENU_ITEM(0x59,LANG_MENU_OSD_SHOW_IN_REVIEW,    MENUITEM_BOOL,          &conf.show_osd_in_review, 0 ),
+    MENU_ITEM(0x59,LANG_MENU_OSD_SHOW_HIDDENFILES,  MENUITEM_BOOL,          &conf.show_hiddenfiles, 0 ),
 #ifdef  CAM_TOUCHSCREEN_UI
     MENU_ITEM   (0x22,LANG_MENU_TOUCHSCREEN_VALUES,         MENUITEM_SUBMENU,   &touchscreen_submenu,       0 ),
 #endif
@@ -1864,6 +1933,9 @@ static CMenuItem raw_exceptions_submenu_items[] =
     MENU_ITEM   (0x5c,LANG_MENU_RAW_SAVE_IN_TIMER,          MENUITEM_BOOL,      &conf.save_raw_in_timer,        0 ),
     MENU_ITEM   (0x5c,LANG_MENU_RAW_SAVE_IN_EDGEOVERLAY,    MENUITEM_BOOL,      &conf.save_raw_in_edgeoverlay,  0 ),
     MENU_ITEM   (0x5c,LANG_MENU_RAW_SAVE_IN_AUTO,           MENUITEM_BOOL,      &conf.save_raw_in_auto,         0 ),
+#if defined(CAM_HAS_CANON_RAW)
+    MENU_ITEM   (0x5c,LANG_MENU_RAW_SAVE_IN_CANON_RAW,      MENUITEM_BOOL,      &conf.save_raw_in_canon_raw,    0 ),
+#endif
 #if CAM_BRACKETING
     MENU_ITEM   (0x5c,LANG_MENU_RAW_SAVE_IN_EV_BRACKETING,  MENUITEM_BOOL,      &conf.save_raw_in_ev_bracketing, 0 ),
 #endif
@@ -1885,12 +1957,16 @@ static void cb_change_dng()
 
 static void cb_change_save_raw()
 {
-    conf.save_raw = !conf.save_raw;
-    cb_change_dng();
-    gui_set_need_restore();
+    if ( conf.enable_raw_shortcut )
+    {
+        conf.save_raw = !conf.save_raw;
+        cb_change_dng();
+        gui_set_need_restore();
+        if ( conf.enable_raw_shortcut == 2 ) conf.show_raw_state = conf.save_raw;
+    }
 }
 
-static const char* gui_dng_version(int change, int arg)
+static const char* gui_dng_version(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[]= { "1.3", "1.1" };
 
@@ -1900,7 +1976,7 @@ static const char* gui_dng_version(int change, int arg)
     return modes[conf.dng_version];
 }
 
-static const char* gui_dng_crop_size(int change, int arg)
+static const char* gui_dng_crop_size(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[]= { "JPEG", "Active", "Full" };
 
@@ -1909,7 +1985,7 @@ static const char* gui_dng_crop_size(int change, int arg)
     return modes[conf.dng_crop_size];
 }
 
-static void gui_menuproc_badpixel_create(int arg)
+static void gui_menuproc_badpixel_create(__attribute__ ((unused))int arg)
 {
     libdng->create_badpixel_bin();
 }
@@ -1919,7 +1995,7 @@ static void raw_fselect_cb(const char * filename)
     raw_prepare_develop(filename, 1);
 }
 
-static void gui_raw_develop(int arg)
+static void gui_raw_develop(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_RAW_DEVELOP_SELECT_FILE, "A/DCIM", "A", raw_fselect_cb);
 }
@@ -2051,9 +2127,10 @@ static void gui_menu_zone_legend(int arg)
     }, NULL);
 }
 
-
 static const char* gui_zebra_mode_modes[] = { "Blink 1", "Blink 2", "Blink 3", "Solid", "Zebra 1", "Zebra 2", "Zones" };
+#ifndef THUMB_FW
 static const char* gui_zebra_draw_osd_modes[] = { "Nothing", "Histo", "OSD" };
+#endif
 static const char* gui_zebra_rgb_fn_modes[] = { "HighLgt", "HighSat"};
 
 static CMenuItem zebra_submenu_items[] =
@@ -2064,7 +2141,9 @@ static CMenuItem zebra_submenu_items[] =
     MENU_ITEM(0x57,LANG_MENU_ZEBRA_OVER,              MENUITEM_INT|MENUITEM_F_UNSIGNED|MENUITEM_F_MINMAX,  &conf.zebra_over,    MENU_MINMAX(0, 32) ),
     MENU_ITEM(0x28,LANG_MENU_ZEBRA_RESTORE_SCREEN,    MENUITEM_BOOL|MENUITEM_ARG_CALLBACK,      &conf.zebra_restore_screen,     cb_zebra_restore_screen ),
     MENU_ITEM(0x5c,LANG_MENU_ZEBRA_RESTORE_OSD,       MENUITEM_BOOL|MENUITEM_ARG_CALLBACK,      &conf.zebra_restore_osd,        cb_zebra_restore_osd ),
+#ifndef THUMB_FW
     MENU_ENUM2(0x5f,LANG_MENU_ZEBRA_DRAW_OVER,        &conf.zebra_draw_osd, gui_zebra_draw_osd_modes ),
+#endif
     MENU_ITEM(0x5c,LANG_MENU_ZEBRA_MULTICHANNEL,      MENUITEM_BOOL,                            &conf.zebra_multichannel, 0 ),
     MENU_ENUM2(0x5f,LANG_MENU_ZEBRA_RGB_FN,           &conf3.zebra_rgb_fn, gui_zebra_rgb_fn_modes ),
     MENU_ITEM(0x35,LANG_MENU_OPEN_ZONE_FILE,          MENUITEM_PROC,		gui_zones_load, 0 ),
@@ -2090,12 +2169,12 @@ static void gui_draw_lang_selected(const char *fn)
     }
 }
 
-static void gui_draw_load_lang(int arg)
+static void gui_draw_load_lang(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_LANG_FILE, conf.lang_file, "A/CHDK/LANG", gui_draw_lang_selected);
 }
 
-static const char* gui_font_enum(int change, int arg)
+static const char* gui_font_enum(int change, __attribute__ ((unused))int arg)
 {
     extern int num_codepages;
     extern char* codepage_names[];
@@ -2122,7 +2201,7 @@ static void gui_draw_menu_rbf_selected(const char *fn)
     }
 }
 
-static void gui_draw_load_menu_rbf(int arg)
+static void gui_draw_load_menu_rbf(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_FONT_FILE, conf.menu_rbf_file, "A/CHDK/FONTS", gui_draw_menu_rbf_selected);
 }
@@ -2137,17 +2216,18 @@ static void gui_draw_symbol_rbf_selected(const char *fn)
     }
 }
 
-static void gui_draw_load_symbol_rbf(int arg)
+static void gui_draw_load_symbol_rbf(__attribute__ ((unused))int arg)
 {
     libfselect->file_select(LANG_STR_SELECT_SYMBOL_FILE, conf.menu_symbol_rbf_file, "A/CHDK/SYMBOLS", gui_draw_symbol_rbf_selected);
 }
 
-static void gui_menuproc_reset_files(int arg)
+static void gui_menuproc_reset_files(__attribute__ ((unused))int arg)
 {
     conf.lang_file[0] = 0;
     strcpy(conf.menu_symbol_rbf_file,DEFAULT_SYMBOL_FILE);
     conf.menu_rbf_file[0] = 0;
     conf_save();
+    conf2_save();
     gui_mbox_init(LANG_INFORMATION, LANG_MENU_RESTART_CAMERA, MBOX_BTN_OK|MBOX_TEXT_CENTER, NULL);
 }
 
@@ -2170,7 +2250,7 @@ static CMenu menu_font_submenu = {0x28,LANG_MENU_FONT_SETTINGS, menu_font_submen
 
 //-------------------------------------------------------------------
 
-static const char* gui_user_menu_show_enum(int change, int arg)
+static const char* gui_user_menu_show_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char* modes[]= { "Off", "On", "On Direct" };
 
@@ -2200,7 +2280,7 @@ static CMenu menu_settings_submenu = {0x28,LANG_MENU_MENU_SETTINGS, menu_setting
 
 #if CAM_ADJUSTABLE_ALT_BUTTON
 
-const char* gui_alt_mode_button_enum(int change, int arg)
+const char* gui_alt_mode_button_enum(int change, __attribute__ ((unused))int arg)
 {
 #if defined(CAM_ALT_BUTTON_NAMES) && defined(CAM_ALT_BUTTON_OPTIONS)
     static const char* names[] = CAM_ALT_BUTTON_NAMES;
@@ -2210,7 +2290,7 @@ const char* gui_alt_mode_button_enum(int change, int arg)
 #endif
     int i;
 
-    for (i=0; i<sizeof(names)/sizeof(names[0]); ++i)
+    for (i=0; i<(int)(sizeof(names)/sizeof(names[0])); ++i)
     {
         if (conf.alt_mode_button==keys[i])
         {
@@ -2221,7 +2301,7 @@ const char* gui_alt_mode_button_enum(int change, int arg)
     i+=change;
     if (i<0)
         i=(sizeof(names)/sizeof(names[0]))-1;
-    else if (i>=(sizeof(names)/sizeof(names[0])))
+    else if (i>=(int)((sizeof(names)/sizeof(names[0]))))
         i=0;
 
     conf.alt_mode_button = keys[i];
@@ -2230,7 +2310,7 @@ const char* gui_alt_mode_button_enum(int change, int arg)
 #endif
 
 #if CAM_OPTIONAL_EXTRA_BUTTON
-static const char* gui_extra_button_enum(int change, int arg)
+static const char* gui_extra_button_enum(int change, __attribute__ ((unused))int arg)
 {
 #if defined(CAM_EXTRA_BUTTON_NAMES) && defined(CAM_EXTRA_BUTTON_OPTIONS)
     static const char* names[] = CAM_EXTRA_BUTTON_NAMES;
@@ -2240,7 +2320,7 @@ static const char* gui_extra_button_enum(int change, int arg)
 #endif
     int i;
 
-    for (i=0; i<sizeof(names)/sizeof(names[0]); ++i)
+    for (i=0; i<(int)(sizeof(names)/sizeof(names[0])); ++i)
     {
         if (conf.extra_button==keys[i])
         {
@@ -2251,7 +2331,7 @@ static const char* gui_extra_button_enum(int change, int arg)
     i+=change;
     if (i<0)
         i=(sizeof(names)/sizeof(names[0]))-1;
-    else if (i>=(sizeof(names)/sizeof(names[0])))
+    else if (i>=(int)(sizeof(names)/sizeof(names[0])))
         i=0;
 
     conf.extra_button = keys[i];
@@ -2260,7 +2340,16 @@ static const char* gui_extra_button_enum(int change, int arg)
 }
 #endif //CAM_OPTIONAL_EXTRA_BUTTON
 
-static const char* gui_alt_power_enum(int change, int arg)
+static const char* gui_raw_toggle_enum(int change, __attribute__ ((unused))int arg)
+{
+    static const char* raw_toggle[]= { "Off", "On", "On+OSD" };
+
+    gui_enum_value_change(&conf.enable_raw_shortcut,change,sizeof(raw_toggle)/sizeof(raw_toggle[0]));
+
+    return raw_toggle[conf.enable_raw_shortcut];
+}
+
+static const char* gui_alt_power_enum(int change, __attribute__ ((unused))int arg)
 {
 // Script option is retained even if scripting is disabled, otherwise conf values will change
 // Equivalent to ALT
@@ -2277,7 +2366,7 @@ static void gui_menuproc_reset_selected(unsigned int btn)
         conf_load_defaults();
 }
 
-static void gui_menuproc_reset(int arg)
+static void gui_menuproc_reset(__attribute__ ((unused))int arg)
 {
     gui_mbox_init(LANG_MSG_RESET_OPTIONS_TITLE,
                   LANG_MSG_RESET_OPTIONS_TEXT,
@@ -2298,6 +2387,7 @@ static CMenuItem chdk_settings_menu_items[] =
     MENU_ITEM   (0x86,LANG_MENU_REMOTE_PARAM,               MENUITEM_SUBMENU,   &remote_submenu, 0 ),
 #endif
     MENU_ITEM   (0x5c,LANG_MENU_MISC_ENABLE_SHORTCUTS,      MENUITEM_BOOL,      &conf.enable_shortcuts, 0 ),
+    MENU_ITEM   (0x5c,LANG_MENU_MISC_ENABLE_RAW_SHORTCUT,   MENUITEM_ENUM,      gui_raw_toggle_enum, 0 ),
     MENU_ITEM   (0x5c,LANG_MENU_MISC_SHOW_SPLASH,           MENUITEM_BOOL,      &conf.splash_show, 0 ),
     MENU_ITEM   (0x5c,LANG_MENU_MISC_START_SOUND,           MENUITEM_BOOL,      &conf.start_sound, 0 ),
 #if CAM_USE_ZOOM_FOR_MF
@@ -2369,17 +2459,17 @@ const char* gui_on_off_enum(int change, int *conf_val)
 
 #ifdef  CAM_TOUCHSCREEN_UI
 
-const char* gui_override_disable_enum(int change, int arg)
+const char* gui_override_disable_enum(int change, __attribute__ ((unused))int arg)
 {
     return gui_change_simple_enum(&conf.override_disable,change,gui_override_disable_modes,sizeof(gui_override_disable_modes)/sizeof(gui_override_disable_modes[0]));
 }
 
-const char* gui_nd_filter_state_enum(int change, int arg)
+const char* gui_nd_filter_state_enum(int change, __attribute__ ((unused))int arg)
 {
     return gui_change_simple_enum(&conf.nd_filter_state,change,gui_nd_filter_state_modes,sizeof(gui_nd_filter_state_modes)/sizeof(gui_nd_filter_state_modes[0]));
 }
 
-const char* gui_histo_show_enum(int change, int arg)
+const char* gui_histo_show_enum(int change, __attribute__ ((unused))int arg)
 {
     return gui_change_simple_enum(&conf.show_histo,change,gui_histo_show_modes,sizeof(gui_histo_show_modes)/sizeof(gui_histo_show_modes[0]));
 }
@@ -2405,7 +2495,7 @@ static int logo_size, logo_text_width, logo_text_height;
 static void init_splash()
 {
     int i = 0, index = 0;
-    while (index < sizeof(text_raw))
+    while (index < (int)sizeof(text_raw))
     {
         text[i++] = &text_raw[index];
         while (text_raw[index++]) ;
@@ -2474,7 +2564,11 @@ static void gui_draw_splash()
         int mx = 0;
         int my = 0;
         int offset_x = (camera_screen.width-LOGO_WIDTH)>>1;
-        int offset_y = ((camera_screen.height-LOGO_HEIGHT)>>1) - 42;
+#ifdef THUMB_FW
+        int offset_y = ((camera_screen.height-LOGO_HEIGHT)>>1) - 66 ;
+#else
+        int offset_y = ((camera_screen.height-LOGO_HEIGHT)>>1) - 42 ;
+#endif
         for (pos=0; pos<logo_size; pos++)
         {
             char data = logo[pos];
@@ -2507,6 +2601,11 @@ static void gui_handle_splash(int force_redraw)
             if (force_redraw || (gui_splash == SPLASH_TIME))
                 gui_draw_splash();
 
+        // on half shoot, cancel splash screen
+        if(kbd_is_key_pressed(KEY_SHOOT_HALF))
+        {
+            gui_splash = 1;
+        }
         if (--gui_splash == 0)
         {
             if (camera_info.state.gui_mode_none || camera_info.state.gui_mode_alt)
@@ -2519,7 +2618,10 @@ static void gui_handle_splash(int force_redraw)
 }
 
 //-------------------------------------------------------------------
-static gui_handler *gui_mode=0;	// current gui mode. pointer to gui_handler structure
+// Dummy for startup to avoid null gui_mode pointer
+static gui_handler startupGuiHandler = { GUI_MODE_STARTUP, 0, 0, 0, 0, GUI_MODE_FLAG_NODRAWRESTORE | GUI_MODE_FLAG_NORESTORE_ON_SWITCH };
+
+static gui_handler *gui_mode = &startupGuiHandler;	// current gui mode. pointer to gui_handler structure
 
 static int gui_osd_need_restore = 0;    // Set when screen needs to be erase and redrawn
 static int gui_mode_need_redraw = 0;    // Set if current mode needs to redraw itself
@@ -2557,12 +2659,6 @@ void gui_init()
 
     process_file( "A/CHDK/badpixel", make_pixel_list, 1 );
     process_file( "A/CHDK/badpixel.txt", make_pixel_list, 1 );
-}
-
-//-------------------------------------------------------------------
-gui_mode_t gui_get_mode()
-{
-    return gui_mode->mode;
 }
 
 //-------------------------------------------------------------------
@@ -2687,7 +2783,7 @@ static void gui_draw_alt_helper()
     is_menu_shortcut = 0;
 
     int y = FONT_HEIGHT;
-    int x = ((CAM_SCREEN_WIDTH/2)-(FONT_WIDTH*35/2));
+    int x = ((camera_screen.width/2)-(FONT_WIDTH*35/2));
 
     twoColors col = user_color(conf.menu_color);
     twoColors hdr_col = user_color(conf.menu_title_color);
@@ -2802,7 +2898,6 @@ void gui_chdk_draw(int force_redraw)
     }
     else if (clear_for_title)
     {
-        draw_restore() ;
         clear_for_title = 0;
     }
 
@@ -3181,11 +3276,9 @@ void gui_activate_alt_mode()
     switch (gui_current_alt_state)
     {
     case ALT_MODE_ENTER:
+    case ALT_MODE_ENTER_SCRIPT:
 
-        if (camera_info.state.state_kbd_script_run)
-            gui_set_mode(&scriptGuiHandler);
-        else
-            gui_set_mode(&altGuiHandler);
+        gui_set_mode((gui_current_alt_state == ALT_MODE_ENTER_SCRIPT) ? &scriptGuiHandler : &altGuiHandler);
 
         conf_update_prevent_shutdown();
 

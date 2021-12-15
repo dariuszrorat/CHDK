@@ -19,12 +19,12 @@ void my_touchw_task(void);
 
 void taskCreateHook(int *p) {
     p-=16;
-    if (p[0]==0xff85bd10)  p[0]=(int)capt_seq_task;
-    if (p[0]==0xff8aebf4)  p[0]=(int)exp_drv_task;
-    if (p[0]==0xff85821c)  p[0]=(int)movie_record_task;
-    if (p[0]==0xffa021bc)  p[0]=(int)filewritetask;
-    if (p[0]==0xff870ce8)  p[0]=(int)init_file_modules_task;
-    if (p[0]==0xff8e6dc0)  p[0]=(int)my_touchw_task;
+    if (p[0]==(int)0xff85bd10)  p[0]=(int)capt_seq_task;
+    if (p[0]==(int)0xff8aebf4)  p[0]=(int)exp_drv_task;
+    if (p[0]==(int)0xff85821c)  p[0]=(int)movie_record_task;
+    if (p[0]==(int)0xffa021bc)  p[0]=(int)filewritetask;
+    if (p[0]==(int)0xff870ce8)  p[0]=(int)init_file_modules_task;
+    if (p[0]==(int)0xff8e6dc0)  p[0]=(int)my_touchw_task;
 }
 
 void boot()
@@ -225,7 +225,7 @@ asm volatile (
 "    MOV     R1, #0x300000 \n"
 "    MOV     R0, #0 \n"
 "    BL      sub_FF829850 \n"
-"    BL      sub_FF8297FC \n"
+"    BL      sub_FF8297FC /*_EnableDispatch*/ \n"
 "    MOV     R3, #0 \n"
 "    STR     R3, [SP] \n"
 "    LDR     R3, =task_Startup_my \n"  // --> Patched. Old value = 0xFF81DC78.
@@ -448,7 +448,7 @@ asm volatile (
 "    MOV     R2, #0 \n"
 "    MOV     R1, #0x200 \n"
 "    MOV     R0, #3 \n"
-"    BL      sub_FF8661D8 \n"
+"    BL      _exmem_ualloc \n"
 "    MOVS    R4, R0 \n"
 "    BNE     loc_FF84D1E8 \n"
 
@@ -466,7 +466,7 @@ asm volatile (
 "    CMP     R0, #1 \n"
 "    BNE     loc_FF84D214 \n"
 "    MOV     R0, #3 \n"
-"    BL      sub_FF866318 \n"
+"    BL      _exmem_ufree \n"
 "    B       loc_FF84D1E0 \n"
 
 "loc_FF84D214:\n"
@@ -545,7 +545,7 @@ asm volatile (
 
 "loc_FF84D29C:\n"
 "    MOV     R0, #3 \n"
-"    BL      sub_FF866318 \n"
+"    BL      _exmem_ufree \n"
 "    CMP     R4, #0 \n"
 "    BNE     loc_FF84D2D4 \n"
 "    MOV     R6, #0 \n"

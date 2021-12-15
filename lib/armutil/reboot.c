@@ -1,4 +1,7 @@
 #include "stdlib.h"
+#include "stddef.h"
+#include "stdio.h"
+#include "string.h"
 #define LOW_LEVEL
 #include "lolevel.h"
 /*
@@ -76,6 +79,7 @@ int reboot(const char *bootfile) {
 	_Restart(7);
 	canon_copy_and_restart((void *)0x1900,buf,size,(void *)0x1900);
 #else
+    (void)bootfile;
     return 0;
 #endif // THUMB_FW
 }

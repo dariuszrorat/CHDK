@@ -26,6 +26,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_SV_MARKET                  72
 #define PROPCASE_BV                         71
 #define PROPCASE_ISO_MODE                   21
+#define PROPCASE_AF_FRAME                   64 // 0 = AiAf, 1 = Center (values differ from later propsets)
 #define PROPCASE_SUBJECT_DIST1              65
 #define PROPCASE_SUBJECT_DIST2              66
 #define PROPCASE_SHOOTING                   205
@@ -46,12 +47,13 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_METERING_MODE              9
 #define PROPCASE_WB_ADJ                     100
 #define PROPCASE_WB_MODE                    5  // 0 = Auto, 1 = Daylight, 2 = Cloudy, 3 = Tungsten, 4 = Fluorescent, 5 = Fluoresent H, 6 = Flash, 7 = Custom, 10 Underwater
-#define PROPCASE_OPTICAL_ZOOM_POSITION      99 //untested !
+#define PROPCASE_OPTICAL_ZOOM_POSITION      99
 #define PROPCASE_STITCH_DIRECTION           52 // 0=left>right, 1=right>left. Some cams have more
 #define PROPCASE_STITCH_SEQUENCE            48 // counts shots in stitch sequence, positive for left-right, negative for right-left
 #define PROPCASE_AF_LOCK                    193
 #define PROPCASE_AF_ASSIST_BEAM             63       // 0=disabled,  1=enabled
 #define PROPCASE_DATE_STAMP                 190      // 0 = Off, 1 = Date, 2 = Date & Time, may only function in "postcard mode"
+#define PROPCASE_LANGUAGE                   196     // Upper byte = language (see default.lua for known values) lowest bit: 0 = NTSC, 1 = PAL
 #define PROPCASE_CUSTOM_SHARPNESS           2       // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_CUSTOM_SATURATION          3       // Canon Menu slide bar values: 255, 254, 0, 1, 2
 #define PROPCASE_CUSTOM_CONTRAST            4       // Canon Menu slide bar values: 255, 254, 0, 1, 2

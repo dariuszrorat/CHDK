@@ -1,5 +1,4 @@
 #include "platform.h"
-#include "stdlib.h"
 #include "core.h"
 #include "conf.h"
 #include "gui.h"
@@ -15,6 +14,8 @@
 #ifdef CAM_HAS_GPS
   #include "gps.h"
 #endif
+
+#include "kbd_common.h"
 
 //==========================================================
 
@@ -104,7 +105,7 @@ void core_spytask_can_start() {
 void script_autostart()
 {
     // Tell keyboard task we are in <ALT> mode
-    enter_alt();
+    enter_alt(0);
     // We were called from the GUI task so switch to <ALT> mode before switching to Script mode
     gui_activate_alt_mode();
     // Switch to script mode and start the script running
@@ -119,6 +120,12 @@ void core_spytask()
     int gps_delay_timer = 200 ;
     int gps_state = -1 ;
 #endif
+#if (OPT_DISABLE_CAM_ERROR)
+    extern void DisableCamError();
+    int dce_cnt=0;
+    int dce_prevmode=0;
+    int dce_nowmode;
+#endif
     
     parse_version(&chdk_version, BUILD_NUMBER, BUILD_SVNREV);
 
@@ -126,6 +133,13 @@ void core_spytask()
     camera_info_init();
 
     spytask_can_start=0;
+
+#if !defined(CAM_DRYOS)
+// create semaphore to protect Canon memory malloc/free/memPartInfo
+// on VxWorks, spytask should start before any other CHDK tasks
+    extern void canon_malloc_init(void);
+    canon_malloc_init();
+#endif
 
     extern void aram_malloc_init(void);
     aram_malloc_init();
@@ -138,7 +152,7 @@ void core_spytask()
     init_chdk_ptp_task();
 #endif
 
-    while((i++<400) && !spytask_can_start) msleep(10);
+    while((i++<1000) && !spytask_can_start) msleep(10);
 
     started();
     msleep(50);
@@ -175,7 +189,7 @@ void core_spytask()
         "A/CHDK/LOGS",
         "A/CHDK/EDGE",
     };
-    for (i = 0; i < sizeof(chdk_dirs) / sizeof(char*); i++)
+    for (i = 0; i < (int)(sizeof(chdk_dirs) / sizeof(char*)); i++)
         mkdir_if_not_exist(chdk_dirs[i]);
 
     no_modules_flag = stat("A/CHDK/MODULES/FSELECT.FLT",0) ? 1 : 0 ;
@@ -208,15 +222,58 @@ void core_spytask()
 
     shooting_init();
 
+    // if starting  with HDMI connected, suspend drawing for 3s to avoid crashes
+#ifdef HDMI_HPD_FLAG
+    if(get_hdmi_hpd_physw_mod()) {
+        draw_suspend(3000);
+    }
+#endif
+
+    if(conf.check_firmware_crc) {
+        module_run("fwcrc.flt");
+    }
+
     while (1)
     {
         // Set up camera mode & state variables
         mode_get();
 
+#ifdef CAM_CLEAN_OVERLAY
+        extern void handle_clean_overlay();
+        handle_clean_overlay();
+#endif
+
+#ifdef  CAM_UNLOCK_ANALOG_AV_IN_REC
+        extern void handle_analog_av_in_rec();
+        handle_analog_av_in_rec();
+#endif
+        // update HDMI power override based on mode and remote settings
+#ifdef CAM_REMOTE_HDMI_POWER_OVERRIDE
+        extern void update_hdmi_power_override(void);
+        update_hdmi_power_override();
+#endif
+
         extern void set_palette();
         set_palette();
 
-        if ( memdmptick && (get_tick_count() >= memdmptick) )
+#if (OPT_DISABLE_CAM_ERROR)
+        dce_nowmode = camera_info.state.mode_play;
+        if (dce_prevmode==dce_nowmode)
+        {                       //no mode change
+            dce_cnt++;          // overflow is not a concern here
+        }
+        else
+        {                       //mode has changed
+            dce_cnt=0;
+        }
+        if (dce_cnt==100)
+        {                       // 1..2s past play <-> rec mode change
+            DisableCamError();
+        }
+        dce_prevmode=dce_nowmode;
+#endif
+
+        if ( memdmptick && ((unsigned)get_tick_count() >= memdmptick) )
         {
             memdmptick = 0;
             dump_memory();
@@ -314,9 +371,4 @@ void core_spytask()
         msleep(20);
         chdk_started_flag=1;
     }
-}
-
-long ftell(FILE *file) {
-    if(!file) return -1;
-    return file->pos;
 }

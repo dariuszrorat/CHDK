@@ -11,26 +11,17 @@ void debug_led(int state)
 	*(int*)LED_PR=state ? 0x93d800 : 0x83dc00;
 }
 
-void shutdown() // hmmm...
+void shutdown()
 {
-    volatile long *p = (void*)LED_PR;    // Green LED
-
-    asm(
-        "MRS     R1, CPSR\n"
-        "AND     R0, R1, #0x80\n"
-        "ORR     R1, R1, #0x80\n"
-        "MSR     CPSR_cf, R1\n"
-        :::"r1","r0");
-
-    *p = 0x83dc00;  // power off.
-
+    extern void _TurnOffE1(void);
+    _TurnOffE1();
     while(1);
 }
 
 // TODO
 // Power Led = first entry in table (led 0)
 // AF Assist Lamp = second entry in table (led 1)
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
     static char led_table[2]={0,4};
     if(state<=1) _LEDDrive(led_table[led%sizeof(led_table)], (!state)&1);
 }
@@ -98,9 +89,6 @@ void *vid_get_viewport_live_fb()
     extern char active_viewport_buffer;
     extern void* viewport_buffers[];
 
-    // no distinct video mode
-    if (movie_status == VIDEO_RECORD_IN_PROGRESS)
-        return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
     // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
     // verified -1 gives best response (50 .. 90 ms)
     return viewport_buffers[(active_viewport_buffer-1)&3];
@@ -120,12 +108,6 @@ void vid_bitmap_refresh()
     full_screen_refresh |= 3;
     _ScreenLock();
     _ScreenUnlock();
-}
-
-//see viewport.h
-int vid_get_aspect_ratio()
-{
-    return 0; // 4:3
 }
 
 int vid_get_palette_type()   { return 5; }

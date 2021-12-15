@@ -39,12 +39,12 @@ void shutdown()
 
 #define LED_PR 0xC02200B6  // tally
 
-void debug_led(int state)
+void debug_led(__attribute__ ((unused))int state)
 {
  //*(int*)LED_PR=state ? 0x46 : 0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
  static char led_table[5]={4,5,7,8,9};
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
@@ -54,11 +54,11 @@ int get_flash_params_count(void){
 }
 
 void JogDial_CW(void){
- _PostLogicalEventForNotPowerType(0x874, 1);  // RotateJogDialRight
+	_PostLogicalEventToUI(0x876, 1);  // RotateJogDialRight
 }
 
 void JogDial_CCW(void){
- _PostLogicalEventForNotPowerType(0x875, 1);  // RotateJogDialLeft
+	_PostLogicalEventToUI(0x877, 1);  // RotateJogDialLeft
 }
 
 void *vid_get_viewport_live_fb() // found in sub_FF84DDB8

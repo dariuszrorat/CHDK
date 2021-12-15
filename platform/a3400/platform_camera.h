@@ -65,6 +65,8 @@
     #define CAM_HAS_MOVIE_DIGEST_MODE       1       // camera doesn't actually have digest mode, this is needed by is_video_recording
     #define CAM_IS_VID_REC_WORKS            1
 
+    #define CAM_UNLOCK_ANALOG_AV_IN_REC     1       // define to enable analog video out in rec mode for cameras without native support
+
     #define CAM_DATE_FOLDER_NAMING          0x400
 
     #define CAM_DRIVE_MODE_FROM_TIMER_MODE  1
@@ -91,8 +93,6 @@
 
     #define CAM_NEED_SET_ZOOM_DELAY         300  // Define to add a delay after setting the zoom position
     #define CAM_USE_OPTICAL_MAX_ZOOM_STATUS 1    // Use ZOOM_OPTICAL_MAX to reset zoom_status when switching from digital to optical zoom
-    #define CAM_USE_ALT_SET_ZOOM_POINT      1    // Define to use the alternate code in lens_set_zoom_point()
-    #define CAM_USE_ALT_PT_MoveOpticalZoomAt 1    // Define to use the PT_MoveOpticalZoomAt() function in lens_set_zoom_point()
     #define CAM_AF_SCAN_DURING_VIDEO_RECORD 1
 
     #define CAM_QUALITY_OVERRIDE            1

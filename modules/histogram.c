@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "math.h"
 #include "modes.h"
@@ -11,8 +10,6 @@
 #include "histogram.h"
 
 //-------------------------------------------------------------------
-
-#define HISTOGRAM_IDLE_STAGE        6
 
 // Indexes into the various arrays for calculating the histogram channels
 #define HISTO_R                     0       // Red channel
@@ -40,7 +37,6 @@
 #define PARADE_YUV                 2
 #define PARADE_YS                  3
 
-
 // Define type of transform to be done to scale the histogram to fit the available height
 #define HISTO_MODE_LINEAR           0
 #define HISTO_MODE_LOG              1
@@ -64,19 +60,35 @@
 #define OSD_HISTO_LAYOUT_PARD_RGB   15
 #define OSD_HISTO_LAYOUT_PARD_YUV   16
 
+#ifndef THUMB_FW
+#define	HISTO_DOT_SIZE	3
+#else
+// digic 6 CHDK screen is ~480 lines instead for 240
+#define	HISTO_DOT_SIZE	5
+#endif
+#define	HISTO_DOT_PAD	(HISTO_DOT_SIZE + 2)
 
-// Define how many viewport blocks to step in each loop iteration. Each block is 6 bytes (UYVYYY) or 4 image pixels
-#define	HISTO_STEP_SIZE	6
+// Approximate number of pixels to sample, subject to minimums step sizes
+// Actual number of samples may exceed target due to rounding/truncation in step calculations
+// Actual total must be less than 64K to allow storing histogram counts in unsigned short
+// 20k based on typical number in earlier implementation
+// cameras typically process 250-600 px/ms uncached, 300-1200 cached
+// NOTE target could be adjusted based on cam_info.cam_digic
+#define HISTO_TARGET_SAMPLES 20000
+// Minimum X step is 4, for alignment with YUV tuples (could technically be 2 on Digic >=6 cams with UYVY viewports)
+#define HISTO_XSTEP_MIN 4
+// Minimum Y step is 2, no need to sample more densely
+#define HISTO_YSTEP_MIN 2
 
 static unsigned char histogram[5][HISTO_WIDTH];             // RGBYG
-static unsigned short *histogram_proc[5] = { 0,0,0,0,0 };   // RGBYG (unsigned short is large enough provided HISTO_STEP_SIZE >= 3)
+static unsigned short *histogram_proc[5] = { 0,0,0,0,0 };   // RGBYG (logic in histogram_process stage 0 ensures unsigned short is large enough)
 unsigned int histo_max[5], histo_max_center[5];             // RGBYG
 static float histo_max_center_invw[5];                      // RGBYG
-static short histogram_allocated = 0;
 
+static short histogram_allocated = 0;
+static short waveform_allocated = 0;
 static unsigned char **waveform_proc;
 static unsigned char **waveform;
-static short waveform_allocated = 0;
 
 static long histo_magnification;
 static long under_exposed;
@@ -105,20 +117,20 @@ static int clip50(int v)
 
 int minrgb(int R, int G, int B)
 {
-  int min = 255;
-  if (R < G) min = R;
-  else min = G;
-  if (B < min) min = B;
-  return min;
+    int min = 255;
+    if (R < G) min = R;
+    else min = G;
+    if (B < min) min = B;
+    return min;
 }
 
 int maxrgb(int R, int G, int B)
 {
-  int max = 0;
-  if (R > G) max = R;
-  else max = G;
-  if (B > max) max = B;
-  return max;
+    int max = 0;
+    if (R > G) max = R;
+    else max = G;
+    if (B > max) max = B;
+    return max;
 }
 
 double saturation(int R, int G, int B)
@@ -165,6 +177,67 @@ static void histogram_free()
     free(histogram_proc[0]);
     histogram_proc[0] = 0;
     histogram_allocated = 0;
+}
+
+/*
+do a single stage of reading YUV data from framebuffer
+Sampled area has margins of one step at top, right and left and bottom
+Each stage samples every 3rd ystep row
+*/
+void histogram_sample_stage(unsigned char *img, int stage, int byte_width, int vis_byte_width, int height, int xstep_bytes, int ystep)
+{
+    // start at stage'th ystep (1-3), plus one step in x
+    unsigned char *p_row = img + stage*ystep*byte_width + xstep_bytes;
+    // end one step short of height
+    unsigned char *p_max = img + byte_width*(height-ystep);
+    // number of from start to end of sampled row
+    // -2 xstep_bytes for margins
+    int row_sample_len = vis_byte_width - 2*xstep_bytes;
+
+    // every 3rd ystep for each stage
+    int ystep_bytes = ystep*byte_width*3;
+
+    for(; p_row < p_max; p_row += ystep_bytes)
+    {
+        // start sample 1 step after start
+        unsigned char *p = p_row;
+        unsigned char *p_row_end = p_row + row_sample_len;
+        for(; p < p_row_end; p+= xstep_bytes)
+        {
+            int y, v, u, hi;
+            y = p[1];
+#ifndef THUMB_FW
+            u = (signed char)p[0];
+            v = (signed char)p[2];
+#else
+            u = (int)p[0] - 128;
+            v = (int)p[2] - 128;
+#endif
+//                p[1] = p[3] = 255;    // Draw columns on screen for debugging
+
+            if (conf.histo_layout != OSD_HISTO_LAYOUT_Y_U_V)
+            {
+                ++histogram_proc[HISTO_Y][y];                       // Y
+                hi = clip(((y<<12)          + v*5743 + 2048)>>12);  // R
+                ++histogram_proc[HISTO_R][hi];
+                hi = clip(((y<<12) - u*1411 - v*2925 + 2048)>>12);  // G
+                ++histogram_proc[HISTO_G][hi];
+                hi = clip(((y<<12) + u*7258          + 2048)>>12);  // B
+                ++histogram_proc[HISTO_B][hi];
+            }
+            else
+            {
+                ++histogram_proc[HISTO_Y][y];                       // Y
+                hi = y;  // Y
+                ++histogram_proc[HISTO_R][hi];
+                hi = u + 128;  // U
+                ++histogram_proc[HISTO_G][hi];
+                hi = v + 128;  // V
+                ++histogram_proc[HISTO_B][hi];
+            }
+
+        }
+    }
 }
 
 static void waveform_alloc()
@@ -341,7 +414,7 @@ static void do_waveform_process()
     }
 }
 
-static void do_histogram_process()
+void do_histogram_process()
 {
     if (waveform_allocated == 1)
     {
@@ -349,10 +422,13 @@ static void do_histogram_process()
     }
 
     static unsigned char *img;
-    static int viewport_size, viewport_width, viewport_row_offset;
 
-    register int x, i, hi;
-    int y, v, u, c;
+    static int viewport_byte_width, viewport_height;
+
+    static int viewport_vis_byte_width;
+    static int xstep_bytes, ystep;
+
+    int i, c;
     float (*histogram_transform)(float);
     unsigned int histo_fill[5];
     int histo_main;
@@ -373,7 +449,7 @@ static void do_histogram_process()
 
     // Select which calculated histogram channel determines magnification / scaling
     if (conf.histo_layout == OSD_HISTO_LAYOUT_Y || conf.histo_layout == OSD_HISTO_LAYOUT_Y_argb
-            || conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V)
+    || conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V)
         histo_main = HISTO_Y;
     else
         histo_main = HISTO_RGB;
@@ -390,13 +466,49 @@ static void do_histogram_process()
     switch (histogram_stage)
     {
     case 0:
-        img=vid_get_viewport_active_buffer();
+    {
+        img = vid_get_viewport_active_buffer();
         if (!img) return;
 
         img += vid_get_viewport_image_offset();		// offset into viewport for when image size != viewport size (e.g. 16:9 image on 4:3 LCD)
-        viewport_size = vid_get_viewport_height() * vid_get_viewport_byte_width() * vid_get_viewport_yscale();
-        viewport_width = vid_get_viewport_width();
-        viewport_row_offset = vid_get_viewport_row_offset();
+
+        viewport_height = vid_get_viewport_height_proper();
+        viewport_byte_width = vid_get_viewport_byte_width();
+        int viewport_pix_width = vid_get_viewport_width_proper();
+        int total_pixels = viewport_pix_width * viewport_height;
+        int xstep;
+
+        if(total_pixels <= HISTO_XSTEP_MIN*HISTO_YSTEP_MIN*HISTO_TARGET_SAMPLES)
+        {
+            xstep = HISTO_XSTEP_MIN;
+            ystep = HISTO_YSTEP_MIN;
+        }
+        else
+        {
+            // initial y step based on min x step and total samples
+            ystep = total_pixels/(HISTO_XSTEP_MIN*HISTO_TARGET_SAMPLES);
+            // if Y step is large, redistribute some to X, keeping multiple of 4
+            // in practice only hit for FHD HDMI
+            if(ystep >= 5*HISTO_YSTEP_MIN)
+            {
+                xstep = 2*HISTO_XSTEP_MIN;
+                ystep >>= 1;
+            }
+            else
+            {
+                xstep = HISTO_XSTEP_MIN;
+            }
+        }
+
+
+#ifndef THUMB_FW
+        xstep_bytes = (xstep*3)/2; // 4 pixels = 6 bytes, step is multiple of 4
+        viewport_vis_byte_width = (viewport_pix_width*3)/2;
+#else
+        xstep_bytes = xstep*2;
+        viewport_vis_byte_width = viewport_pix_width*2;
+#endif
+
         for (c=0; c<5; ++c)
         {
             memset(histogram_proc[c],0,256*sizeof(unsigned short));
@@ -405,66 +517,30 @@ static void do_histogram_process()
 
         histogram_stage=1;
         break;
+    }
 
     case 1:
     case 2:
     case 3:
-        x = 0;  // count how many blocks we have done on the current row (to skip unused buffer space at end of each row)
-        for (i=(histogram_stage-1)*6; i<viewport_size; i+=HISTO_STEP_SIZE*6)
-        {
-            y = img[i+1];
-            u = *(signed char*)(&img[i]);
-            //if (u&0x00000080) u|=0xFFFFFF00;  // Compiler should handle the unsigned -> signed conversion
-            v = *(signed char*)(&img[i+2]);
-            //if (v&0x00000080) v|=0xFFFFFF00;  // Compiler should handle the unsigned -> signed conversion
-
-            if (conf.histo_layout != OSD_HISTO_LAYOUT_Y_U_V)
-            {
-                ++histogram_proc[HISTO_Y][y];                       // Y
-                hi = clip(((y<<12)          + v*5743 + 2048)>>12);  // R
-                ++histogram_proc[HISTO_R][hi];
-                hi = clip(((y<<12) - u*1411 - v*2925 + 2048)>>12);  // G
-                ++histogram_proc[HISTO_G][hi];
-                hi = clip(((y<<12) + u*7258          + 2048)>>12);  // B
-                ++histogram_proc[HISTO_B][hi];
-            }
-            else
-            {
-                ++histogram_proc[HISTO_Y][y];                       // Y
-                hi = y;  // Y
-                ++histogram_proc[HISTO_R][hi];
-                hi = u + 128;  // U
-                ++histogram_proc[HISTO_G][hi];
-                hi = v + 128;  // V
-                ++histogram_proc[HISTO_B][hi];
-            }
-
-            // Handle case where viewport memory buffer is wider than the actual buffer.
-            x += HISTO_STEP_SIZE * 2;	// viewport width is measured in blocks of three bytes each even though the data is stored in six byte chunks !
-            if (x == viewport_width)
-            {
-                i += viewport_row_offset;
-                x = 0;
-            }
-        }
-
+    {
+        histogram_sample_stage(img, histogram_stage, viewport_byte_width, viewport_vis_byte_width, viewport_height, xstep_bytes, ystep);
         ++histogram_stage;
         break;
+    }
 
     case 4:
         for (i=0, c=0; i<HISTO_WIDTH; ++i, c+=2)   // G
         {
             // Merge each pair of values into a single value (for width = 128)
             // Warning: this is optimised for HISTO_WIDTH = 128, don't change the width unless you re-write this code as well.
+#ifndef THUMB_FW
             histogram_proc[HISTO_Y][i] = histogram_proc[HISTO_Y][c] + histogram_proc[HISTO_Y][c+1];
             histogram_proc[HISTO_R][i] = histogram_proc[HISTO_R][c] + histogram_proc[HISTO_R][c+1];
             histogram_proc[HISTO_G][i] = histogram_proc[HISTO_G][c] + histogram_proc[HISTO_G][c+1];
             histogram_proc[HISTO_B][i] = histogram_proc[HISTO_B][c] + histogram_proc[HISTO_B][c+1];
+#endif
             // Calc combined RGB totals
-            if (conf.histo_layout != OSD_HISTO_LAYOUT_Y_U_V)
-                histogram_proc[HISTO_RGB][i] = histogram_proc[HISTO_R][i] + histogram_proc[HISTO_G][i] + histogram_proc[HISTO_B][i];
-            else
-                histogram_proc[HISTO_RGB][i] = histogram_proc[HISTO_Y][i];
+            histogram_proc[HISTO_RGB][i] = histogram_proc[HISTO_R][i] + histogram_proc[HISTO_G][i] + histogram_proc[HISTO_B][i];
         }
 
         // calculate maximums
@@ -492,15 +568,16 @@ static void do_histogram_process()
             }
         }
 
-        if (histo_max[HISTO_RGB] > 0)   // over- / under- expos
+        int hmain = conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V ? HISTO_Y : HISTO_RGB;
+        if (histo_max[hmain] > 0)   // over- / under- expos
         {
-            under_exposed = (histogram_proc[HISTO_RGB][0]*8
-                             +histogram_proc[HISTO_RGB][1]*4
-                             +histogram_proc[HISTO_RGB][2]) > exposition_thresh;
+            under_exposed = (histogram_proc[hmain][0]*8
+                             +histogram_proc[hmain][1]*4
+                             +histogram_proc[hmain][2]) > exposition_thresh;
 
-            over_exposed  = (histogram_proc[HISTO_RGB][HISTO_WIDTH-3]
-                             +histogram_proc[HISTO_RGB][HISTO_WIDTH-2]*4
-                             +histogram_proc[HISTO_RGB][HISTO_WIDTH-1]*8) > exposition_thresh;
+            over_exposed  = (histogram_proc[hmain][HISTO_WIDTH-3]
+                             +histogram_proc[hmain][HISTO_WIDTH-2]*4
+                             +histogram_proc[hmain][HISTO_WIDTH-1]*8) > exposition_thresh;
         }
         else
         {
@@ -527,7 +604,7 @@ static void do_histogram_process()
         histo_magnification = 0;
         if (conf.histo_auto_ajust)
         {
-            if (histo_fill[histo_main] < (HISTO_HEIGHT*HISTO_WIDTH)/5)   // try to ajust if average level is less than 20%
+            if (histo_fill[histo_main] < (HISTO_HEIGHT*HISTO_WIDTH)/5)   // try to adjust if average level is less than 20%
             {
                 histo_magnification = (20*HISTO_HEIGHT*HISTO_WIDTH) / histo_fill[histo_main];
                 for (c=0; c<5; ++c)
@@ -569,7 +646,7 @@ static void gui_osd_draw_single_histo(int hist, coord x, coord y, int small)
     twoColors hc = user_color(conf.histo_color);
     twoColors hc2 = user_color(conf.histo_color2);
 
-    register unsigned int i, v, threshold;
+    register int i, v, threshold;
     register color cl, cl_over, cl_bg = BG_COLOR(hc);
     coord w=HISTO_WIDTH, h=HISTO_HEIGHT;
     int rgb = (conf.histo_layout != OSD_HISTO_LAYOUT_Y_U_V) ? 1 : 0;
@@ -668,8 +745,6 @@ static void gui_osd_draw_blended_histo(coord x, coord y)
     if (conf.histo_show_ev_grid) for (i=1; i<=4; i++) draw_line(x+(1+HISTO_WIDTH)*i/5, y, x+(1+HISTO_WIDTH)*i/5, y+HISTO_HEIGHT, FG_COLOR(hc2));
 
 }
-
-//-------------------------------------------------------------------
 
 static void gui_osd_draw_single_wave(int wave, coord x, coord y, int is_osd_edit)
 {
@@ -1016,11 +1091,13 @@ void gui_osd_draw_histo(int is_osd_edit)
         {
             if (under_exposed && conf.show_overexp)
             {
-                draw_ellipse(conf.histo_pos.x+5, conf.histo_pos.y+5, 3, 3, BG_COLOR(hc2), DRAW_FILLED);
+                draw_ellipse(conf.histo_pos.x+HISTO_DOT_PAD, conf.histo_pos.y+HISTO_DOT_PAD,
+                             HISTO_DOT_SIZE, HISTO_DOT_SIZE, BG_COLOR(hc2), DRAW_FILLED);
             }
             if (over_exposed && conf.show_overexp)
             {
-                draw_ellipse(conf.histo_pos.x+HISTO_WIDTH-5, conf.histo_pos.y+5, 3, 3, BG_COLOR(hc2), DRAW_FILLED);
+                draw_ellipse(conf.histo_pos.x+HISTO_WIDTH-HISTO_DOT_PAD, conf.histo_pos.y+HISTO_DOT_PAD,
+                             HISTO_DOT_SIZE, HISTO_DOT_SIZE, BG_COLOR(hc2), DRAW_FILLED);
             }
         }
         if ((conf.show_overexp ) && camera_info.state.is_shutter_half_press && (under_exposed || over_exposed))
@@ -1096,6 +1173,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

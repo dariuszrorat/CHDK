@@ -13,6 +13,7 @@
 "    LDREQ   R3, =exp_drv_task\n"
 "    BEQ     exitHook\n"
 
+
 /*** INSTALL filewrite() hook ***/
 //"    LDR     R0, =task_FileWrite\n"
 //"    CMP     R0, R3\n"
@@ -20,16 +21,24 @@
 //"    BEQ     exitHook\n"
 
 /*** INSTALL JogDial() hook ***/
-"    LDR     R0, =task_RotaryEncoder\n"
-"    CMP     R0, R3\n"
-"    LDREQ   R3, =JogDial_task_my\n"
-"    BEQ     exitHook\n"
+// was commented out in boot.c from http://chdk.setepontos.com/index.php?topic=12418.msg123489#msg123489
+// but not in codegen file - reyalp
+//"    LDR     R0, =task_RotaryEncoder\n"
+//"    CMP     R0, R3\n"
+//"    LDREQ   R3, =JogDial_task_my\n"
+//"    BEQ     exitHook\n"
 
 /*** INSTALL movie_record_task() hook ***/
-//"    LDR     R0, =task_MovieRecord\n"
-//"    CMP     R0, R3\n"
-//"    LDREQ   R3, =movie_record_task\n"
-//"    BEQ     exitHook\n"
+"    LDR     R0, =task_MovieRecord\n"
+"    CMP     R0, R3\n"
+"    LDREQ   R3, =movie_record_task\n"
+"    BEQ     exitHook\n"
+
+/*** INSTALL liveimage_task() hook ***/
+"    LDR     R0, =task_LiveImageTask\n"
+"    CMP     R0, R3\n"
+"    LDREQ   R3, =liveimage_task\n"
+"    BEQ     exitHook\n"
 
 /*** INSTALL init_file_modules_task() hook ***/
 "    LDR     R0, =task_InitFileModules\n"

@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "keyboard.h"
 #include "font.h"
@@ -9,6 +8,7 @@
 #include "gui_menu.h"
 #include "gui_user_menu.h"
 #include "gui_lang.h"
+#include "ctype.h"
 
 #include "gui_palette.h"
 
@@ -50,7 +50,7 @@ CMenuItem* find_menu_item(CMenu *curr_menu, int itemid )
 
     gui_menu_curr_item = 0;
     while(curr_menu->menu[gui_menu_curr_item].text) {
-        if ( lang_strhash31(curr_menu->menu[gui_menu_curr_item].text) == itemid){
+        if ( lang_strhash31(curr_menu->menu[gui_menu_curr_item].text) == (unsigned)itemid){
             return (CMenuItem*) &(curr_menu->menu[gui_menu_curr_item]);
         }
         if ((curr_menu->menu[gui_menu_curr_item].type & MENUITEM_MASK) == MENUITEM_SUBMENU)
@@ -223,9 +223,6 @@ void gui_menu_init(CMenu *menu_ptr) {
         set_tv_override_menu(curr_menu);
     }
 
-    num_lines = (camera_screen.height - camera_screen.ts_menu_border*2)/rbf_font_height()-1;
-    x = camera_screen.disp_left  + camera_screen.menu_border_width;
-    w = camera_screen.disp_width - camera_screen.menu_border_width*2;
     len_bool = rbf_str_width("\x95");
     len_int = rbf_str_width("99999");
     len_enum = rbf_str_width("WUBfS3a");
@@ -249,7 +246,7 @@ static int gui_menu_rows()
 
 //-------------------------------------------------------------------
 // Full screen erase and redraw of menu
-static void gui_menu_erase_and_redraw()
+void gui_menu_erase_and_redraw()
 {
     gui_menu_redraw = 2;
     gui_set_need_restore();
@@ -732,7 +729,23 @@ void gui_menu_draw_initial()
 { 
     count = gui_menu_rows();
 
+    // Setup screen size
+    num_lines = (camera_screen.height - camera_screen.ts_menu_border*2)/rbf_font_height()-1;
     y = (camera_screen.height - ((num_lines - 1) * rbf_font_height())) >> 1;
+    x = camera_screen.disp_left  + camera_screen.menu_border_width;
+    w = camera_screen.disp_width - camera_screen.menu_border_width*2;
+
+    // Adjust top line to fit in case display size changes
+    if ((count - gui_menu_top_item) < num_lines) {
+        // Screen is larger, move top line up
+        gui_menu_top_item = count - num_lines;
+        if (gui_menu_top_item < 0) gui_menu_top_item = 0;
+    }
+    if ((gui_menu_curr_item - gui_menu_top_item + 1) > num_lines) {
+        // Screen is smaller, move top line down
+        gui_menu_top_item = gui_menu_curr_item - num_lines + 1;
+    }
+
     if (count > num_lines)
     {
         wplus = 8; 

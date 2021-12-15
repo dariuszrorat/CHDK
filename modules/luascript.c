@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "gui.h"
 #include "gui_draw.h"
 #include "script.h"
@@ -33,6 +32,7 @@
 #include "meminfo.h"
 #include "callfunc.h"
 #include "usb_remote.h"
+#include "time.h"
 
 #include "script_api.h"
 #include "curves.h"
@@ -45,9 +45,9 @@
 #include "script_shoot_hook.h"
 #include "rawhookops.h"
 
-#include "../lib/lua/lualib.h"
-#include "../lib/lua/lauxlib.h"
-#include "../lib/lua/lstate.h"  // for L->nCcalls, baseCcalls
+#include "lualib.h"
+#include "lauxlib.h"
+#include "lstate.h"  // for L->nCcalls, baseCcalls
 
 #ifdef THUMB_FW
 // provide div and mod behavior similar to preivous CPUs for digic 6, instead of triggering exception handler
@@ -82,7 +82,7 @@ static int lua_script_is_ptp;
 static int ptp_saved_alt_state;
 static int run_first_resume; // 1 first 'resume', 0 = resuming from yield
 static int run_start_tick; // tick count at start of this kbd_task iteration
-static int run_hook_count; // number of calls to the count hook this kbd_task iteration
+static unsigned run_hook_count; // number of calls to the count hook this kbd_task iteration
 #define YIELD_CHECK_COUNT 100 // check for yield every N vm instructions
 #define YIELD_MAX_COUNT_DEFAULT 25 // 25 checks = 2500 vm instructions
 #define YIELD_MAX_MS_DEFAULT 10
@@ -167,6 +167,15 @@ static ptp_script_msg *lua_create_usb_msg( lua_State* L, int index, unsigned msg
 
 void lua_script_reset()
 {
+    // in PTP, clean up gui state to ensure not left in script handler
+    if(lua_script_is_ptp) {
+        if(ptp_saved_alt_state) {
+            enter_alt(0); // return to regular "alt" from script GUI mode
+        } else {
+            exit_alt();
+        }
+    }
+
     script_shoot_hooks_reset();
     lua_close( L );
     L = 0;
@@ -181,12 +190,12 @@ void lua_script_error_ptp(int runtime, const char *err) {
     }
 }
 
-static void lua_count_hook(lua_State *L, lua_Debug *ar)
+static void lua_count_hook(lua_State *L, __attribute__ ((unused))lua_Debug *ar)
 {
     run_hook_count++;
     if( L->nCcalls > L->baseCcalls || !yield_hook_enabled )
         return;
-    if(run_hook_count >= yield_max_count || get_tick_count() - run_start_tick >= yield_max_ms)
+    if(run_hook_count >= yield_max_count || (unsigned)(get_tick_count() - run_start_tick) >= yield_max_ms)
         lua_yield( L, 0 );
 }
 
@@ -256,9 +265,6 @@ void lua_script_finish(lua_State *L)
                 break;
             }
         }
-        if(!ptp_saved_alt_state) {
-            exit_alt();
-        }
     }
 }
 
@@ -267,12 +273,9 @@ int lua_script_start( char const* script, int ptp )
     script_shoot_hooks_reset();
     lua_script_is_ptp = ptp;
     if(ptp) {
-        ptp_saved_alt_state = (camera_info.state.gui_mode_alt);
-        // put ui in alt state to allow key presses to be sent to script
-        // just setting kbd_blocked leaves UI in a confused state
-        if(!ptp_saved_alt_state) {
-            enter_alt();
-        }
+        ptp_saved_alt_state = camera_info.state.gui_mode_alt;
+        // put ui in script alt state to allow key presses to be sent to script
+        enter_alt(1);
     }
     L = lua_open();
     luaL_openlibs( L );
@@ -486,7 +489,7 @@ static int luaCB_keyfunc( lua_State* L )
   return lua_yield( L, 0 );
 }
 
-static int luaCB_cls( lua_State* L )
+static int luaCB_cls( __attribute__ ((unused))lua_State* L )
 {
   console_clear();
   return 0;
@@ -504,7 +507,7 @@ static int luaCB_set_console_autoredraw( lua_State* L )
   return 0;
 }
 
-static int luaCB_console_redraw( lua_State* L )
+static int luaCB_console_redraw( __attribute__ ((unused))lua_State* L )
 {
   console_redraw();
   return 0;
@@ -724,6 +727,100 @@ static int luaCB_get_user_av96( lua_State* L )
   return 1;
 }
 
+// get minimum valid av96 value (widest aperture), or nil if in playback or no iris
+static int luaCB_get_min_av96( lua_State* L )
+{
+  short av=shooting_get_min_av96(); 
+  if(av < 0) { // -1 = Av not available
+    lua_pushnil(L);
+  } else {
+    lua_pushnumber( L, av );
+  }
+  return 1;
+}
+
+// get maximum valid av96 value (smallest aperture), or nil if in playback or no iris
+static int luaCB_get_max_av96( lua_State* L )
+{
+  short av=shooting_get_max_av96(); 
+  if(av < 0) { // -1 = Av not available
+    lua_pushnil(L);
+  } else {
+    lua_pushnumber( L, av );
+  }
+  return 1;
+}
+
+// get current av96 value - actual current value, not from half press propcase
+static int luaCB_get_current_av96( lua_State* L )
+{
+  lua_pushnumber( L, shooting_get_current_av96() );
+  return 1;
+}
+
+// get current tv96 value - actual current value, not from half press propcase
+// returns nil if image sensor not active (playback, sleep mode, etc)
+static int luaCB_get_current_tv96( lua_State* L )
+{
+  long tv = shooting_get_current_tv96();
+  if( tv == SHOOTING_TV96_INVALID) {
+    lua_pushnil(L);
+  } else {
+    lua_pushnumber( L, tv);
+  }
+  return 1;
+}
+
+// get live view "delta sv" value: APEX*96 offset from base value
+static int luaCB_get_current_delta_sv96( lua_State* L )
+{
+  lua_pushnumber( L, shooting_get_current_delta_sv96() );
+  return 1;
+}
+
+// get live view "drive base sv" value: APEX*96 base value
+static int luaCB_get_current_base_sv96( lua_State* L )
+{
+  lua_pushnumber( L, shooting_get_current_base_sv96() );
+  return 1;
+}
+
+
+// get the exposure value of the ND filter, or 0 if not present
+static int luaCB_get_nd_value_ev96( lua_State* L )
+{
+  lua_pushnumber( L, shooting_get_nd_value_ev96() );
+  return 1;
+}
+
+// get the current ND value: 0 if out or not present, or nd_value if in
+static int luaCB_get_nd_current_ev96( lua_State* L )
+{
+  lua_pushnumber( L, shooting_get_nd_current_ev96() );
+  return 1;
+}
+
+// return true if sensor is enabled (live view on), false if not (playback, rec with display off, display off power save)
+static int luaCB_get_imager_active( lua_State* L )
+{
+  lua_pushboolean( L, shooting_get_imager_active() );
+  return 1;
+}
+
+// return current canon image format as bitmask 1 = jpg, 2 = raw, 3 = raw+jpg
+static int luaCB_get_canon_image_format( lua_State* L )
+{
+  lua_pushnumber( L, shooting_get_canon_image_format() );
+  return 1;
+}
+
+// does cam support canon raw?
+static int luaCB_get_canon_raw_support( lua_State* L )
+{
+  lua_pushboolean(L, camera_info.cam_canon_raw);
+  return 1;
+}
+
 static int luaCB_get_user_tv_id( lua_State* L )
 {
   lua_pushnumber( L, shooting_get_user_tv_id() );
@@ -795,6 +892,15 @@ static int luaCB_set_av96( lua_State* L )
 {
   shooting_set_av96( luaL_checknumber( L, 1 ), shooting_in_progress()?SET_NOW:SET_LATER );
   return 0;
+}
+
+// set current canon image format as bitmask 1 = jpg, 2 = raw, 3 = raw+jpg
+// returns true if support format, false if not
+// NOTE: this setting is lost in shooting mode and play/rec switches
+static int luaCB_set_canon_image_format( lua_State* L )
+{
+  lua_pushboolean( L, shooting_set_canon_image_format(luaL_checknumber( L, 1 )) );
+  return 1;
 }
 
 static int luaCB_set_focus_interlock_bypass( lua_State* L )
@@ -1049,13 +1155,13 @@ static int luaCB_set_exit_key( lua_State* L )
   return 0;
 }
 
-static int luaCB_wheel_right( lua_State* L )
+static int luaCB_wheel_right( __attribute__ ((unused))lua_State* L )
 {
   JogDial_CW();
   return 0;
 }
 
-static int luaCB_wheel_left( lua_State* L )
+static int luaCB_wheel_left( __attribute__ ((unused))lua_State* L )
 {
   JogDial_CCW();
   return 0;
@@ -1256,7 +1362,7 @@ static int luaCB_draw_string( lua_State* L )
   return 0;
 }
 
-static int luaCB_draw_clear( lua_State* L ) {
+static int luaCB_draw_clear( __attribute__ ((unused))lua_State* L ) {
   draw_restore();
   return 0;
 }
@@ -1327,9 +1433,9 @@ static int luaCB_usb_sync_wait( lua_State* L )
   return 0;
 }
 
-static int luaCB_enter_alt( lua_State* L )
+static int luaCB_enter_alt( __attribute__ ((unused))lua_State* L )
 {
-  enter_alt();
+  enter_alt(1);
   // if alt explicitly changed by script, set as 'saved' state
   if(lua_script_is_ptp) {
       ptp_saved_alt_state = 1;
@@ -1337,7 +1443,7 @@ static int luaCB_enter_alt( lua_State* L )
   return 0;
 }
 
-static int luaCB_exit_alt( lua_State* L )
+static int luaCB_exit_alt( __attribute__ ((unused))lua_State* L )
 {
   exit_alt();
   // if alt explicitly changed by script, set as 'saved' state
@@ -1373,29 +1479,13 @@ static int luaCB_print_screen( lua_State* L )
 
 static int luaCB_get_movie_status( lua_State* L )
 {
-  lua_pushnumber( L, movie_status );
+  lua_pushnumber( L, get_movie_status() );
   return 1;
 }
 
 static int luaCB_set_movie_status( lua_State* L )
 {
-  switch(luaL_checknumber( L, 1 )) {
-    case 1:
-      if (movie_status == 4) {
-        movie_status = 1;
-      }
-    break;
-    case 2:
-      if (movie_status == 1) {
-        movie_status = 4;
-      }
-    break;
-    case 3:
-      if (movie_status == 1 || movie_status == 4) {
-        movie_status = 5;
-      }
-    break;
-  }
+  set_movie_status( luaL_checknumber( L, 1 ) );
   return 0;
 }
 
@@ -1524,7 +1614,7 @@ static int luaCB_shot_histo_enable( lua_State* L )
   return 0;
 }
 
-static int luaCB_shot_histo_write_to_file( lua_State* L )
+static int luaCB_shot_histo_write_to_file( __attribute__ ((unused))lua_State* L )
 {
     libshothisto->write_to_file();
     return 0;
@@ -1586,15 +1676,36 @@ static int luaCB_get_time( lua_State* L )
   static struct tm *ttm;
   ttm = get_localtime();
   const char *t = luaL_checkstring( L, 1 );
-  if (strncmp("s", t, 1)==0) r = ( L, ttm->tm_sec );
-  else if (strncmp("m", t, 1)==0) r = ( L, ttm->tm_min );
-  else if (strncmp("h", t, 1)==0) r = ( L, ttm->tm_hour );
-  else if (strncmp("D", t, 1)==0) r = ( L, ttm->tm_mday );
-  else if (strncmp("M", t, 1)==0) r = ( L, ttm->tm_mon+1 );
-  else if (strncmp("Y", t, 1)==0) r = ( L, 1900+ttm->tm_year );
+  if (strncmp("s", t, 1)==0) r = ttm->tm_sec;
+  else if (strncmp("m", t, 1)==0) r = ttm->tm_min;
+  else if (strncmp("h", t, 1)==0) r = ttm->tm_hour;
+  else if (strncmp("D", t, 1)==0) r = ttm->tm_mday;
+  else if (strncmp("M", t, 1)==0) r = ttm->tm_mon+1;
+  else if (strncmp("Y", t, 1)==0) r = 1900+ttm->tm_year;
   lua_pushnumber( L, r );
   return 1;
 }
+
+/*
+set_clock(year, month, day, hour, minute, second)
+
+sets camera clock, including RTC
+values are as they appear in camera UI, full year, month and day start at 1
+does not change DST state, time set is time displayed
+also updates tick_count_offset
+no validation in CHDK
+*/
+static int luaCB_set_clock( lua_State* L )
+{
+    set_clock(luaL_checknumber(L,1), // year, like 2020
+            luaL_checknumber(L,2), // month, 1-12
+            luaL_checknumber(L,3), // day, 1-31
+            luaL_checknumber(L,4), // hour
+            luaL_checknumber(L,5), // minute
+            luaL_checknumber(L,6)); // second
+    return 0;
+}
+
 /*
   val=peek(address[,size])
   return the value found at address in memory, or nil if address or size is invalid
@@ -1739,7 +1850,7 @@ void set_number_field(lua_State* L, const char *key, int val)
 
 static int luaCB_get_buildinfo( lua_State* L )
 {
-  lua_createtable(L, 0, 9);
+  lua_createtable(L, 0, 10);
   set_string_field( L,"platform", camera_info.platform );
   set_string_field( L,"platsub", camera_info.platformsub );
   set_string_field( L,"version", camera_info.chdk_ver );
@@ -1749,6 +1860,7 @@ static int luaCB_get_buildinfo( lua_State* L )
   set_string_field( L,"build_time", camera_info.build_time );
   set_string_field( L,"os", camera_info.os );
   set_number_field( L,"platformid", conf.platformid );
+  set_number_field( L,"digic", camera_info.cam_digic );
   return 1;
 }
 
@@ -1787,7 +1899,7 @@ static int luaCB_raw_merge_add_file( lua_State* L )
     return 1;
 }
 
-static int luaCB_raw_merge_end( lua_State* L )
+static int luaCB_raw_merge_end( __attribute__ ((unused))lua_State* L )
 {
     librawop->raw_merge_end();
     return 0;
@@ -2039,6 +2151,22 @@ static int luaCB_switch_mode_usb( lua_State* L )
   switch_mode_usb(on_off_value_from_lua_arg(L,1));
   return 0;
 }
+
+/*
+  result=force_analog_av(state)
+  force state of analog video connector detect bit
+  where 0 = don't force, 1 = on, 2 = off
+  result true if implemented by port (ANALOG_AV_FLAG defined), false if not
+  can be used to enable video out while using the AV bit as remote input
+  NOTE: video out affects display resolution on some cameras, which 
+  may not be accounted for in features like PTP live view, zebra, histrogram etc
+  forcing video out while PTP is in use may cause problems on some cameras
+*/
+static int luaCB_force_analog_av( lua_State* L )
+{
+  lua_pushboolean(L, kbd_force_analog_av(luaL_checknumber( L, 1 )));
+  return 1;
+}
  
 /*
 pack the lua args into a buffer to pass to the native code calling functions 
@@ -2196,7 +2324,7 @@ static int luaCB_get_config_value( lua_State* L ) {
             break;
             case CONF_INT_PTR:
                 lua_createtable(L, 0, configVal.numb);
-                for( i=0; i<configVal.numb; i++ ) {
+                for( i=0; i<(unsigned)configVal.numb; i++ ) {
                     lua_pushinteger(L, configVal.pInt[i]);
                     lua_rawseti(L, -2, i+1);  //t[i+1]=configVal.pInt[i]
                 }
@@ -2225,7 +2353,7 @@ static int luaCB_get_config_value( lua_State* L ) {
 static int luaCB_set_config_value( lua_State* L ) {
     unsigned int argc = lua_gettop(L);
     unsigned int id, i, j;
-    tConfigVal configVal = {0,0,0,0};  //initialize isXXX
+    tConfigVal configVal = {0};  //initialize isXXX
     
     if( argc>=2 ) {
         id = luaL_checknumber(L, 1);
@@ -2256,7 +2384,7 @@ static int luaCB_set_config_value( lua_State* L ) {
                         }
                         configVal.pInt = malloc(configVal.numb*sizeof(int));
                         if( configVal.pInt ) {
-                            for( j=1; j<=configVal.numb; j++) {
+                            for( j=1; j<=(unsigned)configVal.numb; j++) {
                                 lua_rawgeti(L, i, j);
                                 configVal.pInt[j-1] = lua_tointeger(L, -1);
                                 lua_pop(L, 1);
@@ -2716,9 +2844,21 @@ static const luaL_Reg chdk_funcs[] = {
     FUNC(get_image_dir)
     FUNC(get_flash_params_count)
     FUNC(get_parameter_data)
+    FUNC(get_min_av96)
+    FUNC(get_max_av96)
+    FUNC(get_nd_value_ev96)
+    FUNC(get_nd_current_ev96)
+    FUNC(get_current_av96)
+    FUNC(get_current_tv96)
+    FUNC(get_current_delta_sv96)
+    FUNC(get_current_base_sv96)
+    FUNC(get_imager_active)
+    FUNC(get_canon_image_format)
+    FUNC(get_canon_raw_support)
 
     FUNC(set_av96_direct)
     FUNC(set_av96)
+    FUNC(set_canon_image_format)
     FUNC(set_focus)
     FUNC(set_focus_interlock_bypass)
     FUNC(set_iso_mode)
@@ -2804,6 +2944,7 @@ static const luaL_Reg chdk_funcs[] = {
     FUNC(bitnot)
 
     FUNC(get_time)
+    FUNC(set_clock)
 
     FUNC(get_buildinfo)
     FUNC(get_mode)
@@ -2844,6 +2985,8 @@ static const luaL_Reg chdk_funcs[] = {
     FUNC(set_record)
 
     FUNC(switch_mode_usb)
+
+    FUNC(force_analog_av)
 
     FUNC(call_event_proc)
     FUNC(call_func_ptr)
@@ -2936,7 +3079,7 @@ void register_lua_funcs( lua_State* L )
     lua_pushcfunction( L, r->func );
     lua_setglobal( L, r->name );
   }
-   luaL_dostring(L,"function usb_msg_table_to_string(t)"
+  (void)luaL_dostring(L,"function usb_msg_table_to_string(t)"
                     " local v2s=function(v)"
                         " local t=type(v)"
                         " if t=='string' then return v end"
@@ -3020,7 +3163,7 @@ ModuleInfo _module_info =
     ANY_CHDK_BRANCH, 0, OPT_ARCHITECTURE,   // Requirements of CHDK version
     ANY_PLATFORM_ALLOWED,       // Specify platform dependency
 
-    (int32_t)"Lua",
+    -LANG_MODULE_LUA,           // Module name
     MTYPE_SCRIPT_LANG,          //Run Lua Scripts
 
     &_liblua.base,
@@ -3029,6 +3172,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     CAM_SENSOR_VERSION,         // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

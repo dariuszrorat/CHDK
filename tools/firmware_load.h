@@ -44,18 +44,19 @@ typedef struct {
     int             fsize;              // Size of the firmware (as determined from the start address)
     int             cam_idx;            // Index of the camera name in the firmware
     uint32_t        pid_adr;            // Address of the camera ID in the firmware
-	int			    dryos_ver;          // DryOS version number
+	int			    dryos_ver;          // DryOS version number (capped at the highest known revision)
+    int             real_dryos_ver;     // DryOS version number (the real one, warn if not equal to dryos_ver)
     char            *dryos_ver_str;     // DryOS version string
     char            *firmware_ver_str;  // Camera firmware version string
     char            *fw_build_date;     // Firmware build date
     char            *fw_build_time;     // Firmware build time
     int             fwver_idx;          // Index of camera firmware version string
     int             pid;                // Camera ID
-    int             maxram;             // How much memory does the camera have
+    uint32_t        maxram;             // How much memory does the camera have
 	char		    *cam;               // Pointer to camera name string
     char            *ksys;              // Pointer to encryption key
     int             ksys_idx;           // Index of the encryption key in the firmware dump
-    int             dancing_bits;       // Dancing Bits number for the encryption key
+    uint32_t        dancing_bits;       // Dancing Bits number for the encryption key
     int             dancing_bits_idx;   // Index of the dancing bits data in the firmware dump
     uint32_t        data_start;         // Start of DATA section in RAM
     uint32_t        data_init_start;    // Start of initialisation section for DATA in ROM
@@ -68,6 +69,7 @@ typedef struct {
     uint32_t        base2;          // RAM address copied to
     uint32_t        base_copied;    // ROM address copied from
     int             size2;          // Block size copied (in words)
+    int             lowest_idx;     // Lowest valid index
 
     // Alt copy of ROM (DryOS R51 - only seen on S110 so far)
     uint32_t        alt_base;       // Alternative base address
@@ -88,6 +90,9 @@ int idx_valid(firmware *fw, int i);
 uint32_t idx2adr(firmware *fw, int idx);
 int adr2idx(firmware *fw, uint32_t adr);
 char* adr2ptr(firmware *fw, uint32_t adr);
+
+// index correction for cams with RAM code
+int idxcorr(firmware *fw, int idx);
 
 void set_ignore_errors(int n);
 uint32_t* fwadr(firmware *fw, int i);
@@ -129,6 +134,7 @@ int isSTR(firmware *fw, int offset);
 int isSTR_cond(firmware *fw, int offset);
 int isBX(firmware *fw, int offset);
 int isBX_LR(firmware *fw, int offset);
+int isBLX(firmware *fw, int offset);
 int isBL(firmware *fw, int offset);
 int isBL_cond(firmware *fw, int offset);
 int isBLEQ(firmware *fw, int offset);
@@ -137,6 +143,9 @@ int isBorBL(firmware *fw, int offset);
 int isCMP(firmware *fw, int offset);
 int isMOV(firmware *fw, int offset);
 int isMOV_immed(firmware *fw, int offset);
+int isORR(firmware *fw, int offset);
+int isADD(firmware *fw, int offset);
+int isSUB(firmware *fw, int offset);
 
 int isASCIIstring(firmware *fw, uint32_t adr);
 
@@ -156,6 +165,7 @@ int find_Nth_inst_rev(firmware *fw, int (*inst)(firmware*,int), int idx, int len
 int find_strptr_ref(firmware *fw, char *str);
 int find_str_ref(firmware *fw, char *str);
 int find_nxt_str_ref(firmware *fw, int str_adr, int ofst);
+int find_nxt_str_ref_alt(firmware *fw, char *str, int ofst, int limit);
 
 // Find a B or BL instruction that calls/jumps to the 'v1' address
 int find_BL(firmware *fw, int k, uint32_t v1, uint32_t v2);

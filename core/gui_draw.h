@@ -53,9 +53,24 @@ extern  unsigned char   *chdk_colors;
 #define COLOR_CYAN              (chdk_colors[IDX_COLOR_CYAN])
 
 //-------------------------------------------------------------------
+#define FONT_REAL_WIDTH         8
+#define FONT_REAL_HEIGHT        16
+
+#ifndef THUMB_FW
 
 #define FONT_WIDTH              8
 #define FONT_HEIGHT             16
+// Name of default symbol file (for reset)
+#define DEFAULT_SYMBOL_FILE "A/CHDK/SYMBOLS/icon_10.rbf"
+
+#else // THUMB_FW
+
+#define FONT_WIDTH              14
+#define FONT_HEIGHT             32
+// Name of default symbol file (for reset)
+#define DEFAULT_SYMBOL_FILE "A/CHDK/SYMBOLS/icon_16.rbf"
+
+#endif // THUMB_FW
 
 // Text justification & options
 #define TEXT_LEFT               0
@@ -84,13 +99,18 @@ extern  unsigned char   *chdk_colors;
 //-------------------------------------------------------------------
 extern void draw_init();
 extern void draw_set_draw_proc(void (*pixel_proc)(unsigned int offset, color cl));
+extern void update_draw_proc();
 
 extern void draw_set_guard();
 extern int draw_test_guard();
 
 extern color draw_get_pixel(coord x, coord y);
-
 extern void draw_pixel(coord x, coord y, color cl);
+extern void draw_or_erase_edge_pixel(coord x, coord y, color cl, int is_draw);
+
+extern void draw_dblpixel_raw(unsigned int offset, unsigned int px, unsigned int op);
+extern void erase_zebra();
+extern unsigned int color_to_rawpx(color cl, unsigned int *op);
 
 extern void draw_line(coord x1, coord y1, coord x2, coord y2, color cl);
 extern void draw_hline(coord x, coord y, int len, color cl);
@@ -113,6 +133,8 @@ extern void draw_button(int x, int y, int w, int str_id, int active);
 
 extern void draw_txt_string(coord col, coord row, const char *str, twoColors cl);
 
+extern void draw_suspend(int ms);
+extern int draw_is_suspended(void);
 extern void draw_restore();
 
 extern color get_script_color(int cl);

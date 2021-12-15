@@ -1,11 +1,11 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "gui.h"
 #include "fileutil.h"
 #include "conf.h"
 
 #include "script_api.h"
 #include "module_def.h"
+#include "gui_lang.h"
 
 /***************** BEGIN OF AUXILARY PART *********************
   ATTENTION: DO NOT REMOVE OR CHANGE SIGNATURES IN THIS SECTION
@@ -20,7 +20,8 @@ int jump_label(char * label);
 
 static int ubasic_run_restore(void)             { return jump_label("restore"); }
 
-static void _set_variable(char *name, int value, int isBool, int isTable, int labelCount, const char **labels)
+static void _set_variable(char *name, int value,
+    __attribute__ ((unused))int isBool, __attribute__ ((unused))int isTable, __attribute__ ((unused))int labelCount, __attribute__ ((unused))const char **labels)
 {
     ubasic_set_variable(name[0] - (name[0]>='a'?'a':('A'-26)), value);
 }
@@ -45,7 +46,7 @@ static int ubasic_init_file(char const* filename)
 }
 
 // shoot hooks not supported in ubasic
-static void ubasic_script_shoot_hook_run(int hook) { return; }
+static void ubasic_script_shoot_hook_run(__attribute__ ((unused))int hook) { return; }
 /******************** Module Information structure ******************/
 
 static int module_unloader()
@@ -83,7 +84,7 @@ ModuleInfo _module_info =
     ANY_CHDK_BRANCH, 0, OPT_ARCHITECTURE,			// Requirements of CHDK version
     ANY_PLATFORM_ALLOWED,		// Specify platform dependency
 
-    (int32_t)"uBasic",
+    -LANG_MODULE_UBASIC,        // Module name
     MTYPE_SCRIPT_LANG,          //Run uBasic Scripts
 
     &_libubasic.base,
@@ -92,6 +93,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     CAM_SENSOR_VERSION,         // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

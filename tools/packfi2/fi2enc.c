@@ -11,7 +11,10 @@
 #include "aes128.h"
 
 static const char *g_str_err_malloc = "memory allocation error (requested %d bytes)\n";
-static const char *g_str_shorthelp = "Usage: fi2encdec [-p PID] [-key KEY -iv IV] in.file out.file\n";
+static const char *g_str_shorthelp = "Usage: fi2encdec [-p PID] [-key KEY -iv IV] [-x FLAGS] in.file out.file\n"
+                                     "    FLAGS: one or more of the following letters\n"
+                                     "           W: checksum is word based (on new models)\n"
+                                     "\n";
 
 char *_strlwr(char *moep) {
      char *tmp = moep;
@@ -30,6 +33,7 @@ struct fi2_rec_s {
 	uint32_t	fboot;		// Bootloader block flag
 	uint32_t	uf2;		// unknown flag 2
 	uint32_t	uf3;		// unknown flag 3 (new in DryOS 50)
+    uint32_t    uf4;        // unknown flag 4 (seen in a DryOS r55 file)
 } fi2_rec_s;
 
 // FI2 header (with size field)
@@ -75,7 +79,7 @@ static int get_hexstring( void *dst, const char *str, int len )
 		return -1;
 	}
 	if( !p ) return -1;
-	if( strlen( str ) != len*2 ){
+	if( strlen( str ) != (size_t)len*2 ){
 		printf( "Hex length mismatch in \"%s\"!\n", str );
 		return -1;
 	}
@@ -85,7 +89,7 @@ static int get_hexstring( void *dst, const char *str, int len )
 		else if( c < 'G' && c >= 'A' ) c -= ('A' - 0x0A);
 		else if( c < 'g' && c >= 'a' ) c -= ('a' - 0x0A);
 		else {
-			printf("Non-nex character \'%c\' at %d in string %s\n", c, i+1, str );
+			printf("Non-hex character \'%c\' at %d in string %s\n", c, i+1, str );
 			return -1;
 		}
 		p[i/2] = i & 1 ? p[i/2] | c : c << 4;
@@ -96,19 +100,24 @@ static int get_hexstring( void *dst, const char *str, int len )
 static int fi2rec_size(uint32_t dryos_ver)
 {
     // return the correct size to use for the block record
-    if (dryos_ver >= 50)
+    if (dryos_ver >= 55)
     {
         return sizeof (fi2_rec_s);
     }
-    else
+    else if (dryos_ver >= 50)
     {
         return sizeof (fi2_rec_s) - 4; // exclude the new R50 extra value
     }
+    else
+    {
+        return sizeof (fi2_rec_s) - 8; // exclude the new R55 extra value too
+    }
 }
 
-static int fi2enc( char *infname, char *outfname, uint32_t *key, uint32_t *iv , uint32_t pid, uint32_t dryos_ver)
+static int fi2enc( char *infname, char *outfname, uint32_t *key, uint32_t *iv , uint32_t pid, uint32_t dryos_ver,
+                   int32_t cs_words)
 {
-	unsigned long i;
+	uLongf i;
 	size_t flen;
 	uint32_t cs;
 	FILE *fi, *fo;
@@ -168,7 +177,7 @@ static int fi2enc( char *infname, char *outfname, uint32_t *key, uint32_t *iv , 
 	}
 	memset( buf, 0xFF, i );
 	i -= 4;
-	if( Z_OK !=    compress( buf + 4, (uLongf*)&i, upkbuf, flen ) ){ 
+	if( Z_OK !=    compress( buf + 4, &i, upkbuf, flen ) ){ 
 		printf( "Data compression error\n" );
 		return -1;
 	}
@@ -179,13 +188,20 @@ static int fi2enc( char *infname, char *outfname, uint32_t *key, uint32_t *iv , 
 	// encrypt data block
 	aes128_cbc_encrypt( buf, exkey, iv, fi2rec.len );
 	pblk = buf;									
-	for( i = 0; i < (int)fi2rec.len; i++) cs += buf[i];	// update block checksum
+    if (cs_words) {
+        uint32_t *wbuf = (uint32_t*)buf;
+        for( i = 0; i < fi2rec.len/4; i++) cs += wbuf[i];	// update block checksum
+    }
+    else {
+        for( i = 0; i < fi2rec.len; i++) cs += buf[i];	// update block checksum
+    }
+
 	free( upkbuf ); upkbuf = NULL;
 	// process next block
 	// finalize header
   	i = 32 + fi2rec_size(dryos_ver);
+    i = align128(i); // header needs to be aligned
 	store32_be( &hdr.hlen_be, i - 4 );
-    i = align128(i);
 	hdr.nblk = 1;
 	hdr.datacs = cs;
 	buf = (unsigned char*)malloc( i );							// allocate buffer for encrypted header
@@ -232,6 +248,8 @@ int main( int argc, char **argv )
 	char *fni = NULL, *fno = NULL;
 	uint32_t pid=0;
     uint32_t dryos_ver=0;
+    char *flags = NULL;
+    int32_t cs_words = 0;
 
 	// parse command line
 	for( i = 1; i < argc; i++){
@@ -255,6 +273,9 @@ int main( int argc, char **argv )
 			        dryos_ver = strtoul(argv[++i], &err, 0);
 				if (*err) return -1;
 			}
+			else if( !strcmp( "x", _strlwr(argv[i]+1) ) ){ // extra flags, single string without spaces
+			        flags = argv[++i];
+			}
 			else {
 				printf("Unexpected option: %s\n", argv[i]);
 				return -1;
@@ -272,8 +293,13 @@ int main( int argc, char **argv )
 		fputs( g_str_shorthelp, stdout );
 		return -1;
 	}
+    if (flags) {
+        if ( strstr(flags, "W") ) {
+            cs_words = 1;
+        }
+    }
 	for( i = 0; i < 4; i ++ )  key[i] = read32_be( key+i );
-        i = fi2enc( fni, fno, key, iv , pid, dryos_ver);
+        i = fi2enc( fni, fno, key, iv , pid, dryos_ver, cs_words);
 	if ( !i ) printf( "Done\n" );	else printf( "Failed!\n" );
 	return i;
 }

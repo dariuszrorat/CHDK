@@ -3,9 +3,6 @@
 #include "core.h"
 #include "conf.h"
 #include "keyboard.h"
-#include "stdlib.h"
-#include "platform.h"
-#include "stdio.h"
 
 #define PARAM_FILE_COUNTER      0x1        // see comments in ixus140 port
 
@@ -135,7 +132,7 @@ const CapturemodeMap modemap[] = {
 { MODE_TOY_CAMERA            ,8757 },
 { MODE_SOFTFOCUS             ,8758 },
 { MODE_MONOCHROME            ,8760 },
-{ MODE_HIGHSPEED_BURST      ,16393 }, // highspeed burst hq
+{ MODE_HIGHSPEED_BURST | MODE_DISABLE_RAW ,16393 }, // highspeed burst hq
 { MODE_PORTRAIT             ,16403 },
 { MODE_SNOW                 ,16411 },
 { MODE_FIREWORK             ,16413 },
@@ -143,15 +140,15 @@ const CapturemodeMap modemap[] = {
 { MODE_FACE_SELF_TIMER      ,16942 }, // smart shutter, face self timer
 { MODE_SMART_SHUTTER        ,16943 }, // smart shutter, smile detection
 { MODE_WINK_SELF_TIMER      ,16944 }, // smart shutter, wink self timer
-{ MODE_NIGHT_SCENE          ,16947 }, // handheld night scene
-{ MODE_AUTO                 ,32768 },
+{ MODE_NIGHT_SCENE | MODE_DISABLE_RAW ,16947 }, // handheld night scene
+{ MODE_AUTO | MODE_DISABLE_RAW ,32768 },
 { MODE_M                    ,32769 },
 { MODE_AV                   ,32770 },
 { MODE_TV                   ,32771 },
 { MODE_P                    ,32772 },
-{ MODE_HYBRID_AUTO          ,32784 },
+{ MODE_HYBRID_AUTO | MODE_DISABLE_RAW ,32784 },
 { MODE_DISCREET             ,32823 },
-{ MODE_SPORTS               ,33287 },
+{ MODE_SPORTS | MODE_DISABLE_RAW ,33287 },
 { MODE_STITCH               ,33293 }, // stitch, unofficial, may crash
 //{                         ,  33295 }, // crash and lock up :(
 { MODE_SMOOTH_SKIN          ,33300 }, // unofficial?
@@ -172,13 +169,14 @@ long get_target_file_num() {
     return get_exposure_counter();
 }
 #if defined(CAM_DATE_FOLDER_NAMING)
+/*
+  CAM_DATE_FOLDER_NAMING should be 0x80, otherwise various filenames are returned
+  this _GetImageFolder version only seems to take 3 arguments, but it doesn't hurt if a 4th one is provided
+*/
 void get_target_dir_name(char *out)
 {
-    static char buf[32];
     extern void _GetImageFolder(char*,int,int,int);
-    _GetImageFolder(buf,get_file_next_counter(),CAM_DATE_FOLDER_NAMING,time(NULL));
-    strncpy(out,buf,15);
-    out[15] = 0;
+    _GetImageFolder(out,get_file_next_counter(),CAM_DATE_FOLDER_NAMING,time(NULL));
 }
 #else
 long get_target_dir_num() 
@@ -186,5 +184,3 @@ long get_target_dir_num()
     return 0;
 }
 #endif
-
-int circle_of_confusion = 5;

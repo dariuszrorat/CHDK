@@ -1,9 +1,13 @@
 #include "platform.h"
 #include "platform_palette.h"
 #include "lolevel.h"
+#include "gui_draw.h"
 
 void vid_bitmap_refresh()
 {
+    if(draw_is_suspended()) {
+        return;
+    }
     extern int full_screen_refresh;
     extern void _ScreenLock();
     extern void _ScreenUnlock();
@@ -33,8 +37,8 @@ void debug_led(int state)
 	p[0]=0x44;
 }
 
-void camera_set_led(int led, int state, int bright) {
- static char led_table[]={0,12}; // status, AF
+void camera_set_led(int led, int state, __attribute__ ((unused))int bright) {
+ static char led_table[]={0,4}; // status, AF
  _LEDDrive(led_table[led%sizeof(led_table)], state<=1 ? !state : state);
 }
 
@@ -60,12 +64,18 @@ void *vid_get_viewport_live_fb()
     extern char active_viewport_buffer;
     extern void* viewport_buffers[];
 
-    // no distinct video mode
-    if (/*mode_is_video(mode_get())*/ is_video_recording())
-        return viewport_buffers[0];     // Video only seems to use the first viewport buffer.
+    int i = active_viewport_buffer - 1;
+    // video appears to only use 3 buffers, no distinct video mode
+    if (is_video_recording()) {
+        if(i < 0) {
+            i = 2;
+        }
+    } else if(i < 0) {
+        i = 3;
+    }
+
     // Hopefully return the most recently used viewport buffer so that motion detect, histogram, zebra and edge overly are using current image data
-    // verified -1 gives best response
-    return viewport_buffers[(active_viewport_buffer-1)&3];
+    return viewport_buffers[i];
 }
 
 
@@ -74,9 +84,20 @@ char *hook_raw_image_addr()
     return (char*)0x42365c30; //(Found @0xff413f98)
 }
 
+extern int _GetVideoOutType(void);
+extern int _GetVRAMHPixelsSize(void);
+extern int _GetVRAMVPixelsSize(void);
+
 // Y multiplier for cameras with 480 pixel high viewports (CHDK code assumes 240)
+// elph130 is 240 when using video out in rec, or in FISHEYE mode
 int vid_get_viewport_yscale() {
-	return 2;
+    if (camera_info.state.mode_play) {
+        return 2;
+    }
+    if(_GetVideoOutType() != 0 || (camera_info.state.mode_shooting == MODE_FISHEYE && !is_video_recording())) {
+        return 1;
+    }
+    return 2;
 }
 
 int vid_get_viewport_width()
@@ -85,18 +106,20 @@ int vid_get_viewport_width()
     {
         return 360;
     }
-    extern int _GetVRAMHPixelsSize();
     return _GetVRAMHPixelsSize() >> 1;
 }
 
 long vid_get_viewport_height()
 {
+    int vot = _GetVideoOutType();
     if (camera_info.state.mode_play)
     {
+        if(vot == 2) { // PAL
+            return 288; // 576
+        }
         return 240;
     }
-    extern int _GetVRAMVPixelsSize();
-    return _GetVRAMVPixelsSize() >> 1;
+    return _GetVRAMVPixelsSize() >> (vid_get_viewport_yscale() - 1);
 }
 
 // viewport width offset table for each image size
@@ -111,7 +134,7 @@ int vid_get_viewport_xoffset()
 
 int vid_get_viewport_display_xoffset()
 {
-    if (camera_info.state.mode_play)
+    if (camera_info.state.mode_play || is_video_recording())
     {
         return 0;
     }
@@ -130,7 +153,7 @@ int vid_get_viewport_display_xoffset()
     }
     else
     {
-	    return vp_xo[shooting_get_prop(PROPCASE_ASPECT_RATIO)];
+        return vp_xo[shooting_get_prop(PROPCASE_ASPECT_RATIO)];
     }
 }
 
@@ -144,11 +167,7 @@ int vid_get_viewport_yoffset()
     {
         return 0;
     }
-    else if (camera_info.state.mode_shooting == MODE_STITCH)
-    {
-        return 0;
-    }
-    // no distinct video mode
+    // no distinct video mode, video uses its own aspect ratio, not still ratio of current mode
     else if (/*mode_is_video(m)*/ is_video_recording())
     {
         if(shooting_get_prop(PROPCASE_VIDEO_RESOLUTION) == 2) { // 640x480
@@ -157,9 +176,13 @@ int vid_get_viewport_yoffset()
             return 30; // 16:9 video
         }
     }
+    else if (camera_info.state.mode_shooting == MODE_STITCH)
+    {
+        return 0;
+    }
     else
     {
-	    return vp_yo[shooting_get_prop(PROPCASE_ASPECT_RATIO)];
+        return vp_yo[shooting_get_prop(PROPCASE_ASPECT_RATIO)];
     }
 }
 
@@ -169,28 +192,40 @@ int vid_get_viewport_display_yoffset()
     {
         return 0;
     }
-    else if (camera_info.state.mode_shooting == MODE_STITCH)
-    {
-        return 72;
-    }
     else if (/*mode_is_video(m)*/ is_video_recording())
     {
         if(shooting_get_prop(PROPCASE_VIDEO_RESOLUTION) == 2) { // 640x480
             return 0;// 4:3 video, no offset
         } else {
-            return 30; // 16:9 video
+            return 30;
         }
+    }
+    else if (camera_info.state.mode_shooting == MODE_STITCH)
+    {
+        return 72;
     }
     else
     {
-	    return vp_yo[shooting_get_prop(PROPCASE_ASPECT_RATIO)];
+        return vp_yo[shooting_get_prop(PROPCASE_ASPECT_RATIO)];
     }
 }
 
-int vid_get_viewport_display_yoffset_proper()   { return vid_get_viewport_display_yoffset() * 2; }
-int vid_get_viewport_height_proper()            { return vid_get_viewport_height() * 2; }
-int vid_get_viewport_fullscreen_height()        { return 480; }
+int vid_get_viewport_display_yoffset_proper()   { return vid_get_viewport_display_yoffset() * vid_get_viewport_yscale(); }
+int vid_get_viewport_height_proper()            { return vid_get_viewport_height() * vid_get_viewport_yscale(); }
 
+int vid_get_viewport_fullscreen_height()
+{
+    if (camera_info.state.mode_play) {
+        int vot = _GetVideoOutType();
+        if(vot == 2) {
+            return 576; // PAL in playback is 576
+        } else {
+            return 480; // all other playback is 480
+        }
+    } else {
+        return 240<<(vid_get_viewport_yscale()-1);
+    }
+}
 int vid_get_palette_type()                      { return 3; }
 int vid_get_palette_size()                      { return 256 * 4; }
 
@@ -210,7 +245,10 @@ void *vid_get_bitmap_active_palette()
     // active_palette_buffer can point at null when
     // func and menu are opened for the first time
     if(!p) {
-        p = palette_buffer_ptr[0]; // rec mode buffer appears to always be initialized
+        p = palette_buffer_ptr[0]; // rec mode buffer normally initialized
+        if(!p) { // but may be null on video out switch
+            return (void *)0;
+        }
     }
     return (p+1);
 }
@@ -220,11 +258,11 @@ void load_chdk_palette()
 {
     extern int active_palette_buffer;
     // Only load for the standard record and playback palettes
-    // 0 = rec, 4 = func menu, 5 = playback, 6 = menu (play or rec), 
+    // 0 = rec, 4 = func menu, 5 = playback, 6 = menu (play or rec),
     if ((active_palette_buffer == 0) || (active_palette_buffer == 5) || (active_palette_buffer == 4))
     {
         int *pal = (int*)vid_get_bitmap_active_palette();
-        if (pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
+        if (pal && pal[CHDK_COLOR_BASE+0] != 0x33ADF62)
         {
             pal[CHDK_COLOR_BASE+0]  = 0x33ADF62;  // Red
             pal[CHDK_COLOR_BASE+1]  = 0x326EA40;  // Dark Red

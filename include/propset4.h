@@ -18,6 +18,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_BRACKET_MODE                    29
 #define PROPCASE_SHOOTING_MODE                   49
 #define PROPCASE_QUALITY                         57
+#define PROPCASE_LANGUAGE                        61     // Upper byte = language (see default.lua for known values) lowest bit: 0 = NTSC, 1 = PAL
 #define PROPCASE_DATE_STAMP                      66     // 0 = Off, 1 = Date, 2 = Date & Time
 #define PROPCASE_DIGITAL_ZOOM_MODE               91     // Digital Zoom Mode/State 0 = off/standard, 2 = 1.7x, 3 = 2.1x
 #define PROPCASE_DIGITAL_ZOOM_STATE              94     // Digital Zoom Mode/State 0 = Digital Zoom off, 1 = Digital Zoom on
@@ -86,6 +87,7 @@ DO NOT USE MULTILINE COMMENTS AROUND DEFINES
 #define PROPCASE_MY_COLORS                       188     // 0 = Off, 1 = Vivid, 2 = Neutral, 3 = B/W, 4 = Sepia, 5 = Positive Film, 6 = Lighter Skin Tone, 7 = Darker Skin Tone, 8 = Vivid Red, 9 = Vivid Green, 10 = Vivid Blue, 11 = Custom Color
 #define PROPCASE_CUSTOM_SHARPNESS                229     // Canon Menu slide bar values: 255, 254, 0, 1, 2
 
+#define PROPCASE_IMAGE_FORMAT                    214     // from UIFS_GetStillShotableNumber, 0 = RAW, 1 = JPEG, 2 = RAW+JPEG
 #define PROPCASE_TIMER_SHOTS                     378     // Number of shots for TIMER_MODE=Custom
 
 #endif

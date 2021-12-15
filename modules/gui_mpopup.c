@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "keyboard.h"
 #include "lang.h"
 #include "gui.h"
@@ -37,7 +36,7 @@ static short                    mpopup_actions[MAX_ACTIONS];    // Content of ra
 static int                      mpopup_actions_num;             // Num of items in raised popupmenu
 static int                      mpopup_actions_active;          // Idx of current item (cursor)
 static coord                    mpopup_actions_x, mpopup_actions_y;    // top-left coord of window
-static unsigned int             mpopup_actions_w;               // width of window
+static int                      mpopup_actions_w;               // width of window
 
 typedef void (*mpopup_on_select_t)(unsigned int btn);
 static mpopup_on_select_t mpopup_on_select;
@@ -229,7 +228,7 @@ ModuleInfo _module_info =
     ANY_CHDK_BRANCH, 0, OPT_ARCHITECTURE,			// Requirements of CHDK version
     ANY_PLATFORM_ALLOWED,		// Specify platform dependency
 
-    (int32_t)"Popup menu module",
+    -LANG_MODULE_POPUP_MENU,    // Module name
     MTYPE_EXTENSION,
 
     &_libmpopup.base,
@@ -238,6 +237,8 @@ ModuleInfo _module_info =
     ANY_VERSION,                // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     ANY_VERSION,                // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/

@@ -3,7 +3,6 @@
 #include "core.h"
 #include "keyboard.h"
 #include "math.h"
-#include "stdlib.h"
 #include "conf.h"
 
 #ifndef CAM_FILE_COUNTER_IS_VAR
@@ -133,7 +132,7 @@ int register_pt_hooks() {
     if(_ExecuteEventProcedure("ExportToEventProcedure","PT_CompleteFileWrite",overridden_PT_CompleteFileWrite) == -1) {
         return 3;
     }
-    //_LogPrintf(0x120,"pt hook(s) registered");
+    //_LogCameraEvent(0x120,"pt hook(s) registered");
     return 0;
 }
 #endif

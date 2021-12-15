@@ -41,7 +41,6 @@ NHSTUB(SetParameterData,            0xff96a23c)  //similar to ixus65
 //NHSTUB(SetLogicalEventActive                  ,0xff963624) //  1 88%
 //NHSTUB(UnsetZoomForMovie                      ,0xff9a7ce0) //  1 89%
 //NHSTUB(add_ptp_handler                        ,0xffa62090) //  1 96%
-//NHSTUB(exmem_alloc                            ,0xff814f44) //  2 93%
 //NHSTUB(malloc                                 ,0xffc1d8ec) //  1 53%
 //NHSTUB(taskIdListGet                          ,0xffc2c248) //  1 82%
 //NHSTUB(localtime                              ,0xffc15040) //  1 93%

@@ -1,5 +1,4 @@
 #include "camera_info.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "gui.h"
 #include "gui_draw.h"
@@ -9,8 +8,8 @@
 #define RBF_MAX_NAME        64
 #define UBUFFER_SIZE        256 // Amount of uncached memory to allocate for file reading
 //-------------------------------------------------------------------
-static unsigned int RBF_HDR_MAGIC1 = 0x0DF00EE0;
-static unsigned int RBF_HDR_MAGIC2 = 0x00000003;
+static int RBF_HDR_MAGIC1 = 0x0DF00EE0;
+static int RBF_HDR_MAGIC2 = 0x00000003;
 
 // Header as seperate structure so it can be directly loaded from the font file easily
 // structure layout maps to file layout - do not change !
@@ -85,7 +84,12 @@ void init_fonts()
 void alloc_cTable(font *f) {
 
     // Calculate additional values for font
-    f->width = 8 * f->hdr.charSize / f->hdr.height;
+    if (f->usingFont8x16) {
+        f->width = FONT_WIDTH;
+    }
+    else {
+        f->width = 8 * f->hdr.charSize / f->hdr.height;
+    }
     f->charCount = f->hdr.charLast - f->hdr.charFirst + 1;
 
     // set width table to default value
@@ -243,9 +247,9 @@ void rbf_load_from_file(char *file, int codepage)
     if (!rbf_font_load(file, rbf_font, 0))
     {
         // Reset back to built in font, file load failed
-        rbf_font->hdr.charSize  = 16;
-        rbf_font->hdr.height    = 16;
-        rbf_font->hdr.maxWidth  = 8;
+        rbf_font->hdr.charSize  = FONT_HEIGHT;
+        rbf_font->hdr.height    = FONT_HEIGHT;
+        rbf_font->hdr.maxWidth  = FONT_WIDTH;
         rbf_font->hdr.charFirst = 0;
         rbf_font->hdr.charLast  = 255;
 

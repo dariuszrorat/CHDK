@@ -217,6 +217,18 @@ _cam_info camera_info =
     CAM_KEY_PRESS_DELAY, CAM_KEY_RELEASE_DELAY, 
     CAM_AF_LED,
     CAM_CIRCLE_OF_CONFUSION,
+    CAM_DIGIC,
+#if defined(CAM_HAS_CANON_RAW)
+    1,
+#else
+    0,
+#endif
+    { 0 },  // state
+    { 0 },  // perf
+    { 0 },  // dof_values
+#if defined(OPT_FILEIO_STATS)
+    { 0 },  // fileio_stats
+#endif
 };
 
 //==========================================================

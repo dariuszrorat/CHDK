@@ -9,13 +9,13 @@ FILE boot.c
 void taskCreateHook(int *p)
 {
 	p-=16;
-	if (p[0]==0xFF821ACC)  p[0]=(int)mykbd_task;
-	if (p[0]==0xFF842A40)  p[0]=(int)jogdial_task_my; 
-	if (p[0]==0xFF859F88)  p[0]=(int)movie_record_task;
-	if (p[0]==0xFF85DFC0)  p[0]=(int)capt_seq_task;
-	if (p[0]==0xFF878F08)  p[0]=(int)init_file_modules_task;
-	if (p[0]==0xFF8B67E8)  p[0]=(int)exp_drv_task;
-	if (p[0]==0xFFA101b8)  p[0]=(int)filewritetask;
+	if (p[0]==(int)0xFF821ACC)  p[0]=(int)mykbd_task;
+	if (p[0]==(int)0xFF842A40)  p[0]=(int)jogdial_task_my; 
+	if (p[0]==(int)0xFF859F88)  p[0]=(int)movie_record_task;
+	if (p[0]==(int)0xFF85DFC0)  p[0]=(int)capt_seq_task;
+	if (p[0]==(int)0xFF878F08)  p[0]=(int)init_file_modules_task;
+	if (p[0]==(int)0xFF8B67E8)  p[0]=(int)exp_drv_task;
+	if (p[0]==(int)0xFFA101b8)  p[0]=(int)filewritetask;
 }
 
 void boot()
@@ -254,9 +254,22 @@ FUNC sig=task_CaptSeq name=capt_seq_task
 ASM
 FW 50
 >>>
+// only do quick press hack if overrides are active
+"    BL      captseq_hack_override_active\n"      // returns 1 if tv or sv override in effect
+"    STR     R0,[SP,#-4]!\n" // push return value
 "    BL      shooting_expo_param_override\n"      // added
 <<<
-FW 21
+FW 1
+>>>
+"    LDR     R0,[SP],#4\n" // pop override hack
+"    CMP     R0, #1\n"     // +
+"    MOVEQ   R0, #0\n"     // +
+"    STREQ   R0, [R6,#0x24]\n"  // fixes overrides behavior at short shutter press
+"    LDRNE   R0, [R6,#0x24]\n" // modified NE
+"    CMPNE   R0, #0\n"         // modified NE
+<<<
+SKIP 2
+FW 18
 PATCHSUB ref=0
 >>>
 "    BL      capt_seq_hook_raw_here \n"         // added

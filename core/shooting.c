@@ -1,7 +1,6 @@
 #include "platform.h"
 #include "keyboard.h"
 #include "math.h"
-#include "stdlib.h"
 #include "conf.h"
 #include "histogram.h"
 #include "usb_remote.h"
@@ -48,11 +47,54 @@ typedef struct {
 
 static PHOTO_PARAM photo_param_put_off;
 
+// used to save / restore ISO mode when using override
+// because override requires mode set to AUTO
+static int iso_override_mode_save = 0;
+
 //-------------------------------------------------------------------
 // Convert values to/from APEX 96
 
 //static const double log_2 = 0.6931471805599;      // natural logarithm of 2
 static const double inv_log_2 = 1.44269504088906;   // 1 / log_2
+
+//-------------------------------------------------------------------
+
+#ifdef OPT_VIEWPORT_DEBUG
+    char avb_history[32];
+    unsigned char avb_times[32];
+    static unsigned avb_hp = 0;
+    static long avb_pts = 0;
+    static char avb_pv = 0;
+#endif
+
+// Periodic update from kbd_task
+void shooting_update_state(void)
+{
+    // ISO override will set ISO_MODE to auto in halfpress when get_shooting becomes true
+    // or immediately if already in shooting or raw hook for bracketing
+    // if existing ISO mode is not auto, it will be saved to iso_override_mode_save
+    // restore when shooting goes to false
+    if (iso_override_mode_save && !shooting_in_progress()) {
+        shooting_set_iso_mode(iso_override_mode_save);
+        iso_override_mode_save = 0;
+    }
+
+#ifdef OPT_VIEWPORT_DEBUG
+    extern volatile char active_viewport_buffer;
+    long avb_ts;
+    char avb_v;
+    avb_ts = get_tick_count();
+    avb_v = active_viewport_buffer;
+    if (avb_v != avb_pv) {
+        avb_history[avb_hp] = avb_v;
+        avb_times[avb_hp] = avb_ts - avb_pts;
+        avb_hp = (avb_hp+1) & 31;
+        avb_pts = avb_ts;
+        avb_pv = avb_v;
+    }
+#endif
+
+}
 
 //-------------------------------------------------------------------
 // Functions to access Canon properties
@@ -92,6 +134,142 @@ int   shooting_get_exif_subject_dist()          { return shooting_get_prop_int(P
 int   shooting_is_flash()                       { return shooting_get_prop_int(PROPCASE_IS_FLASH_READY); }
 int   shooting_in_progress()                    { return shooting_get_prop_int(PROPCASE_SHOOTING); }
 
+// get current image format: 1 = jpeg, 2 = Raw, 3 = Raw + JPEG
+int shooting_get_canon_image_format() {
+#ifdef CAM_HAS_CANON_RAW
+#ifdef PROPCASE_IMAGE_FORMAT
+    switch(shooting_get_prop(PROPCASE_IMAGE_FORMAT)) {
+        case 0:
+            return SHOOTING_CANON_FMT_RAW;
+        case 2:
+            return (SHOOTING_CANON_FMT_RAW | SHOOTING_CANON_FMT_JPG);
+        default:
+            return SHOOTING_CANON_FMT_JPG;
+    }
+#else // PROPCASE_IMAGE_FORMAT not defined, = propset 2 or 3
+    if(shooting_get_prop(PROPCASE_RESOLUTION) == 5) { // resolution 5 = raw, jpeg controlled by JPEG_WITH_RAW
+       if(shooting_get_prop(PROPCASE_JPEG_WITH_RAW) == 1) {
+           return (SHOOTING_CANON_FMT_RAW | SHOOTING_CANON_FMT_JPG);
+       }
+       return SHOOTING_CANON_FMT_RAW;
+    } else {
+        return SHOOTING_CANON_FMT_JPG;
+    }
+#endif
+#else // no native raw
+    return SHOOTING_CANON_FMT_JPG;
+#endif
+}
+
+// set current canon image format: 1 = jpeg, 2 = Raw, 3 = Raw + JPEG
+int shooting_set_canon_image_format(int fmt) {
+#ifdef CAM_HAS_CANON_RAW
+#ifdef PROPCASE_IMAGE_FORMAT
+    int v;
+    switch(fmt) {
+        case SHOOTING_CANON_FMT_RAW:
+            v = 0;  
+            break;
+        case (SHOOTING_CANON_FMT_RAW | SHOOTING_CANON_FMT_JPG):
+            v = 2;
+            break;
+        case SHOOTING_CANON_FMT_JPG:
+            v = 1;
+            break;
+        default:
+            return 0;
+    }
+    shooting_set_prop(PROPCASE_IMAGE_FORMAT,v);
+    return 1;
+#else // PROPCASE_IMAGE_FORMAT not defined, propset 2 or 3
+    // raw enabled is in resolution, try to save when changing to raw, restore when switching to jpeg
+    static int saved_resolution = -1;
+
+    // invalid format, bail
+    if(fmt < 1 || fmt > 3) {
+        return 0;
+    }
+    if(fmt & SHOOTING_CANON_FMT_RAW) {
+        int res = shooting_get_prop(PROPCASE_RESOLUTION);
+        if( res != 5) { // raw requested, if resolution not already set, set to 5 and previous
+            saved_resolution = res;
+            shooting_set_prop(PROPCASE_RESOLUTION,5);
+        }
+        if(fmt & SHOOTING_CANON_FMT_JPG) {
+            shooting_set_prop(PROPCASE_JPEG_WITH_RAW,1);
+        } else {
+            shooting_set_prop(PROPCASE_JPEG_WITH_RAW,0);
+        }
+    } else { // jpeg
+        if(shooting_get_prop(PROPCASE_RESOLUTION) == 5) { // 5 = raw for cams that set with resolution
+            if(saved_resolution != -1) {
+                shooting_set_prop(PROPCASE_RESOLUTION,saved_resolution); // switching to jpeg, try to restore resolution
+                saved_resolution = -1;
+            } else {
+                shooting_set_prop(PROPCASE_RESOLUTION,0); // default to L if we don't know
+            }
+        }
+    }
+    return 1;
+#endif
+#else // no native raw
+    return fmt == SHOOTING_CANON_FMT_JPG; // only setting jpeg is valid
+#endif
+}
+
+
+int shooting_get_imager_active() {
+  extern int imager_active;
+  return imager_active;
+}
+
+/*
+get canon video out type setting.
+NOTE this reflects the menu NTSC/PAL menu setting, not whether video out is active
+Returns 1 = NTSC, 2 = PAL, like with GetVideoOutType
+1 if prop unknown
+*/
+int shooting_get_analog_video_standard(void)
+{
+#ifdef PROPCASE_LANGUAGE
+    int v=shooting_get_prop(PROPCASE_LANGUAGE);
+    // lowest bit of language propcase
+    v = (v&1) + 1;
+    return v;
+#else // if unknown, just pretend it's NTSC
+    return 1;
+#endif
+}
+
+// translate digital zoom propcase values to match pre-propset 7 values
+// mode: 0 = off or standard digital zoom, 2 or 3 digital tele
+// PROPCASE_DIGITAL_ZOOM_MODE not defined for propset 1, ports configured to not need these functions
+#if CAM_PROPSET > 1
+int shooting_get_digital_zoom_mode(void)
+{
+    int x=shooting_get_prop(PROPCASE_DIGITAL_ZOOM_MODE);
+#if CAM_PROPSET == 7 || CAM_PROPSET == 9 || CAM_PROPSET == 10|| CAM_PROPSET == 11 || CAM_PROPSET == 12 || CAM_PROPSET == 13
+    if(x==1) {
+        return 0;
+    }
+#endif
+    return x;
+}
+#endif // CAM_PROPSET > 1
+// state: 0 = off or digital tele, 1 = standard
+int shooting_get_digital_zoom_state(void)
+{
+#if CAM_PROPSET == 7 || CAM_PROPSET == 9 || CAM_PROPSET == 10 || CAM_PROPSET == 11 || CAM_PROPSET == 12 || CAM_PROPSET == 13
+    // PS7 doesn't have _STATE, combines values
+    int x=shooting_get_prop(PROPCASE_DIGITAL_ZOOM_MODE);
+    if(x==1) {
+        return 1;
+    }
+    return 0;
+#else
+    return shooting_get_prop(PROPCASE_DIGITAL_ZOOM_STATE);
+#endif
+}
 /*
 get focus mode as used in script
 essentially returns PROPCASE_REAL_FOCUS_MODE,
@@ -214,7 +392,7 @@ static short canon_sv96_base=0;
 #define SV96_MARKET_OFFSET          69          // market-real sv96 conversion value
 
 // Conversion values for pow(2,-69/96) 'market' to 'real', and pow(2,69/96) 'real' to 'market'
-// Uses integer arithmetic to avoid floating point calculations. Values choses to get as close
+// Uses integer arithmetic to avoid floating point calculations. Values chosen to get as close
 // to the desired multiplication factor as possible within normal ISO range.
 #define ISO_MARKET_TO_REAL_MULT     9955
 #define ISO_MARKET_TO_REAL_SHIFT    14
@@ -275,13 +453,18 @@ short shooting_get_iso_override_value()
     // Some cameras will crash if flash used and ISO set lower than this value (most easily tested in AUTO mode)
     if ((iso > 0) && (iso < CAM_MIN_ISO_OVERRIDE)) iso = CAM_MIN_ISO_OVERRIDE;
 #endif
+#ifdef CAM_MAX_ISO_OVERRIDE
+    // Limit max ISO
+    // Some cameras will crash if ISO set higher than this value (dependence on flash is unclear)
+    if (iso > CAM_MAX_ISO_OVERRIDE) iso = CAM_MAX_ISO_OVERRIDE;
+#endif
     return shooting_iso_market_to_real(iso);    // return real value (after limits applied)
 }
 
 int shooting_get_iso_mode()
 {
     short isov = shooting_get_canon_iso_mode();
-    long i;
+    unsigned i;
     for (i=0;i<ISO_SIZE;i++)
     {
         if (iso_table[i].prop_id == isov)
@@ -315,7 +498,7 @@ static void set_iso_mode(int i)
 
 void shooting_set_iso_mode(int v)
 {
-    int i;
+    unsigned i;
     if (v < 50) // CHDK ID
     {
         for (i=0; i<ISO_SIZE; i++)
@@ -358,8 +541,12 @@ void shooting_set_sv96(short sv96, short is_now)
             while ((shooting_is_flash_ready()!=1) || (focus_busy)) msleep(10);
 
             short iso_mode = shooting_get_canon_iso_mode();
-            if (iso_mode >= 50)
+            if (iso_mode >= 50) {
+                // save current ISO mode, to avoid leaving in auto after override done
+                // only needed for non-auto
+                iso_override_mode_save = iso_mode;
                 shooting_set_iso_mode(0);   // Force AUTO mode on camera
+            }
 
             short dsv96 = sv96 + SV96_MARKET_OFFSET - canon_sv96_base;
 
@@ -386,6 +573,10 @@ void shooting_set_iso_real(short iso, short is_now)
 #ifdef CAM_MIN_ISO_OVERRIDE
             // Limit min (non-zero) ISO
             if ((iso > 0) && (iso < ISO_MARKET_TO_REAL(CAM_MIN_ISO_OVERRIDE))) iso = ISO_MARKET_TO_REAL(CAM_MIN_ISO_OVERRIDE);
+#endif
+#ifdef CAM_MAX_ISO_OVERRIDE
+            // Limit max ISO
+            if (iso > ISO_MARKET_TO_REAL(CAM_MAX_ISO_OVERRIDE)) iso = ISO_MARKET_TO_REAL(CAM_MAX_ISO_OVERRIDE);
 #endif
             shooting_set_sv96(shooting_get_sv96_from_iso(iso), is_now);
         }
@@ -425,7 +616,7 @@ short shooting_get_tv96_from_shutter_speed(float t)
             return (short)(t - 0.5);
         return (short)(t + 0.5);
     }
-    return -10000;
+    return SHOOTING_TV96_INVALID;
 }
 
 float shooting_get_shutter_speed_from_tv96(short tv96)
@@ -460,7 +651,7 @@ static int find_nearest_shutter_speed_entry(short tv96)
     if (tv96 <= shutter_speeds_table[0].prop_id)
         return 0;
 
-    int i;
+    unsigned i;
     for (i=0; i<SS_SIZE-1; i++)
     {
         if ((tv96 > shutter_speeds_table[i].prop_id) && (tv96 <= shutter_speeds_table[i+1].prop_id))
@@ -528,7 +719,7 @@ void shooting_set_user_tv_by_id(int v)
 #if CAM_HAS_USER_TV_MODES
     if (!camera_info.state.mode_play)
     {
-        long i;
+        unsigned i;
         for (i=0;i<SS_SIZE;i++)
         {
             if (shutter_speeds_table[i].id == v)
@@ -539,6 +730,8 @@ void shooting_set_user_tv_by_id(int v)
             }
         }
     }
+#else
+    (void)v;
 #endif
 }
 
@@ -550,6 +743,8 @@ void shooting_set_user_tv_by_id_rel(int v)
         int cv = shooting_get_user_tv_id();
         shooting_set_user_tv_by_id(cv+v);
     }
+#else
+    (void)v;
 #endif
 }
 
@@ -561,6 +756,8 @@ void shooting_set_user_tv96(short tv96)
         tv96 = find_canon_shutter_speed(tv96);
         set_property_case(PROPCASE_USER_TV, &tv96, sizeof(tv96));
     }
+#else
+    (void)tv96;
 #endif
 }
 
@@ -589,14 +786,14 @@ short shooting_get_aperture_sizes_table_size()  { return AS_SIZE; }
 
 // APEX96 conversion
 
-short shooting_get_aperture_from_av96(short av96)
+int shooting_get_aperture_from_av96(short av96)
 {
     if (av96)
         return (short)((pow(2, ((double)av96)/192.0))*1000.0 + 0.5);
     return -1;
 }
 
-short shooting_get_av96_from_aperture(short aperture)
+short shooting_get_av96_from_aperture(int aperture)
 {
     return (int)((log((double)aperture/1000.0) * 192 * inv_log_2) + 0.5);
 }
@@ -604,17 +801,17 @@ short shooting_get_av96_from_aperture(short aperture)
 // Get Av override value (APEX96)
 short shooting_get_av96_override_value()
 {
-    if (conf.av_override_value<AS_SIZE)
+    if (conf.av_override_value<(int)AS_SIZE)
         return (short) aperture_sizes_table[conf.av_override_value].prop_id;
     return (short) (AV96_MAX+32*(conf.av_override_value-AS_SIZE+1));
 }
 
-short shooting_get_real_aperture()
+int shooting_get_real_aperture()
 {
-    return shooting_get_aperture_from_av96(GetCurrentAvValue());
+    return shooting_get_aperture_from_av96(shooting_get_current_av96());
 }
 
-static short shooting_get_min_real_aperture()
+static int shooting_get_min_real_aperture()
 {
     short av96;
     get_property_case(PROPCASE_MIN_AV, &av96, sizeof(av96));
@@ -626,12 +823,13 @@ static short shooting_get_min_real_aperture()
 // Overrides
 
 // Find nearest entry in 'aperture_sizes_table' to the given 'av96' value
+#if (CAM_HAS_IRIS_DIAPHRAGM || CAM_DRAW_EXPOSITION)
 static int find_nearest_aperture_entry(short av96)
 {
     if (av96 <= aperture_sizes_table[0].prop_id)
         return 0;
 
-    int i;
+    unsigned i;
     for (i=0; i<AS_SIZE-1; i++)
     {
         if ((av96 > aperture_sizes_table[i].prop_id) && (av96 <= aperture_sizes_table[i+1].prop_id))
@@ -645,6 +843,7 @@ static int find_nearest_aperture_entry(short av96)
 
     return AS_SIZE-1;
 }
+#endif
 
 // Convert 'av96' value to nearest Canon value from aperture_sizes_table
 #if CAM_HAS_IRIS_DIAPHRAGM
@@ -669,6 +868,8 @@ void shooting_set_av96_direct(short av96, short is_now)
         else
             photo_param_put_off.av96 = av96;
     }
+#else
+    (void)av96; (void)is_now;
 #endif
 }
 
@@ -677,6 +878,8 @@ void shooting_set_av96(short av96, short is_now)
 #if CAM_HAS_IRIS_DIAPHRAGM
     if (!camera_info.state.mode_play)
         shooting_set_av96_direct(find_canon_aperture(av96), is_now);
+#else
+    (void)av96; (void)is_now;
 #endif
 }
 
@@ -694,7 +897,7 @@ short shooting_get_user_av96()
 int shooting_get_user_av_id()
 {
 #if CAM_HAS_IRIS_DIAPHRAGM
-    return aperture_sizes_table[find_nearest_aperture_entry(shooting_get_user_av96())].prop_id;
+    return aperture_sizes_table[find_nearest_aperture_entry(shooting_get_user_av96())].id;
 #else
     return 0;
 #endif
@@ -703,7 +906,7 @@ int shooting_get_user_av_id()
 void shooting_set_user_av_by_id(int v)
 {
 #if CAM_HAS_IRIS_DIAPHRAGM
-    long i;
+    unsigned i;
     if (!camera_info.state.mode_play)
     {
         for (i=0;i<AS_SIZE;i++)
@@ -716,6 +919,8 @@ void shooting_set_user_av_by_id(int v)
             }
         }
     }
+#else
+    (void)v;
 #endif
 }
 
@@ -727,6 +932,8 @@ void shooting_set_user_av_by_id_rel(int v)
         int cv = shooting_get_user_av_id();
         shooting_set_user_av_by_id(cv+v);
     }
+#else
+    (void)v;
 #endif
 }
 
@@ -738,6 +945,8 @@ void shooting_set_user_av96(short av96)
         av96 = find_canon_aperture(av96);
         set_property_case(PROPCASE_USER_AV, &av96, sizeof(av96));
     }
+#else
+    (void)av96;
 #endif
 }
 
@@ -757,8 +966,20 @@ void shooting_set_nd_filter_state(short v, short is_now)
     {
         if (is_now)
         {
-            if (v==1)
+#if CAM_ND_SET_AV_VALUE == 1
+            short av;
+            get_property_case(PROPCASE_MIN_AV,&av,sizeof(av));
+            if(v==1) {
+                av += shooting_get_nd_value_ev96();
+            }
+            set_property_case(PROPCASE_AV, &av, sizeof(av));
+#if defined(PROPCASE_AV2)
+            set_property_case(PROPCASE_AV2, &av, sizeof(av));
+#endif
+#endif // CAM_ND_SET_AV_VALUE
+            if (v==1) {
                 PutInNdFilter();
+            }
             else if (v==2)
                 PutOutNdFilter();
 #if defined(CAM_HAS_NATIVE_ND_FILTER) && defined(PROPCASE_ND_FILTER_STATE)
@@ -769,6 +990,41 @@ void shooting_set_nd_filter_state(short v, short is_now)
         else
             photo_param_put_off.nd_filter = v;
     }
+#else
+    (void)v; (void)is_now;
+#endif // CAM_HAS_ND_FILTER
+}
+
+
+// get usable Av range (iris only)
+// Appears to be the full range, including smaller (higher F/ number) than available in Canon UI.
+// NOTE canon functions Min and Max refer to aperture size, CHDK refer to av96 values
+// returns -1 if unavailable (0 is a valid Av = F/1.0)
+short shooting_get_min_av96()
+{
+#if CAM_HAS_IRIS_DIAPHRAGM
+    extern short GetUsableMaxAv(void);
+    if (camera_info.state.mode_play)
+    {
+        return -1;
+    }
+    return GetUsableMaxAv();
+#else
+    return -1;
+#endif
+}
+
+short shooting_get_max_av96()
+{
+#if CAM_HAS_IRIS_DIAPHRAGM
+    extern short GetUsableMinAv(void);
+    if (camera_info.state.mode_play)
+    {
+        return -1;
+    }
+    return GetUsableMinAv();
+#else
+    return -1;
 #endif
 }
 
@@ -854,7 +1110,7 @@ int shooting_get_subject_distance_override_value()
 
 int shooting_mode_canon2chdk(int canonmode)
 {
-	int i;
+	unsigned i;
 	for (i=0; i < MODESCNT; i++)
     {
 		if (modemap[i].canonmode == canonmode)
@@ -865,7 +1121,7 @@ int shooting_mode_canon2chdk(int canonmode)
 
 int shooting_mode_chdk2canon(int hackmode)
 {
-	int i;
+	unsigned i;
 	for (i=0; i < MODESCNT; i++)
     {
 		if (modemap[i].hackmode == hackmode)
@@ -950,9 +1206,9 @@ void shooting_update_dof_values()
   int fl = get_focal_length(zoom_point);
   short f_focus_ok = shooting_get_focus_ok();
   short f_hyp_calc = 0, f_dist_calc = 0;
-  short min_av96_zoom_point = min_av96_zoom_point_tbl[zoom_point];
+  short min_av96_zoom_point = 0;
   short av96 = shooting_get_user_av96();
-  short curr_av96 = GetCurrentAvValue();
+  short curr_av96 = shooting_get_current_av96();
   short prop_av96 = shooting_get_av96();
   short min_av96;
 
@@ -960,7 +1216,9 @@ void shooting_update_dof_values()
     min_av96_zoom_point_tbl = (short *) malloc(zoom_points * sizeof(short));
     if (min_av96_zoom_point_tbl) {
       memset(min_av96_zoom_point_tbl, 0, zoom_points * sizeof(short));
-      min_av96_zoom_point = 0;
+    }
+    else {
+        return;
     }
   } else min_av96_zoom_point = min_av96_zoom_point_tbl[zoom_point]; 
 
@@ -1019,6 +1277,11 @@ void shooting_update_dof_values()
           camera_info.dof_values.depth_of_field = camera_info.dof_values.far_limit - camera_info.dof_values.near_limit;
       }
     }
+    // if at infinity then set near to hyperfocal value
+    // note focus beyond infinity is not distinguished from infinity
+    if (shooting_is_infinity_distance()) {
+      camera_info.dof_values.near_limit = hyp;
+    }
   }
   camera_info.dof_values.hyperfocal_distance_1e3 = hyp_1e3;
   camera_info.dof_values.hyperfocal_distance = hyp;
@@ -1040,9 +1303,13 @@ int shooting_get_hyperfocal_distance()
   return camera_info.dof_values.hyperfocal_distance;
 }
 
+static int focus_interlock_bypass = 0;
+
 short shooting_can_focus()
 {
     if(camera_info.state.mode_play) return 0 ;                 // don't focus in playback mode
+
+    if(focus_interlock_bypass) return 1;                       // checks disabled, allow
 
     if( camera_info.state.mode_video == 1) return 1;           // FIXME : default to MF enabled in video mode for now
 
@@ -1097,17 +1364,25 @@ void shooting_set_image_quality(int imq)
 }
 #endif
 
+#ifdef CAM_ILC
+void shooting_set_zoom(__attribute__ ((unused))int v) {}
+void shooting_set_zoom_rel(__attribute__ ((unused))int v) {}
+void shooting_set_zoom_speed(__attribute__ ((unused))int v) {}
+#else // not ILC
 void shooting_set_zoom(int v)
 {
-    int dist;
     if (!camera_info.state.mode_play)
     {
-        dist = shooting_get_subject_distance();
+#if CAM_REFOCUS_AFTER_ZOOM
+        int dist = shooting_get_subject_distance();
         lens_set_zoom_point(v);
 #if defined(CAM_NEED_SET_ZOOM_DELAY)
         msleep(CAM_NEED_SET_ZOOM_DELAY);
 #endif
         shooting_set_focus(dist, SET_NOW);
+#else // CAM_REFOCUS_AFTER_ZOOM
+        lens_set_zoom_point(v);
+#endif // CAM_REFOCUS_AFTER_ZOOM
     }
 }
 
@@ -1126,8 +1401,8 @@ void shooting_set_zoom_speed(int v) {
         lens_set_zoom_speed(v);
     }
 }
+#endif // !CAM_ILC
 
-static int focus_interlock_bypass = 0;
 void set_focus_bypass(int m)
 {
 	focus_interlock_bypass = m ;
@@ -1138,13 +1413,13 @@ void shooting_set_focus(int v, short is_now)
     int s=v;
     if (!camera_info.state.mode_play)
     {
-        if ((is_now) && ( focus_interlock_bypass || shooting_can_focus())) 
+        if (is_now && shooting_can_focus()) 
         {
             if (conf.dof_subj_dist_as_near_limit)
             {
                 s=shooting_get_near_limit_f(v,shooting_get_min_real_aperture(),get_focal_length(lens_get_zoom_point()));
             }
-            if (!conf.dof_use_exif_subj_dist && (s != INFINITY_DIST)) 
+            if (!conf.dof_use_exif_subj_dist && (s != (int)INFINITY_DIST)) 
                 s+=shooting_get_lens_to_focal_plane_width();
             lens_set_focus_pos(s); 
         }
@@ -1157,11 +1432,26 @@ void shooting_video_bitrate_change(int v)
 {
 #if CAM_CHDK_HAS_EXT_VIDEO_MENU
     int m[]={1,2,3,4,5,6,7,8,10,12};  // m[v]/4 = bitrate*1x
-    if (v>=(sizeof(m)/sizeof(m[0])))
+    if (v>=(int)((sizeof(m)/sizeof(m[0]))))
         v=(sizeof(m)/sizeof(m[0]))-1;
     change_video_tables(m[v],4);
+#else
+    (void)v;
 #endif
 }
+#ifdef CAM_MOVIEREC_NEWSTYLE
+void shooting_video_minbitrate_change(int v)
+{
+    char m[]={1,2,3,4,5,6,7,8,9,10};  // m[v]/10 = bitrate*1x
+    if (v>=(int)(sizeof(m)/sizeof(m[0])))
+        v=(sizeof(m)/sizeof(m[0]))-1;
+    change_video_minbitrate(m[v],10);
+}
+unsigned int shooting_get_video_recorded_size_kb()
+{
+    return get_video_recorded_size_kb();
+}
+#endif
 
 //-------------------------------------------------------------------
 
@@ -1361,25 +1651,82 @@ void shooting_bracketing(void)
 // Other state test functions. 
 // Not strictly shooting related; but somehow ended up here.
 
-// TODO sd990 hack for overrides
+// Check if any shutter, aperture or ISO overrides active, for cameras
+// that require capt seq hack to override canon "quick press" behavior
 // caller must save regs
 int captseq_hack_override_active()
 {
-    if (camera_info.state.state_kbd_script_run)
+    if (camera_info.state.state_kbd_script_run) {
         if ( photo_param_put_off.tv96 != PHOTO_PARAM_TV_NONE || photo_param_put_off.sv96 )
             return 1;
+#if CAM_HAS_IRIS_DIAPHRAGM
+        if(photo_param_put_off.av96)
+            return 1;
+#endif
+    }
     if(conf.override_disable==1)
         return 0;
     if(is_iso_override_enabled)
         return 1;
     if(is_tv_override_enabled)
         return 1;
+#if CAM_HAS_IRIS_DIAPHRAGM
+    if(is_av_override_enabled)
+        return 1;
+#endif
     return 0;
+}
+
+#ifdef CAM_SIMPLE_MOVIE_STATUS
+extern int simple_movie_status;
+#else
+extern int movie_status;
+#endif
+
+void set_movie_status(int status)
+{
+#ifndef CAM_SIMPLE_MOVIE_STATUS
+    switch(status)
+    {
+        case 1:
+            if (movie_status == VIDEO_RECORD_IN_PROGRESS)
+            {
+                movie_status = VIDEO_RECORD_STOPPED;
+            }
+            break;
+        case 2:
+            if (movie_status == VIDEO_RECORD_STOPPED)
+            {
+                movie_status = VIDEO_RECORD_IN_PROGRESS;
+            }
+            break;
+        case 3:
+            if (movie_status == VIDEO_RECORD_STOPPED || movie_status == VIDEO_RECORD_IN_PROGRESS)
+            {
+                movie_status = VIDEO_RECORD_STOPPING;
+            }
+            break;
+    }
+#else // CAM_SIMPLE_MOVIE_STATUS
+      // no known way to control the recording process
+      (void)status;
+#endif
+}
+
+int get_movie_status()
+{
+#ifndef CAM_SIMPLE_MOVIE_STATUS
+    return movie_status;
+#else
+    // firmware movie_status interpreted as: zero - not recording, nonzero - recording
+    return simple_movie_status?VIDEO_RECORD_IN_PROGRESS:VIDEO_RECORD_STOPPED;
+#endif
 }
 
 // Return whether video is being recorded
 int is_video_recording()
 {
+#ifndef CAM_SIMPLE_MOVIE_STATUS
 #if defined(CAM_HAS_MOVIE_DIGEST_MODE)
     // If camera has movie digest mode then movie_status values are different than previous models
     // 'movie_status' values
@@ -1397,6 +1744,9 @@ int is_video_recording()
     //      5 - movie recording stopping
     return (movie_status > 1);
 #endif
+#else // CAM_SIMPLE_MOVIE_STATUS
+    return (simple_movie_status!=0);
+#endif
 }
 
 // Converted from MODE_IS_VIDEO macro (philmoz July 2011)
@@ -1411,7 +1761,11 @@ int mode_is_video(int m)
             m==MODE_VIDEO_COLOR_SWAP ||
             m==MODE_VIDEO_MINIATURE ||
             m==MODE_VIDEO_TIME_LAPSE ||
-            m==MODE_VIDEO_IFRAME_MOVIE
+            m==MODE_VIDEO_IFRAME_MOVIE ||
+            m==MODE_VIDEO_M ||
+            m==MODE_VIDEO_STAR_TIME_LAPSE ||
+            m==MODE_VIDEO_SHORT_CLIP ||
+            m==MODE_VIDEO_SUPER_SLOW
         // not clear if this should be considered a video mode ?
         //  m==MODE_VIDEO_MOVIE_DIGEST
         );
@@ -1653,7 +2007,9 @@ uses switch_mode_usb if a usb connection is present
 */
 void shooting_set_playrec_mode(int mode)
 {
-    if (conf.remote_enable == 0 && get_usb_bit()) 
+    // use PTP compatible switch if Canon firmware would see USB bit set
+    // NOTE this does not detect PTP/IP, which also requires the "usb" logic
+    if (get_usb_bit_physw_mod())
     {
         switch_mode_usb(mode);
         return;

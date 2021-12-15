@@ -3,8 +3,7 @@
  */
 #include "conf.h"
 
-void change_video_tables(int a, int b){
-}
+void change_video_tables(__attribute__ ((unused))int a, __attribute__ ((unused))int b) {}
 
 void  set_quality(int *x){ // -17 highest; +12 lowest
  if (conf.video_mode) *x=12-((conf.video_quality-1)*(12+17)/(99-1));
@@ -233,7 +232,7 @@ asm volatile (
 "    LDR     R2, =0x67B8 \n"
 "    MOV     R1, #0 \n"
 "    MOV     R0, #0xD \n"
-"    BL      sub_FF88789C \n"
+"    BL      _exmem_ualloc \n"
 "    LDR     R0, [R5, #0x4C] \n"
 "    LDR     R1, =0x67B8 \n"
 "    CMP     R0, #2 \n"

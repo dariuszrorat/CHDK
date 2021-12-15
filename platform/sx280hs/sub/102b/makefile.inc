@@ -1,8 +1,3 @@
-
-# No Digic6 finsig utility yet
-override OPT_GEN_STUBS=
-override FORCE_GEN_STUBS=
-
 PLATFORMID=12895
 
 PLATFORMOS=dryos
@@ -22,6 +17,3 @@ NEED_ENCODED_DISKBOOT=10
 KEYSYS=d4d
 
 PLATFORMOSVER=52
-
-# mandatory for DIGIC 6
-MEMBASEADDR=0x8000

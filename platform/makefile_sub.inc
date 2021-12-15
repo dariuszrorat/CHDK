@@ -3,12 +3,16 @@ topdir=../../../../
 
 include $(topdir)makefile_cam.inc
 
+# Disable GCC 10 optimisation that prevents build from booting on some cameras.
+# See https://chdk.setepontos.com/index.php?topic=14281.0
+ifeq ($(GCC_VERSION_MAJOR),10)
+    CFLAGS+=-fno-tree-loop-distribute-patterns
+endif
+
 # Change CPU architecture to ARM V4 if building with GCC EABI
 # Otherwise incorrect wrapper calls to firmware functions are generated
-ifdef OPT_USE_GCC_EABI
-    ifndef THUMB_FW
-        ARCHFLAGS+=-march=armv4
-    endif
+ifndef THUMB_FW
+    ARCHFLAGS+=-march=armv4t
 endif
 
 all: libplatformsub.a main.bin
@@ -20,43 +24,53 @@ FWVERADDR=$(shell grep "Firmware Ver" stubs_entry.S | \
 #add platform dependent 'core' files (build as THUMB)
 OBJS+=main.thm.o gui_draw.thm.o memmgmt.thm.o \
      gui.thm.o kbd_process.thm.o kbd_common.thm.o conf.thm.o gui_osd.thm.o raw.thm.o usb_sync.thm.o\
-     shooting.thm.o camera_info.thm.o remotecap.thm.o lib_thumb.thm.o
+     shooting.thm.o camera_info.thm.o remotecap.thm.o lib_thumb.thm.o lang_str.thm.o ptp.thm.o\
+     firmware_crc_data.thm.o
+
+gui_draw.thm.o: $(core)/gui_draw.c $(lfont)/font_8x16_uni_packed.h
+	@echo $< '->' $@
+	$(CC) $(CFLAGS) -nostdinc -mthumb -c -o $@ $<
+
+lang_str.thm.o: $(llang)/lang_str.c $(llang)/lang_str.h
+	@echo $< '->' $@
+	$(CC) $(CFLAGS) -nostdinc -mthumb -c -o $@ $<
+
+firmware_crc_data.thm.o: $(core)/firmware_crc_data.c $(camfw)/firmware_crc_data.h
+	@echo $< '->' $@
+	$(CC) $(CFLAGS) -I$(camfw) -nostdinc -mthumb -c -o $@ $<
 
 # Build rules for source files containing assembly code - don't include 'march=armv4'
 # NOTE: these files should not contain C functions that could be called from Thumb code
 capt_seq.o: capt_seq.c $(platform)/generic/capt_seq.c
-	@echo $< \-\> $@
+	@echo $< '->' $@
 	$(CC) $(CFLAGS) -nostdinc -c -o $@ $<
 
 filewrite.o: filewrite.c $(platform)/generic/filewrite.c
-	@echo $< \-\> $@
+	@echo $< '->' $@
 	$(CC) $(CFLAGS) -nostdinc -c -o $@ $<
 
 movie_rec.o: movie_rec.c
-	@echo $< \-\> $@
+	@echo $< '->' $@
 	$(CC) $(CFLAGS) -nostdinc -c -o $@ $<
 
 boot.o: boot.c
-	@echo $< \-\> $@
+	@echo $< '->' $@
 	$(CC) $(CFLAGS) -nostdinc -c -o $@ $<
 
 libplatformsub.a: $(OBJS) bin_compat.h
 
 .FORCE: ;
 entry.o: $(core)/entry.S .FORCE
-	@echo $< \-\> $@
+	@echo $< '->' $@
 	$(CC) $(CFLAGS) -nostdinc -c -o $@ $<
 
 main.bin: main.elf
 
 LDOPTS=-nostdlib -Wl,--allow-shlib-undefined -Wl,-T,$(tools)/link-boot.ld -Wl,-N,-Ttext,$(MEMISOSTART)
 
-main.elf: entry.o $(cam)/libplatform.a \
-          $(camfw)/libplatformsub.a \
-          $(lfont)/$Olibfont.a $(lmath)/$Olibmath.a \
-          $(llang)/$Oliblang.a $(larmutil)/$Olibarmutil.a \
-          $(lcore)/$Olibcore.a
-	@echo \-\> $@
+main.elf: entry.o $(cam)/libplatform.a $(camfw)/libplatformsub.a \
+          $(lfont)/$Olibfont.a $(llang)/$Oliblang.a $(larmutil)/$Olibarmutil.a $(lcore)/$Olibcore.a
+	@echo '->' $@
 	$(CC) $(CFLAGS) -o $@ -Wl,--start-group $^ -lgcc -Wl,--end-group $(LDOPTS)
 	( $(NM) $@ | grep ' U ' > $@.syms ) && echo "error: unresolved symbols in $@ (see $@.syms)" && exit 1 || exit 0
 
@@ -77,7 +91,7 @@ distclean: clean
 	rm -rf .dep
 
 run-code-gen:
-	@echo $^ \-\> $@
+	@echo $^ '->' $@
 	if [ -s $(TARGET_PRIMARY) ] && [ -s code_gen.txt ] ; then \
 	  $(tools)/code_gen $(ROMBASEADDR) code_gen.txt $(TARGET_PRIMARY) $(ALT_ROMBASEADDR) ; \
 	else \
@@ -85,7 +99,7 @@ run-code-gen:
 	fi ; \
 
 stubs_auto.S: $(STUBS_AUTO_DEPS)
-	@echo $^ \-\> $@
+	@echo $^ '->' $@
 	cat $^ | \
 	    grep -E '^[[:space:][:alpha:](]*["][[:space:]]*[Bb][a-wA-W]*[\.]*[a-wA-W]*[[:space:]]+sub_[0-9A-Fa-f]+[[:space:]]*[\\/"]' | \
 	    sed 's/.*[Bb][[:alpha:]\.]*[[:space:]][[:space:]]*sub_\([0-9A-Fa-f]*\).*/\1/' | \
@@ -98,17 +112,28 @@ stubs_auto.S: $(STUBS_AUTO_DEPS)
 	    $(SORT) | uniq | \
 	    awk '{if(NF>0){printf("STUB2(%s)\n",$$1)}}' >> stubs_auto.S
 
+ifdef THUMB_FW
+    FINSIG_EXE=$(tools)/finsig_thumb2$(EXE)
+# capstone tools required to build thumb2 stubs, allow batch rebuilds without
+    ifneq ($(OPT_CAPSTONE_TOOLS),1)
+        override FORCE_GEN_STUBS=
+        override OPT_GEN_STUBS=
+    endif
+else
+    FINSIG_EXE=$(tools)/finsig_$(PLATFORMOS)$(EXE)
+endif
+
 # Force stubs build even if turned off in localbuildconf.inc (used for batch-rebuild-stubs target)
 ifdef FORCE_GEN_STUBS
     override OPT_GEN_STUBS=1
 endif
 
-stubs_entry.S: $(TARGET_PRIMARY) $(tools)/signatures_$(PLATFORMOS).h $(tools)/finsig_$(PLATFORMOS)$(EXE) stubs_entry_2.S stubs_min.S
-	@echo \-\> $@
+stubs_entry.S: $(TARGET_PRIMARY) $(tools)/signatures_$(PLATFORMOS).h $(FINSIG_EXE) stubs_entry_2.S stubs_min.S
+	@echo '->' $@
 ifdef OPT_GEN_STUBS
 	rm -f stubs_entry.S.err
 	if [ -s $(TARGET_PRIMARY) ] ; then \
-	  $(tools)/finsig_$(PLATFORMOS) $(TARGET_PRIMARY) $(ROMBASEADDR) stubs_entry.S $(ALT_ROMBASEADDR) ; \
+	  $(FINSIG_EXE) $(TARGET_PRIMARY) $(ROMBASEADDR) stubs_entry.S $(ALT_ROMBASEADDR) ; \
 	else \
 	  echo CAUTION! \'stubs_entry.S\' is not updated due to target firmware binary not found! ; \
 	  touch stubs_entry.S ; \
@@ -142,7 +167,7 @@ bin_compat.h: stubs_entry.S .FORCE
 	 echo "/* THIS FILE IS GENERATED, DO NOT EDIT! */" > bin_compat.h ; \
 	 grep "Firmware Ver" stubs_entry.S | \
 	 awk -F'["|@]' '{printf "\nver_sig_t ver_sigs[]={\n"; \
-	 str=toupper("$(PLATFORMSUB)"); len=length(str); str1=substr(str,0,len-3) "." substr(str,len-2); \
+	 str=toupper("$(PLATFORMSUB)"); len=length(str); str1=substr(str,1,len-3) "." substr(str,len-2); \
 	 printf "    {(const char *)%s, \"GM%s\"},\n", substr($$5,2), str1;}' >> bin_compat.h ; \
 	 awk -v ptt="^$(PLATFORM),.+,$(PLATFORMSUB)" -F',' '$$0 ~ ptt { str=toupper($$2); \
 	 len=length(str); str1=substr(str,1,len-3) "." substr(str,len-2); \
@@ -150,11 +175,14 @@ bin_compat.h: stubs_entry.S .FORCE
 	 >> bin_compat.h ; \
 	 echo "};" >> bin_compat.h ; \
 	 echo "pid_sig_t pid_sigs[]={" >> bin_compat.h ; \
-	 grep "PLATFORMID" stubs_entry.S | \
-	 awk -F'@' '{printf "    {(short *)%s, PLATFORMID},\n", substr($$2,2);}' >> bin_compat.h ; \
+	 grep -E -h -s "PLATFORMID.+@" ../../makefile.inc makefile.inc stubs_entry.S | \
+	 $(ESED) 's/(PLATFORMID.+@ *)([0-9xXa-fA-F]+)(.*)/PLATFORMID @ \2/' | \
+	 awk -F'@' '{printf "    {(short *)%s, PLATFORMID},\n", substr($$2,2); exit;}' >> bin_compat.h ; \
 	 echo "};" >> bin_compat.h ; \
 	fi
 
+cam-info:
+	echo $(TARGET_CAM),$(TARGET_FW),$(subst _,,$(STATE)),$(SRCFW),$(subst $(TARGET_CAM),,$(PLATFORM)),$(subst _AUTOBUILD,,$(SKIP_AUTOBUILD)),$(TARGET_PID),$(PLATFORMOS),$(PLATFORMOSVER),$(DIGIC),$(ROMBASEADDR),$(MEMBASEADDR),$(MAXRAMADDR),$(KEYSYS),$(FI2FLAGS),$(NEED_ENCODED_DISKBOOT),$(THUMB_FW),$(OPT_ARAM_MALLOC),$(ARAM_HEAP_START),$(ARAM_HEAP_SIZE),$(OPT_CHDK_IN_ARAM),$(OPT_EXMEM_MALLOC),$(EXMEM_HEAP_SKIP),$(EXMEM_BUFFER_SIZE),$(OPT_CHDK_IN_EXMEM)
 
 $(TARGET_PRIMARY):
 	touch $(TARGET_PRIMARY)
@@ -166,7 +194,7 @@ include $(topdir)bottom.inc
 # to prevent make from trying implicit rules to create them. Speeds up build process
 ../../../makefile_sub.inc: ;
 $(tools)/signatures_$(PLATFORMOS).h: ;
-$(tools)/finsig_$(PLATFORMOS)$(EXE): ;
+$(FINSIG_EXE): ;
 $(platform)/generic/*.c: ;
 $(core)/*.c: ;
 $(core)/*.S: ;

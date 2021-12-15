@@ -17,20 +17,28 @@ int get_usb_bit() {
 }
 
 KeyMap keymap[] = {
+	{ 0, KEY_ZOOM_ASSIST	 ,0x00080000 },
+    { 0, KEY_ERASE	         ,0x00040000 },  
+    { 0, KEY_VIDEO	         ,0x00020000 },
+	{ 0, KEY_FRAMING_ASSIST	 ,0x00010000 },
     { 0, KEY_LEFT            ,0x00004000 }, // Found @0xff63eeb4, levent 0x06
     { 0, KEY_RIGHT           ,0x00002000 }, // Found @0xff63eebc, levent 0x07
 	{ 0, KEY_UP              ,0x00000400 }, //
     { 0, KEY_DOWN            ,0x00000800 }, // Found @0xff63eeb4, levent 0x06 
     { 0, KEY_SET             ,0x00001000 }, // Found @0xff63eed4, levent 0x08  
-    { 0, KEY_MENU            ,0x00008000 }, // Found @0xff63eecc, levent 0x09         
-    { 0, KEY_DISPLAY         ,0x00000800 }, // Found @0xff63eec4, levent 0x0a
+    { 0, KEY_MENU            ,0x00008000 }, // Found @0xff63eecc, levent 0x09
+	{ 0, KEY_ZOOM_IN         ,0x00000080 },
+	{ 0, KEY_ZOOM_IN         ,0x00000180 },
     { 0, KEY_ZOOM_IN         ,0x00000100 }, // Found @0xff63eeec, levent 0x02
-    { 0, KEY_ZOOM_OUT        ,0x00000040 },    
+	{ 0, KEY_ZOOM_OUT        ,0x00000040 },
+	{ 0, KEY_ZOOM_OUT        ,0x00000060 },
+    { 0, KEY_ZOOM_OUT        ,0x00000020 },    
     { 2, KEY_SHOOT_FULL      ,0x00000060 }, // Found @0xff63ef1c, levent 0x01
     { 2, KEY_SHOOT_FULL_ONLY ,0x00000040 }, // Found @0xff63ef1c, levent 0x01
     { 2, KEY_SHOOT_HALF      ,0x00000020 }, // Found @0xff63ef14, levent 0x00
-    { 2, KEY_POWER           ,0x00000080 }, // Found @0xff63ef24, levent 0x100
+    //{ 2, KEY_POWER           ,0x00000080 }, // Found @0xff63ef24, levent 0x100
     { 2, KEY_PLAYBACK        ,0x00000100 }, // Found @0xff63ef2c, levent 0x101
+	{ 2, KEY_WIFI            ,0x00000200 },
     { 0, 0, 0 }
 };
 
@@ -65,7 +73,7 @@ void __attribute__((noinline)) mykbd_task() {
 // Pointer to stack location where jogdial task records previous and current
 // jogdial positions
 extern short* jog_position;
-//extern short rear_dial_position;//jeroymo
+extern short rear_dial_position;//jeroymo
 
 void jogdial_control(int n) {
     if (jogdial_stopped && !n) {
@@ -93,7 +101,7 @@ static short new_jogdial = 0, old_jogdial = 0;
 long get_jogdial_direction(void)
 {
     old_jogdial = new_jogdial;
-    //new_jogdial = rear_dial_position;//jeronymo
+    new_jogdial = rear_dial_position;//jeronymo
 
     if      (old_jogdial > new_jogdial)     return JOGDIAL_LEFT;
     else if (old_jogdial < new_jogdial)     return JOGDIAL_RIGHT;

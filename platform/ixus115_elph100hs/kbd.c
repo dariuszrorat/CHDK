@@ -19,6 +19,13 @@ int get_usb_bit()
 		return(( usb_physw[USB_IDX] & USB_MASK)==USB_MASK) ;
 }
 
+int get_hdmi_hpd_bit() {
+    long hpd_physw[3];
+    hpd_physw[HDMI_HPD_IDX] = 0;
+    _GetKbdState(hpd_physw);
+    return( ((hpd_physw[HDMI_HPD_IDX] & HDMI_HPD_FLAG)==HDMI_HPD_FLAG)?0:1) ;
+}
+
 KeyMap keymap[] = {
 
 	// tiny bug: key order matters. KEY_SHOOT_FULL needs to come before KEY_SHOOT_HALF and KEY_SHOOT_FULL_ONLY
@@ -41,9 +48,6 @@ KeyMap keymap[] = {
 
 
 long __attribute__((naked)) wrap_kbd_p1_f();
-
-static void __attribute__((noinline)) mykbd_task_proceed() {
-}
 
 // no stack manipulation needed here, since we create the task directly
 void __attribute__((noinline)) mykbd_task() {

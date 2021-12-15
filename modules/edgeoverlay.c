@@ -4,11 +4,13 @@
 #include "modes.h"
 #include "viewport.h"
 #include "shooting.h"
-#include "stdlib.h"
 #include "gui.h"
 #include "gui_draw.h"
 #include "gui_lang.h"
 #include "bitvector.h"
+#include "time.h"
+#include "dirent.h"
+#include "ctype.h"
 
 #include "edgeoverlay.h"
 #include "module_def.h"
@@ -219,7 +221,7 @@ static void average_filter_row(const unsigned char* ptrh1,  // previous row
 {
     const unsigned char* ptrh2 = ptrh1 + viewport_byte_width*viewport_yscale;  // current row
     const unsigned char* ptrh3 = ptrh2 + viewport_byte_width*viewport_yscale;  // next row
-
+#ifndef THUMB_FW
     for (; x<x_max; x+=6)
     {
         *(smptr + x + 1) = (*(ptrh1 + x - 1) +
@@ -277,6 +279,65 @@ static void average_filter_row(const unsigned char* ptrh1,  // previous row
     smptr[x+4] = smptr[x-2];
     smptr[x+5] = smptr[x-1];
 }
+#else
+	for (; x<x_max; x+=8)
+    {
+        *(smptr + x + 1) = (*(ptrh1 + x - 1) +
+                            *(ptrh1 + x + 1) +
+                            *(ptrh1 + x + 3) +
+
+                            *(ptrh2 + x - 1) +
+                            *(ptrh2 + x + 1) +
+                            *(ptrh2 + x + 3) +
+
+                            *(ptrh3 + x - 1) +
+                            *(ptrh3 + x + 1) +
+                            *(ptrh3 + x + 3)) / 9u;
+
+        *(smptr + x + 3) = (*(ptrh1 + x + 1) +
+                            *(ptrh1 + x + 3) +
+                            *(ptrh1 + x + 5) +
+
+                            *(ptrh2 + x + 1) +
+                            *(ptrh2 + x + 3) +
+                            *(ptrh2 + x + 5) +
+
+                            *(ptrh3 + x + 1) +
+                            *(ptrh3 + x + 3) +
+                            *(ptrh3 + x + 5)) / 9u;
+
+        *(smptr + x + 5) = (*(ptrh1 + x + 3) +
+                            *(ptrh1 + x + 5) +
+                            *(ptrh1 + x + 7) +
+
+                            *(ptrh2 + x + 3) +
+                            *(ptrh2 + x + 5) +
+                            *(ptrh2 + x + 7) +
+
+                            *(ptrh3 + x + 3) +
+                            *(ptrh3 + x + 5) +
+                            *(ptrh3 + x + 7)) / 9u;
+
+        *(smptr + x + 7) = (*(ptrh1 + x + 5) +
+                            *(ptrh1 + x + 7) +
+                            *(ptrh1 + x + 9) +
+
+                            *(ptrh2 + x + 5) +
+                            *(ptrh2 + x + 7) +
+                            *(ptrh2 + x + 9) +
+
+                            *(ptrh3 + x + 5) +
+                            *(ptrh3 + x + 7) +
+                            *(ptrh3 + x + 9)) / 9u;
+    }
+
+    // copy 2nd last column to last column to prevent vertical stripe artifact.
+    smptr[x+1] = smptr[x-7];
+    smptr[x+3] = smptr[x-5];
+    smptr[x+5] = smptr[x-3];
+    smptr[x+7] = smptr[x-1];
+}
+#endif
 
 // Sobel edge detector
 static int calc_edge_overlay()
@@ -295,9 +356,13 @@ static int calc_edge_overlay()
 
     const int y_min = camera_screen.edge_hmargin+ slice   *slice_height;
     const int y_max = camera_screen.edge_hmargin+(slice+1)*slice_height;
+#ifndef THUMB_FW
     const int x_min = 6;
     const int x_max = (viewport_width - 2) * 3;
-
+#else
+    const int x_min = 8;
+    const int x_max = (viewport_width - 4) * 2;
+#endif
     img += vid_get_viewport_image_offset();		// offset into viewport for when image size != viewport size (e.g. 16:9 image on 4:3 LCD)
 
     xoffset = 0;
@@ -364,7 +429,7 @@ static int calc_edge_overlay()
         ptrh3 = ptrh2 + viewport_byte_width*viewport_yscale;
 
         // Now we do sobel on the current line
-
+#ifndef THUMB_FW
         for (x = x_min, xdiv3 = x_min/3; x < x_max; x += 6, xdiv3 += 2)
         {
             // convolve vert (second Y)
@@ -427,6 +492,69 @@ static int calc_edge_overlay()
         }   // for x
     }   // for y
 
+#else
+        for (x = x_min, xdiv3 = x_min/2; x < x_max; x += 4, xdiv3 += 2)
+        {										//  1 231  2 3
+            // convolve vert (second Y)			//  1 234  5 678	>>	 1 2  3 4  5 6
+            conv1 = *(ptrh1 + x + 1) * ( 1) +	// UYVYYY UYVYYY	>>	UYVY UYVY UYVY
+                    *(ptrh1 + x + 5) * (-1) +	// 012345 678901	>>	0123 4567 8901
+
+                    *(ptrh2 + x + 1) * ( 2) +
+                    *(ptrh2 + x + 5) * (-2) +
+
+                    *(ptrh3 + x + 1) * ( 1) +
+                    *(ptrh3 + x + 5) * (-1);
+            if  (conv1 < 0)     // abs()
+                conv1 = -conv1;
+
+            // convolve vert (first Y of next pixel)
+            conv2 = *(ptrh1 + x + 1) * ( 1) +
+                    *(ptrh1 + x + 3) * ( 2) +
+                    *(ptrh1 + x + 5) * ( 1) +
+
+                    *(ptrh3 + x + 1) * (-1) +
+                    *(ptrh3 + x + 3) * (-2) +
+                    *(ptrh3 + x + 5) * (-1);
+            if  (conv2 < 0)     // abs()
+                conv2 = -conv2;
+
+            if (conv1 + conv2 > conf.edge_overlay_thresh)
+            {
+                bv_set(edgebuf, (y-camera_screen.edge_hmargin)*viewport_width + xdiv3, 1);
+            }
+
+            // Do it once again for the next 'pixel'
+
+            // convolve vert (second Y)
+            conv1 = *(ptrh1 + x + 7) * ( 1) +
+                    *(ptrh1 + x + 11) * (-1) +
+
+                    *(ptrh2 + x + 7) * ( 2) +
+                    *(ptrh2 + x + 11) * (-2) +
+
+                    *(ptrh3 + x + 7) * ( 1) +
+                    *(ptrh3 + x + 11) * (-1);
+            if  (conv1 < 0)     // abs()
+                conv1 = -conv1;
+
+            // convolve vert (first Y of next pixel)
+            conv2 = *(ptrh1 + x + 7) * ( 1) +
+                    *(ptrh1 + x + 9) * ( 2) +
+                    *(ptrh1 + x + 11) * ( 1) +
+
+                    *(ptrh3 + x + 7) * (-1) +
+                    *(ptrh3 + x + 9) * (-2) +
+                    *(ptrh3 + x + 11) * (-1);
+            if  (conv2 < 0)     // abs()
+                conv2 = -conv2;
+
+            if (conv1 + conv2 > conf.edge_overlay_thresh)
+            {
+                bv_set(edgebuf, (y-camera_screen.edge_hmargin)*viewport_width + xdiv3+1, 1);
+            }
+        }   // for x
+    }   // for y
+#endif
 
 //  For an even more improved edge overlay, enabling the following lines will
 //  post-filter the results of the edge detection, removing false edge 'dots'
@@ -510,10 +638,10 @@ static int draw_edge_overlay()
     for (y = y_slice_min; y < y_slice_max; ++y)
     {
         y_off = y + yoffset;
-        
+
         shutter_fullpress |= kbd_is_key_pressed(KEY_SHOOT_FULL);
 
-        if ((unsigned)(y_off-y_min) < (y_max-y_min)) // is the same as ((y_off > y_min) && (y_off < y_max)) // do not draw outside of allowed area
+        if ((y_off > y_min) && (y_off < y_max)) // do not draw outside of allowed area
         {
             const int y_edgebuf = (y-y_min) * viewport_width;
 
@@ -521,16 +649,12 @@ static int draw_edge_overlay()
             {
                 x_off = x + xoffset;
 
-                if ((unsigned)(x_off-x_min) < (x_max-x_min)) // is the same as  ((x_off > x_min) && (x_off < x_max)) // do not draw outside of allowed area
+                if ((x_off > x_min) && (x_off < x_max)) // do not draw outside of allowed area
                 {
                     // Draw a pixel to the screen wherever we detected an edge.
                     // If there is no edge based on the newest data, but there is one painted on the screen
                     // from previous calls, delete it from the screen.
-                    const int bEdge = bv_get(edgebuf, y_edgebuf + x);
-                    const int bDraw = bEdge || (draw_get_pixel(x_off+viewport_xoffset, y_off+viewport_yoffset) == cl);
-                    if (bEdge || bDraw)
-                        draw_pixel(x_off+viewport_xoffset, y_off+viewport_yoffset, bEdge ? cl : 0);
-                    
+                    draw_or_erase_edge_pixel(x_off+viewport_xoffset, y_off+viewport_yoffset, cl, bv_get(edgebuf, y_edgebuf + x));
                 }
             }   // for x
         }
@@ -553,8 +677,7 @@ static int draw_edge_overlay()
             for (x = x_min_c; x < x_max_c; ++x)
             {
                 // if there is an edge drawn on the screen but there is no edge there based on the newest data, delete it from the screen
-                if (draw_get_pixel(x+viewport_xoffset, y+viewport_yoffset) == cl)
-                    draw_pixel(x+viewport_xoffset, y+viewport_yoffset, 0 );
+                draw_or_erase_edge_pixel(x+viewport_xoffset, y+viewport_yoffset, cl, 0);
             }
         }
     }
@@ -571,8 +694,7 @@ static int draw_edge_overlay()
             for (x = x_min; x < x_max; ++x)
             {
                 // if there is an edge drawn on the screen but there is no edge there based on the newest data, delete it from the screen
-                if (draw_get_pixel(x+viewport_xoffset, y+viewport_yoffset) == cl)
-                    draw_pixel(x+viewport_xoffset, y+viewport_yoffset, 0 );
+                draw_or_erase_edge_pixel(x+viewport_xoffset, y+viewport_yoffset, cl, 0);
             }
         }
     }
@@ -621,6 +743,11 @@ static void set_offset_from_overlap()
 // (dynamically decompressing it) using draw_edge_overlay().
 void edge_overlay()
 {
+    // Check that viewport dimensions do not exceed bitmap dimensions.
+    // HDMI output may use a larger frame for the image compared to the bitmap we draw on - the code can't handle this.
+    if ((vid_get_viewport_width() > camera_screen.width) || (vid_get_viewport_height() > camera_screen.height))
+        return;
+
     // Was the shutter fully pressed the last time we ran?
     // We use this to make sure that the user has released
     // the button before processing the next FullPress event.
@@ -769,9 +896,9 @@ ATTENTION: DO NOT REMOVE OR CHANGE SIGNATURES IN THIS SECTION
 // PURPOSE:   Perform on-load initialisation
 // RETURN VALUE: 1 error, 0 ok
 //---------------------------------------------------------
-int _module_loader( unsigned int* chdk_export_list )
+int _module_loader( __attribute__ ((unused))unsigned int* chdk_export_list )
 {
-    module_restore_edge((void**)&edgebuf, (int*)&fsm_state);
+    fsm_state = module_restore_edge((void**)&edgebuf);
     return 0;
 }
 
@@ -803,7 +930,7 @@ int _module_can_unload()
 
 /******************** Module Information structure ******************/
 
-libedgeovr_sym _libedgeovr = 
+libedgeovr_sym _libedgeovr =
 {
     {
          _module_loader, _module_unloader, _module_can_unload, 0, 0
@@ -832,6 +959,8 @@ ModuleInfo _module_info =
     CAM_SCREEN_VERSION,         // CAM SCREEN version
     ANY_VERSION,                // CAM SENSOR version
     CAM_INFO_VERSION,           // CAM INFO version
+
+    0,
 };
 
 /*************** END OF AUXILARY PART *******************/
