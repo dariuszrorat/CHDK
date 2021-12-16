@@ -548,6 +548,8 @@ extern Vars vars;
 
 extern void conf_save();
 extern void conf_restore();
+extern void conf2_save();
+extern void conf2_restore();
 extern void conf_load_defaults();
 extern void conf_change_dng(void);
 extern void conf_update_prevent_shutdown(void);
