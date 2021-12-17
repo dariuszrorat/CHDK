@@ -1899,7 +1899,7 @@ static CMenu osd_submenu = {0x22,LANG_MENU_OSD_TITLE, osd_submenu_items };
 //-------------------------------------------------------------------
 
 static const char* gui_histo_show_modes[] =                 { "Don't", "Always", "Rec", "Shoot" };
-static const char* gui_histo_view_modes[]= { "RGB", "Y", "RGB Y", "R G B", "Y U V", "RGB all", "Y all", "Blend", "Blend Y", "WaveY", "WaveYS", "WaveRGB", "WaveYUV", "WaveVec", "PardYS", "PardRGB", "PardYUV"};
+static const char* gui_histo_view_modes[]= { "RGB", "Y", "RGB Y", "R G B", "Y U V", "Y Sat", "RGB all", "Y all", "Blend", "Blend Y", "WaveY", "WaveYS", "WaveRGB", "WaveYUV", "WaveVec", "PardYS", "PardRGB", "PardYUV"};
 static const char* gui_histo_transform_modes[]= { "Linear", "Log" };
 static const char* gui_wave_parade_modes[]= { "Horiz.", "Vert." };
 

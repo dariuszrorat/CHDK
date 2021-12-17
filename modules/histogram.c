@@ -17,6 +17,10 @@
 #define HISTO_B                     2       // Blue channel
 #define HISTO_RGB                   3       // Combined Red, Green and Blue
 #define HISTO_Y                     4       // Luminance (Y) from viewport
+#define HISTO_L                     5       // Luminance (Y) from viewport
+#define HISTO_U                     6       // U from viewport
+#define HISTO_V                     7       // V from viewport
+#define HISTO_S                     8       // RGB saturation
 
 #define WAVE_L                     0       // Default Luminance (Y) from viewport
 #define WAVE_R                     1       // Red channel
@@ -47,18 +51,19 @@
 #define OSD_HISTO_LAYOUT_A_Y         2
 #define OSD_HISTO_LAYOUT_R_G_B       3
 #define OSD_HISTO_LAYOUT_Y_U_V       4
-#define OSD_HISTO_LAYOUT_A_yrgb      5
-#define OSD_HISTO_LAYOUT_Y_argb      6
-#define OSD_HISTO_LAYOUT_BLEND       7
-#define OSD_HISTO_LAYOUT_BLEND_Y     8
-#define OSD_HISTO_LAYOUT_WAVE_Y      9
-#define OSD_HISTO_LAYOUT_WAVE_YS    10
-#define OSD_HISTO_LAYOUT_WAVE_RGB   11
-#define OSD_HISTO_LAYOUT_WAVE_YUV   12
-#define OSD_HISTO_LAYOUT_WAVE_VEC   13
-#define OSD_HISTO_LAYOUT_PARD_YS    14
-#define OSD_HISTO_LAYOUT_PARD_RGB   15
-#define OSD_HISTO_LAYOUT_PARD_YUV   16
+#define OSD_HISTO_LAYOUT_Y_S         5
+#define OSD_HISTO_LAYOUT_A_yrgb      6
+#define OSD_HISTO_LAYOUT_Y_argb      7
+#define OSD_HISTO_LAYOUT_BLEND       8
+#define OSD_HISTO_LAYOUT_BLEND_Y     9
+#define OSD_HISTO_LAYOUT_WAVE_Y     10
+#define OSD_HISTO_LAYOUT_WAVE_YS    11
+#define OSD_HISTO_LAYOUT_WAVE_RGB   12
+#define OSD_HISTO_LAYOUT_WAVE_YUV   13
+#define OSD_HISTO_LAYOUT_WAVE_VEC   14
+#define OSD_HISTO_LAYOUT_PARD_YS    15
+#define OSD_HISTO_LAYOUT_PARD_RGB   16
+#define OSD_HISTO_LAYOUT_PARD_YUV   17
 
 #ifndef THUMB_FW
 #define	HISTO_DOT_SIZE	3
@@ -215,18 +220,10 @@ void histogram_sample_stage(unsigned char *img, int stage, int byte_width, int v
 #endif
 //                p[1] = p[3] = 255;    // Draw columns on screen for debugging
 
-            if (conf.histo_layout != OSD_HISTO_LAYOUT_Y_U_V)
+            switch (conf.histo_layout)
             {
-                ++histogram_proc[HISTO_Y][y];                       // Y
-                hi = clip(((y<<12)          + v*5743 + 2048)>>12);  // R
-                ++histogram_proc[HISTO_R][hi];
-                hi = clip(((y<<12) - u*1411 - v*2925 + 2048)>>12);  // G
-                ++histogram_proc[HISTO_G][hi];
-                hi = clip(((y<<12) + u*7258          + 2048)>>12);  // B
-                ++histogram_proc[HISTO_B][hi];
-            }
-            else
-            {
+                case OSD_HISTO_LAYOUT_Y_U_V:
+                {
                 ++histogram_proc[HISTO_Y][y];                       // Y
                 hi = y;  // Y
                 ++histogram_proc[HISTO_R][hi];
@@ -234,8 +231,32 @@ void histogram_sample_stage(unsigned char *img, int stage, int byte_width, int v
                 ++histogram_proc[HISTO_G][hi];
                 hi = v + 128;  // V
                 ++histogram_proc[HISTO_B][hi];
+                break;
+                }
+                case OSD_HISTO_LAYOUT_Y_S:
+                {
+                int R = clip(((y<<12)          + v*5743 + 2048)>>12);
+                int G = clip(((y<<12) - u*1411 - v*2925 + 2048)>>12);
+                int B = clip(((y<<12) + u*7258          + 2048)>>12);
+                int S = clip((int) 255 * saturation(R, G, B));
+                ++histogram_proc[HISTO_Y][y];                       // Y
+                hi = y;  // Y
+                ++histogram_proc[HISTO_R][hi];
+                hi = S;
+                ++histogram_proc[HISTO_G][hi];
+                break;
+                }
+                default:
+                {
+                ++histogram_proc[HISTO_Y][y];                       // Y
+                hi = clip(((y<<12)          + v*5743 + 2048)>>12);  // R
+                ++histogram_proc[HISTO_R][hi];
+                hi = clip(((y<<12) - u*1411 - v*2925 + 2048)>>12);  // G
+                ++histogram_proc[HISTO_G][hi];
+                hi = clip(((y<<12) + u*7258          + 2048)>>12);  // B
+                ++histogram_proc[HISTO_B][hi];
+                }
             }
-
         }
     }
 }
@@ -449,7 +470,7 @@ void do_histogram_process()
 
     // Select which calculated histogram channel determines magnification / scaling
     if (conf.histo_layout == OSD_HISTO_LAYOUT_Y || conf.histo_layout == OSD_HISTO_LAYOUT_Y_argb
-    || conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V)
+    || conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V || conf.histo_layout == OSD_HISTO_LAYOUT_Y_S)
         histo_main = HISTO_Y;
     else
         histo_main = HISTO_RGB;
@@ -568,7 +589,8 @@ void do_histogram_process()
             }
         }
 
-        int hmain = conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V ? HISTO_Y : HISTO_RGB;
+        int hmain = ((conf.histo_layout == OSD_HISTO_LAYOUT_Y_U_V) || (conf.histo_layout == OSD_HISTO_LAYOUT_Y_S))
+           ? HISTO_Y : HISTO_RGB;
         if (histo_max[hmain] > 0)   // over- / under- expos
         {
             under_exposed = (histogram_proc[hmain][0]*8
@@ -649,23 +671,43 @@ static void gui_osd_draw_single_histo(int hist, coord x, coord y, int small)
     register int i, v, threshold;
     register color cl, cl_over, cl_bg = BG_COLOR(hc);
     coord w=HISTO_WIDTH, h=HISTO_HEIGHT;
-    int rgb = (conf.histo_layout != OSD_HISTO_LAYOUT_Y_U_V) ? 1 : 0;
+    int ofs = 0;
 
     switch (hist)
     {
     case HISTO_R:
-        cl=rgb ? COLOR_RED : COLOR_CYAN;
+        cl=COLOR_RED;
+        ofs=0;
         break;
     case HISTO_G:
-        cl=rgb ? COLOR_GREEN : COLOR_MAGENTA;
+        cl=COLOR_GREEN;
+        ofs=0;
         break;
     case HISTO_B:
-        cl=rgb ? COLOR_BLUE : COLOR_YELLOW;
+        cl=COLOR_BLUE;
+        ofs=0;
+        break;
+    case HISTO_L:
+        cl=COLOR_CYAN;
+        ofs=-5;
+        break;
+    case HISTO_U:
+        cl=COLOR_MAGENTA;
+        ofs=-5;
+        break;
+    case HISTO_V:
+        cl=COLOR_YELLOW;
+        ofs=-5;
+        break;
+    case HISTO_S:
+        cl=COLOR_MAGENTA;
+        ofs=-7;
         break;
     case HISTO_RGB:
     case HISTO_Y:
     default:
         cl=FG_COLOR(hc);
+        ofs=0;
         break;
     }
 
@@ -675,7 +717,7 @@ static void gui_osd_draw_single_histo(int hist, coord x, coord y, int small)
         w>>=1;
         for (i=0; i<w; ++i)
         {
-            threshold = (histogram[hist][i<<1]+histogram[hist][(i<<1)+1])>>2;
+            threshold = (histogram[hist+ofs][i<<1]+histogram[hist+ofs][(i<<1)+1])>>2;
 
             for (v=1; v<h-1; ++v)
                 draw_pixel(x+1+i, y+h-v, (v<=threshold)?cl:cl_bg);
@@ -688,7 +730,7 @@ static void gui_osd_draw_single_histo(int hist, coord x, coord y, int small)
     {
         for (i=0; i<w; ++i)
         {
-            threshold = histogram[hist][i];
+            threshold = histogram[hist+ofs][i];
 
             for (v=1; v<h-3; ++v)
                 draw_pixel(x+1+i, y+h-v, (v<=threshold)?cl:cl_bg);
@@ -1004,10 +1046,18 @@ void gui_osd_draw_histo(int is_osd_edit)
             gui_osd_draw_single_histo(HISTO_Y, conf.histo_pos.x, conf.histo_pos.y+HISTO_HEIGHT, 0);
             break;
         case OSD_HISTO_LAYOUT_R_G_B:
-        case OSD_HISTO_LAYOUT_Y_U_V:
             gui_osd_draw_single_histo(HISTO_R, conf.histo_pos.x, conf.histo_pos.y, 0);
             gui_osd_draw_single_histo(HISTO_G, conf.histo_pos.x, conf.histo_pos.y+HISTO_HEIGHT, 0);
             gui_osd_draw_single_histo(HISTO_B, conf.histo_pos.x, conf.histo_pos.y+HISTO_HEIGHT*2, 0);
+            break;
+        case OSD_HISTO_LAYOUT_Y_U_V:
+            gui_osd_draw_single_histo(HISTO_L, conf.histo_pos.x, conf.histo_pos.y, 0);
+            gui_osd_draw_single_histo(HISTO_U, conf.histo_pos.x, conf.histo_pos.y+HISTO_HEIGHT, 0);
+            gui_osd_draw_single_histo(HISTO_V, conf.histo_pos.x, conf.histo_pos.y+HISTO_HEIGHT*2, 0);
+            break;
+        case OSD_HISTO_LAYOUT_Y_S:
+            gui_osd_draw_single_histo(HISTO_L, conf.histo_pos.x, conf.histo_pos.y, 0);
+            gui_osd_draw_single_histo(HISTO_S, conf.histo_pos.x, conf.histo_pos.y+HISTO_HEIGHT, 0);
             break;
         case OSD_HISTO_LAYOUT_A_yrgb:
             gui_osd_draw_single_histo(HISTO_RGB, conf.histo_pos.x, conf.histo_pos.y, 0);

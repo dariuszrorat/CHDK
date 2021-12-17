@@ -23,12 +23,13 @@ cards where the official CHDK project is loaded automatically.
 ### Histogram extensions
 
   - YUV histogram
+  - Y / saturation histogram
   - Y waveform
-  - Y saturation waveform overlay
+  - Y / saturation waveform overlay
   - RGB waveform overlay
   - YUV waveform overlay
   - YUV vectorscope
-  - Y staturation parade
+  - Y / staturation parade
   - RGB parade
   - YUV parade
 
