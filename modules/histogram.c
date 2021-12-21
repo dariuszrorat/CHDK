@@ -67,9 +67,11 @@
 
 #ifndef THUMB_FW
 #define	HISTO_DOT_SIZE	3
+#define	HISTO_STEP_SIZE	6
 #else
 // digic 6 CHDK screen is ~480 lines instead for 240
 #define	HISTO_DOT_SIZE	5
+#define	HISTO_STEP_SIZE	4
 #endif
 #define	HISTO_DOT_PAD	(HISTO_DOT_SIZE + 2)
 
@@ -106,36 +108,31 @@ static int waveform_stage=1;
 // Histogram calculation functions
 
 // Clip value to byte range (for YUV -> RGB conversion)
-static int clip(int v)
+int clip(int v);
+inline int clip(int v)
 {
     if (v<0) v=0;
-    else if (v>255) v=255;
-    return v;
+    return v<255 ? v:255;
 }
-
-static int clip50(int v)
+int clip50(int v);
+inline int clip50(int v)
 {
     if (v<0) v=0;
-    else if (v>50) v=50;
-    return v;
+    return v<50 ? v:50;
 }
 
-int minrgb(int R, int G, int B)
+int minrgb(int R, int G, int B);
+inline int minrgb(int R, int G, int B)
 {
-    int min = 255;
-    if (R < G) min = R;
-    else min = G;
-    if (B < min) min = B;
-    return min;
+    int min = R<G ? R:G;
+    return B>min ? min:B;
 }
 
-int maxrgb(int R, int G, int B)
+int maxrgb(int R, int G, int B);
+inline int maxrgb(int R, int G, int B)
 {
-    int max = 0;
-    if (R > G) max = R;
-    else max = G;
-    if (B > max) max = B;
-    return max;
+    int max = R>G ? R:G;
+    return B<max ? max:B;
 }
 
 double saturation(int R, int G, int B)
@@ -263,11 +260,12 @@ void histogram_sample_stage(unsigned char *img, int stage, int byte_width, int v
 
 static void waveform_alloc()
 {
+    unsigned short w = camera_screen.width / 3;
     unsigned short c;
     // Allocate buffer to screen width / 3
-    waveform_proc = malloc(120 * sizeof(unsigned char *));
-    waveform = malloc(120 * sizeof(unsigned char *));
-    for (c = 0; c < 120; c++)
+    waveform_proc = malloc(w * sizeof(unsigned char *));
+    waveform = malloc(w * sizeof(unsigned char *));
+    for (c = 0; c < w; c++)
     {
         waveform_proc[c] = malloc(3 * 48 * sizeof(unsigned char));
         memset(waveform_proc[c], 0, 3 * 48);
@@ -279,8 +277,9 @@ static void waveform_alloc()
 
 static void waveform_free()
 {
+    unsigned short w = camera_screen.width / 3;
     unsigned short c;
-    for (c = 0; c < 120; c++)
+    for (c = 0; c < w; c++)
     {
         free(waveform_proc[c]);
         waveform_proc[c] = NULL;
@@ -296,8 +295,9 @@ static void waveform_free()
 
 static void waveform_clear()
 {
+    unsigned short w = camera_screen.width / 3;
     unsigned short c;
-    for (c = 0; c < 120; c++)
+    for (c = 0; c < w; c++)
     {
         memset(waveform_proc[c], 0, 3 * 48);
     }
@@ -305,8 +305,9 @@ static void waveform_clear()
 
 static void waveform_copy()
 {
+    unsigned short w = camera_screen.width / 3;
     unsigned short c;
-    for (c = 0; c < 120; c++)
+    for (c = 0; c < w; c++)
     {
         memcpy(waveform[c], waveform_proc[c], 3 * 48 * sizeof(unsigned char));
     }
@@ -317,9 +318,9 @@ static void do_waveform_process()
     static unsigned char *img_buf;
     static int viewport_size, viewport_width, viewport_height,
            viewport_row_offset, wiewport_byte_width;
-    register int v, x, y, px, py;
+    int v, x, y, px, py;
     int step_v, step_x, step_y;
-    register int Y, U, V, R, G, B, S;
+    int Y, U, V, R, G, B, S;
 
     //initialize variables
     viewport_width = camera_screen.width;
@@ -793,7 +794,7 @@ static void gui_osd_draw_single_wave(int wave, coord x, coord y, int is_osd_edit
     twoColors hc = user_color(conf.histo_color);
     twoColors hc2 = user_color(conf.histo_color2);
     color cl;
-    register unsigned short i, v, lum;
+    unsigned short i, v, lum;
     short offset;
 
     switch (wave)
@@ -854,7 +855,7 @@ static void gui_osd_draw_horizontal_parade(int parade, coord x, coord y, int is_
     twoColors hc = user_color(conf.histo_color);
     twoColors hc2 = user_color(conf.histo_color2);
     color cl;
-    register unsigned short i, v, value;
+    unsigned short i, v, value;
     short offset;
 
     draw_rectangle(x+1, y+1, x+HISTO_WIDTH*2, y+HISTO_HEIGHT-1, hc, DRAW_FILLED);
@@ -893,7 +894,7 @@ static void gui_osd_draw_blended_wave(int wave, coord x, coord y, int is_osd_edi
 {
     twoColors hc = user_color(conf.histo_color);
     twoColors hc2 = user_color(conf.histo_color2);
-    register unsigned short i, v, R, G, B, Y, U, V, S;
+    unsigned short i, v, R, G, B, Y, U, V, S;
     color cls[] =
     {
         COLOR_BLACK,
@@ -998,8 +999,8 @@ static void gui_osd_draw_vectorscope(coord x, coord y, int is_osd_edit)
     twoColors hc = user_color(conf.histo_color);
     twoColors hc2 = user_color(conf.histo_color2);
     color cl = FG_COLOR(hc);
-    register unsigned short i, v;
-    register int Y, U, V;
+    unsigned short i, v;
+    int Y, U, V;
     int center_x = HISTO_WIDTH / 2;
     int center_y = HISTO_WIDTH / 2;
 
