@@ -1,0 +1,9 @@
+@title ARRI ALEXA Zones
+# https://guide.smallhd.com/m/all_monitors/l/808517
+# Values scaled to real viewport levels
+@zone   0,   5, 0xD2
+@zone   6,  10, 0xDF
+@zone 120, 142, 0x55
+@zone 177, 198, 0x21
+@zone 247, 251, 0x6C
+@zone 252, 255, 0x22
