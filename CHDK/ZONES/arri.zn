@@ -3,7 +3,10 @@
 # Values scaled to real viewport levels
 @zone   0,   5, 0xD2
 @zone   6,  10, 0xDF
+@zone  11, 119, 0xAA
 @zone 120, 142, 0x55
+@zone 143, 176, 0x33
 @zone 177, 198, 0x21
+@zone 199, 246, 0x31
 @zone 247, 251, 0x6C
 @zone 252, 255, 0x22
