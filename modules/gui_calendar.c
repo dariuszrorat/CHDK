@@ -20,6 +20,10 @@ gui_handler GUI_MODE_CALENDAR =
 #define TITLE_COLOR             (MAKE_COLOR(COLOR_BLACK, COLOR_WHITE))
 #define CALENDAR_COLOR          (MAKE_COLOR(COLOR_GREY, COLOR_WHITE))
 #define WEEKEND_COLOR           (MAKE_COLOR(COLOR_YELLOW, COLOR_RED))
+#define TODAY_COLOR             (MAKE_COLOR(COLOR_GREY, COLOR_BLUE))
+#define TODAY_WEEKEND_COLOR     (MAKE_COLOR(COLOR_YELLOW, COLOR_BLUE))
+#define HOLIDAY_COLOR           (MAKE_COLOR(COLOR_GREY, COLOR_RED))
+#define HOLIDAY_WEEKEND_COLOR   (MAKE_COLOR(COLOR_YELLOW, COLOR_RED))
 
 //-------------------------------------------------------------------
 static int need_redraw;
@@ -164,8 +168,15 @@ void gui_calendar_draw() {
         
         for (i=1; i<=d; ++i) {
             sprintf(str, " %2d ", i);
-            draw_string(cal_x+x*FONT_WIDTH*4, y, str, (x<5)?CALENDAR_COLOR:WEEKEND_COLOR);
-            
+            if ((1900+ttm->tm_year == cal_year) && (ttm->tm_mon == cal_month) &&(ttm->tm_mday == i))
+            {
+                draw_string(cal_x+x*FONT_WIDTH*4, y, str, (x<5)?TODAY_COLOR:TODAY_WEEKEND_COLOR);
+            }
+            else
+            {
+                draw_string(cal_x+x*FONT_WIDTH*4, y, str, (x<5)?CALENDAR_COLOR:(x==6?HOLIDAY_WEEKEND_COLOR:WEEKEND_COLOR));
+            }
+
             if (++x>6) {
               x=0;
               y += FONT_HEIGHT+4;

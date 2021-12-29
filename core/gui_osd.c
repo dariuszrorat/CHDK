@@ -468,7 +468,7 @@ void gui_osd_draw_state(int is_osd_edit)
         if (camera_info.cam_has_nd_filter)
             if ((conf.nd_filter_state && !(conf.override_disable==1))|| is_osd_edit)
                 gui_print_osd_state_string_chr("NDFILTER:", ((conf.nd_filter_state==1)?"IN":"OUT"));
-        if ((conf.autoiso_enable && shooting_get_iso_mode()<=0 && !(camera_info.state.mode_shooting==MODE_M || camera_info.state.mode_shooting==MODE_TV) && shooting_get_flash_mode() && (autoiso_and_bracketing_overrides_are_enabled)) || is_osd_edit)
+        if ((conf.autoiso_enable && shooting_get_iso_mode()<=0 && (camera_info.state.mode_shooting==MODE_AUTO || camera_info.state.mode_shooting==MODE_P || camera_info.state.mode_shooting==MODE_AV) && shooting_get_flash_mode() && (autoiso_and_bracketing_overrides_are_enabled)) || is_osd_edit)
             gui_print_osd_state_string_chr("AUTOISO:", ((conf.autoiso_enable==1)?"ON":"OFF"));
         if ((is_sd_override_enabled && shooting_can_focus()) || (camera_info.state.gui_mode_alt && shooting_get_common_focus_mode()) || is_osd_edit)
         {
