@@ -89,7 +89,7 @@ The default is 1/2.5" sensor size in include/camera.h
 
 ## WARNING
 
-The project was tested only on the Powershot SX10IS and SX100IS. I don't know
+The project was tested only on the Powershot SX10IS, SX20IS and SX100IS. I don't know
 how it will behave on other camera models so be careful. Many times during
 tests and errors in the codes my camera turned off with the lens extended
 and in order to restart it I had to remove the batteries. I do not know how

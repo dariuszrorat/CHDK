@@ -51,6 +51,6 @@ unsigned char rec_colors[] =
         0xD9,                       // Dark Yellow
         0xDD,                       // Light Yellow
         0x11,                       // Transparent Dark Grey
-        0x2B,                       // Magenta
+        0x20,                       // Magenta
 };
 

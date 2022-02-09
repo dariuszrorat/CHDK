@@ -1,0 +1,11 @@
+@title Ansel Adams Zones
+# Values scaled to real viewport levels
+@zone   0,  12, 0x3B
+@zone  13,  23, 0x36
+@zone  24,  39, 0x31
+@zone  40,  72, 0x2D
+@zone  73, 112, 0x59
+@zone 113, 159, 0xB0
+@zone 160, 211, 0xDE
+@zone 212, 252, 0xD1
+@zone 253, 255, 0x91
