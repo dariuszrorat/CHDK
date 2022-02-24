@@ -51,7 +51,7 @@ cards where the official CHDK project is loaded automatically.
 
 ## Compilation
 
-The code was compiled and tested only for SX10IS and SX100IS. Define these values
+The code was compiled and tested only for SX10IS, SX20IS and SX100IS. Define these values
 in platform\<model>\platform_camera.h as sensor size float values
 
 ```
