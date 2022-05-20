@@ -110,7 +110,7 @@ void rgb_to_temperature(double RGB[3], double *T, double *Green)
         else
             Tmin = *T;
     }
-    *Green = (testRGB[1] / testRGB[0]) / (RGB[1] / RGB[0]);
+    *Green = 2 * (testRGB[1] / testRGB[0]) / (RGB[1] / RGB[0]);
     if (*Green < 0.2) *Green = 0.2;
     if (*Green > 2.5) *Green = 2.5;
 }
@@ -628,7 +628,6 @@ static void gui_osd_draw_values(int is_osd_edit, int is_zebra)
                 RGB[2] = 1.0 / (wb[2] / 1000.0);
 
                 rgb_to_temperature(RGB, &temperature, &tint);
-                tint *= 2;
                 int tk = Round(temperature, 0);
                 int tnt = Round(tint * 1000.0, 0);
 
